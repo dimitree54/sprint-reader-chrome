@@ -1,4 +1,4 @@
-﻿﻿![Sprint Reader](https://raw.githubusercontent.com/anthonynosek/sprint-reader-chrome/master/src/graphics/icon128.png?raw=true)
+![Sprint Reader](https://raw.githubusercontent.com/anthonynosek/sprint-reader-chrome/master/src/graphics/icon128.png?raw=true)
 
 # Sprint Reader
 
@@ -73,7 +73,7 @@ See the [Wiki](https://github.com/anthonynosek/sprint-reader-chrome/wiki) for fu
 
 ## <a name="license"></a>License
 
-Copyright (c) 2013-2020, Anthony Nosek  
+Copyright (c) 2013-2024, Anthony Nosek
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
