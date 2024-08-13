@@ -37,10 +37,6 @@ Key features of Sprint Reader:
 ## <a name="team-members"></a>Team Members
 * Anthony Nosek (<anthonynosek@gmail.com>)
 
-## <a name="social"></a>Sprint Reader on Social Media
-
-Sprint Reader has a ﻿![Facebook](https://raw.githubusercontent.com/anthonynosek/sprint-reader-chrome/master/src/graphics/facebook_16x16.png?raw=true) [ Facebook](https://www.facebook.com/SprintReader) page for the latest developments, interesting articles and updates from the Sprint Reader team. Check back for new tips and suggestions from our sprinters.
-
 ## <a name="useful-resources"></a>Useful Resources
 
 - [Google Chrome Extensions Official Site](https://developer.chrome.com/extensions)
