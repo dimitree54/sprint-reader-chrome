@@ -3,8 +3,8 @@
 
 	Sprint Reader
 
-          email: anthonynosek@gmail.com
-      copyright: Anthony Nosek
+    email: anthonynosek@gmail.com
+    copyright: Anthony Nosek
 -------------------------------------------------------------*/
 
 // Initialise the welcome (welcome.html) screen
