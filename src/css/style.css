@@ -80,7 +80,7 @@ input[type="number"] {
 
 #popup-container {
 	width:400px;
-	height:430px;
+	height:480px;
 }
 
 #word-container{
@@ -261,7 +261,7 @@ label {
 }
 
 .bfh-selectbox {
-	margin-bottom: 10px; !important;
+	margin-bottom: 10px !important;
 	z-index:1000;
 }
 
@@ -322,7 +322,7 @@ label {
 .github {
 	position: relative;
 	float: left;
-	margin: 12px 8px 0px 0px;	
+	margin: 16px 20px 0px 0px;	
 }
 
 .github_logo path {
@@ -433,7 +433,6 @@ label {
 	color: #3399ff;
 	display: block;
 	width: 100%;
-	float: left;
 	font-weight: normal;
 	font-size: 18px;
 }

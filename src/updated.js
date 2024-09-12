@@ -9,10 +9,10 @@
 
 // Initialise the (updated.html) screen
 // This screen (updated.html) is opened after Sprint Reader
-// has been updated. Updates are automatic through the 
+// has been updated. Updates are automatic through the
 // Google Chrome store.
 function init() {
-	displayVersion();
+    displayVersion();
 }
 
 document.addEventListener("DOMContentLoaded", init, false);
