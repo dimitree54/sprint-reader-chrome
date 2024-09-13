@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 //
-// 	SPRINT READER
-//	Speed Reading Extension for Google Chrome
-//	Copyright (c) 2013-2024, Anthony Nosek
-//	https://github.com/anthonynosek/sprint-reader-chrome/blob/master/LICENSE
+// SPRINT READER
+// Speed Reading Extension for Google Chrome
+// Copyright (c) 2013-2024, Anthony Nosek
+// https://github.com/anthonynosek/sprint-reader-chrome/blob/master/LICENSE
 //
 //------------------------------------------------------------------------------
 
@@ -17,29 +17,31 @@ function init() {
 }
 
 function setTabHeight() {
-    var windowHeight = window.innerHeight;
-    if (windowHeight >= 500) windowHeight = 480;
-
+    const windowHeight = Math.min(window.innerHeight, 500);
+    
     // Set the tab control height
-    var tabHeight = Math.round(windowHeight - 5) + "px";
-    $(".tabbable").css("height", tabHeight);
-
+    const tabHeight = `${Math.round(windowHeight - 5)}px`;
+    document.querySelector(".tabbable").style.height = tabHeight;
+    
     // Set the tab content height based on the size of the window
-    var tabContentHeight = Math.round(windowHeight - 70) + "px";
-    $(".tab-content").css("height", tabContentHeight);
+    const tabContentHeight = `${Math.round(windowHeight - 70)}px`;
+    document.querySelector(".tab-content").style.height = tabContentHeight;
 }
 
 // Open the reader window when a user clicks on the reader link
-window.onload = function () {
-    var a = document.getElementById("openReader");
-    a.onclick = async function () {
-        chrome.runtime.sendMessage({
+function setupReaderLink() {
+    const openReaderLink = document.getElementById("openReader");
+    openReaderLink.addEventListener("click", async (event) => {
+        event.preventDefault();
+        await chrome.runtime.sendMessage({
             target: "background",
             type: "openReaderFromPopup",
         });
-        close();
-        return false;
-    };
-};
+        window.close();
+    });
+}
 
-document.addEventListener("DOMContentLoaded", init, false);
+document.addEventListener("DOMContentLoaded", () => {
+    init();
+    setupReaderLink();
+});

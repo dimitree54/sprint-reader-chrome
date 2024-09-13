@@ -112,7 +112,7 @@ async function loadReader() {
         setDivVariables();
 
         // Set the language of the selected text
-        language = getLanguage(selectedText);
+        language = await getLanguage(selectedText);
 
         // User settings
         getSettingsDefault();
@@ -152,9 +152,6 @@ async function loadReader() {
 
         // Group the words depending upon the chunk size set
         textArray = getTextArray(selectedAlgorithm, selectedText, chunkSize);
-
-        // Set the display of the status
-        displayStatusData(selectedText);
 
         // Get the word div
         // divWord is a global variable, we use it a lot
@@ -198,6 +195,9 @@ async function loadReader() {
         // Setup the slide tooltip
         // This has to be called before setEventListeners
         setupSlideTooltip();
+
+        // Set the display of the status
+        displayStatusData();
 
         // Add event listeners
         setEventListeners();
@@ -450,10 +450,10 @@ function getSettingsDefault() {
     colorSchemeName = "modern-blue";
     font = "Arial";
     fontSize = 110;
-    showRemainingTime = false;
+    showRemainingTime = true;
     textOrientationAutoDetect = true;
     textOrientationIsRightToLeft = false;
-    WPM = 300;
+    WPM = 400;
 }
 
 function getAdvancedSettingsDefault() {
@@ -612,12 +612,6 @@ function displaySettings() {
     $("#font").attr("data-family", font);
     $("#fontdataoption").text(font);
     document.getElementById("fontselection").value = font;
-
-    // Display the WPM, chunk size and text orientation on the main screen (status)
-    var divStatus = document.getElementById("statuslabel");
-    var orient = "";
-    if (displayReaderRightToLeft) orient = " RTL";
-    divStatus.innerHTML = "WPM: " + WPM + " (" + chunkSize + ")" + orient;
 
     // Text orientation
     if (textOrientationIsRightToLeft) {
@@ -1645,7 +1639,6 @@ function showFocalGuide() {
     divFocalGuideBottom.css("left", "");
     divFocalGuideBottom.css("right", "");
 
-    var backColour = $("body").css("background");
     var guideColor = $("body").css("color");
     if (highlightOptimalLetter) {
         guideColor = highlightOptimalLetterColour;
@@ -1898,10 +1891,10 @@ async function refreshReader() {
 }
 
 // Display the WPM, chunk size and text orientation on the main screen (status)
-function displayStatusData(selectedText) {
+function displayStatusData() {
     var divStatus = document.getElementById("statuslabel");
     // Text orientation
-    var orient = "";
+    var orient = " LTR";
     if (displayReaderRightToLeft) orient = " RTL";
     // Real words per minute
     var realWPM = slideShowData.realWPM;

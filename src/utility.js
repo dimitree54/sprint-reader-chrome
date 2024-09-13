@@ -109,14 +109,14 @@ function getMoreAdvancedSettingsDefaults() {
     madvEnableSpaceInsertion = true;
     madvLongWordCharacterTriggerDoNotJoin = 4;
     madvLongWordMinCharacterPerSlidePostSplit = 6;
-    madvLongWordTriggerCharacterCount = 13;
+    madvLongWordTriggerCharacterCount = 17;
     madvRemoveLastSlideNullOrEmpty = true;
     madvStaticFocalUnicodeCharacter = "";
     madvWordFreqHighestFreqSlideDuration = 40;
     madvWordFreqLowestFreqSlideDuration = 300;
     madvWordFreqMinimumSlideDuration = 40;
     madvWordLengthMinimumSlideDuration = 0;
-    madvWPMAdjustmentStep = 25;
+    madvWPMAdjustmentStep = 50;
     // Display
     madvAlwaysHideFocalGuide = false;
     madvAutoHideSentence = false;
@@ -163,356 +163,129 @@ function reverseString(s) {
 //	- language.shortname
 //	- language.fullname
 //	- language.isrighttoleft
-function getLanguage(selectedText) {
+const languageMap = {
+    en: { fullname: "English", pattern: "en-us" },
+    ab: { fullname: "Abkhazian" },
+    af: { fullname: "Afrikaans" },
+    ar: { fullname: "Arabic", isrighttoleft: true },
+    az: { fullname: "Azeri" },
+    be: { fullname: "Belarusian", pattern: "be" },
+    bg: { fullname: "Bulgarian" },
+    bn: { fullname: "Bengali", pattern: "bn" },
+    bo: { fullname: "Tibetan" },
+    br: { fullname: "Breton" },
+    ca: { fullname: "Catalan", pattern: "ca" },
+    ceb: { fullname: "Cebuano" },
+    cs: { fullname: "Czech", pattern: "cz" },
+    cy: { fullname: "Welsh" },
+    da: { fullname: "Danish", pattern: "da" },
+    de: { fullname: "German", pattern: "de" },
+    el: { fullname: "Greek" },
+    eo: { fullname: "Esperanto" },
+    es: { fullname: "Spanish", pattern: "es" },
+    et: { fullname: "Estonian" },
+    eu: { fullname: "Basque" },
+    fa: { fullname: "Farsi" },
+    fi: { fullname: "Finnish", pattern: "fi" },
+    fo: { fullname: "Faroese" },
+    fr: { fullname: "French", pattern: "fr" },
+    fy: { fullname: "Frisian" },
+    gd: { fullname: "Scots Gaelic" },
+    gl: { fullname: "Galician" },
+    gu: { fullname: "Gujarati", pattern: "gu" },
+    ha: { fullname: "Hausa" },
+    haw: { fullname: "Hawaiian" },
+    he: { fullname: "Hebrew", isrighttoleft: true },
+    hi: { fullname: "Hindi", pattern: "hi" },
+    hr: { fullname: "Croatian" },
+    hu: { fullname: "Hungarian", pattern: "hu" },
+    hy: { fullname: "Armenian", pattern: "hy" },
+    id: { fullname: "Indonesian" },
+    is: { fullname: "Icelandic" },
+    it: { fullname: "Italian", pattern: "it" },
+    ja: { fullname: "Japanese" },
+    ka: { fullname: "Georgian" },
+    kk: { fullname: "Kazakh" },
+    km: { fullname: "Cambodian" },
+    ko: { fullname: "Korean" },
+    ku: { fullname: "Kurdish", isrighttoleft: true },
+    ky: { fullname: "Kyrgyz" },
+    la: { fullname: "Latin", pattern: "la" },
+    lt: { fullname: "Lithuanian", pattern: "lt" },
+    lv: { fullname: "Latvian", pattern: "lv" },
+    mg: { fullname: "Malagasy" },
+    mk: { fullname: "Macedonian" },
+    ml: { fullname: "Malayalam", pattern: "ml" },
+    mn: { fullname: "Mongolian" },
+    mr: { fullname: "Marathi" },
+    ms: { fullname: "Malay" },
+    nd: { fullname: "Ndebele" },
+    ne: { fullname: "Nepali" },
+    nl: { fullname: "Dutch", pattern: "nl" },
+    nn: { fullname: "Nynorsk" },
+    no: { fullname: "Norwegian", pattern: "nb-no" },
+    nso: { fullname: "Sepedi" },
+    pa: { fullname: "Punjabi", isrighttoleft: true, pattern: "pa" },
+    pl: { fullname: "Polish", pattern: "pl" },
+    ps: { fullname: "Pashto", isrighttoleft: true },
+    pt: { fullname: "Portuguese", pattern: "pt" },
+    pt_PT: { fullname: "Portuguese (Portugal)", pattern: "pt" },
+    pt_BR: { fullname: "Portuguese (Brazil)", pattern: "pt" },
+    ro: { fullname: "Romanian" },
+    ru: { fullname: "Russian", pattern: "ru" },
+    sa: { fullname: "Sanskrit" },
+    sh: { fullname: "Serbo-Croatian" },
+    sk: { fullname: "Slovak", pattern: "sk" },
+    sl: { fullname: "Slovene", pattern: "sl" },
+    so: { fullname: "Somali" },
+    sq: { fullname: "Albanian" },
+    sr: { fullname: "Serbian" },
+    sv: { fullname: "Swedish", pattern: "sv" },
+    sw: { fullname: "Swahili" },
+    ta: { fullname: "Tamil", pattern: "ta" },
+    te: { fullname: "Telugu", pattern: "te" },
+    th: { fullname: "Thai" },
+    tl: { fullname: "Tagalog" },
+    tlh: { fullname: "Klingon" },
+    tn: { fullname: "Setswana" },
+    tr: { fullname: "Turkish", pattern: "tr" },
+    ts: { fullname: "Tsonga" },
+    tw: { fullname: "Tiwi" },
+    uk: { fullname: "Ukrainian", pattern: "uk" },
+    ur: { fullname: "Urdu", isrighttoleft: true },
+    uz: { fullname: "Uzbek" },
+    ve: { fullname: "Venda" },
+    vi: { fullname: "Vietnamese" },
+    xh: { fullname: "Xhosa" },
+    zh: { fullname: "Chinese" },
+    zh_TW: { fullname: "Traditional Chinese (Taiwan)" }
+};
+
+async function getLanguage(selectedText) {
     // Detect the language of the passed in text
-    var selectedTextLanguage;
-    guessLanguage.detect(selectedText, function (language) {
-        selectedTextLanguage = language;
-        //console.log('[Sprint Reader] Detected language of provided text is [' + language + ']');
+    const selectedTextLanguage = await new Promise(resolve => {
+        guessLanguage.detect(selectedText, language => {
+            //console.log('[Sprint Reader] Detected language of provided text is [' + language + ']');
+            resolve(language);
+        });
     });
 
-    var language = {};
-    language.shortname = selectedTextLanguage;
-    language.isrighttoleft = false;
-    language.pattern = "en-us";
+    const languageInfo = languageMap[selectedTextLanguage] || { fullname: "" };
 
-    switch (selectedTextLanguage) {
-        case "en":
-            language.fullname = "English";
-            break;
-        case "ab":
-            language.fullname = "Abkhazian";
-            break;
-        case "af":
-            language.fullname = "Afrikaans";
-            break;
-        case "ar":
-            language.fullname = "Arabic";
-            language.isrighttoleft = true;
-            break;
-        case "az":
-            language.fullname = "Azeri";
-            break;
-        case "be":
-            language.fullname = "Belarusian";
-            language.pattern = "be";
-            break;
-        case "bg":
-            language.fullname = "Bulgarian";
-            break;
-        case "bn":
-            language.fullname = "Bengali";
-            language.pattern = "bn";
-            break;
-        case "bo":
-            language.fullname = "Tibetan";
-            break;
-        case "br":
-            language.fullname = "Breton";
-            break;
-        case "ca":
-            language.fullname = "Catalan";
-            language.pattern = "ca";
-            break;
-        case "ceb":
-            language.fullname = "Cebuano";
-            break;
-        case "cs":
-            language.fullname = "Czech";
-            language.pattern = "cz";
-            break;
-        case "cy":
-            language.fullname = "Welsh";
-            break;
-        case "da":
-            language.fullname = "Danish";
-            language.pattern = "da";
-            break;
-        case "de":
-            language.fullname = "German";
-            language.pattern = "de";
-            break;
-        case "el":
-            language.fullname = "Greek";
-            break;
-        case "eo":
-            language.fullname = "Esperanto";
-            break;
-        case "es":
-            language.fullname = "Spanish";
-            language.pattern = "es";
-            break;
-        case "et":
-            language.fullname = "Estonian";
-            break;
-        case "eu":
-            language.fullname = "Basque";
-            break;
-        case "fa":
-            language.fullname = "Farsi";
-            break;
-        case "fi":
-            language.fullname = "Finnish";
-            language.pattern = "fi";
-            break;
-        case "fo":
-            language.fullname = "Faroese";
-            break;
-        case "fr":
-            language.fullname = "French";
-            language.pattern = "fr";
-            break;
-        case "fy":
-            language.fullname = "Frisian";
-            break;
-        case "gd":
-            language.fullname = "Scots Gaelic";
-            break;
-        case "gl":
-            language.fullname = "Galician";
-            break;
-        case "gu":
-            language.fullname = "Gujarati";
-            language.pattern = "gu";
-            break;
-        case "ha":
-            language.fullname = "Hausa";
-            break;
-        case "haw":
-            language.fullname = "Hawaiian";
-            break;
-        case "he":
-            language.fullname = "Hebrew";
-            language.isrighttoleft = true;
-            break;
-        case "hi":
-            language.fullname = "Hindi";
-            language.pattern = "hi";
-            break;
-        case "hr":
-            language.fullname = "Croatian";
-            break;
-        case "hu":
-            language.fullname = "Hungarian";
-            language.pattern = "hu";
-            break;
-        case "hy":
-            language.fullname = "Armenian";
-            language.pattern = "hy";
-            break;
-        case "id":
-            language.fullname = "Indonesian";
-            break;
-        case "is":
-            language.fullname = "Icelandic";
-            break;
-        case "it":
-            language.fullname = "Italian";
-            language.pattern = "it";
-            break;
-        case "ja":
-            language.fullname = "Japanese";
-            break;
-        case "ka":
-            language.fullname = "Georgian";
-            break;
-        case "kk":
-            language.fullname = "Kazakh";
-            break;
-        case "km":
-            language.fullname = "Cambodian";
-            break;
-        case "ko":
-            language.fullname = "Korean";
-            break;
-        case "ku":
-            language.fullname = "Kurdish";
-            language.isrighttoleft = true;
-            break;
-        case "ky":
-            language.fullname = "Kyrgyz";
-            break;
-        case "la":
-            language.fullname = "Latin";
-            language.pattern = "la";
-            break;
-        case "lt":
-            language.fullname = "Lithuanian";
-            language.pattern = "lt";
-            break;
-        case "lv":
-            language.fullname = "Latvian";
-            language.pattern = "lv";
-            break;
-        case "mg":
-            language.fullname = "Malagasy";
-            break;
-        case "mk":
-            language.fullname = "Macedonian";
-            break;
-        case "ml":
-            language.fullname = "Malayalam";
-            language.pattern = "ml";
-            break;
-        case "mn":
-            language.fullname = "Mongolian";
-            break;
-        case "mr":
-            language.fullname = "Marathi";
-            break;
-        case "ms":
-            language.fullname = "Malay";
-            break;
-        case "nd":
-            language.fullname = "Ndebele";
-            break;
-        case "ne":
-            language.fullname = "Nepali";
-            break;
-        case "nl":
-            language.fullname = "Dutch";
-            language.pattern = "nl";
-            break;
-        case "nn":
-            language.fullname = "Nynorsk";
-            break;
-        case "no":
-            language.fullname = "Norwegian";
-            language.pattern = "nb-no";
-            break;
-        case "nso":
-            language.fullname = "Sepedi";
-            break;
-        case "pa":
-            language.fullname = "Punjabi";
-            language.isrighttoleft = true;
-            language.pattern = "pa";
-            break;
-        case "pl":
-            language.fullname = "Polish";
-            language.pattern = "pl";
-            break;
-        case "ps":
-            language.fullname = "Pashto";
-            language.isrighttoleft = true;
-            break;
-        case "pt":
-            language.fullname = "Portuguese";
-            language.pattern = "pt";
-            break;
-        case "pt_PT":
-            language.fullname = "Portuguese (Portugal)";
-            language.pattern = "pt";
-            break;
-        case "pt_BR":
-            language.fullname = "Portuguese (Brazil)";
-            language.pattern = "pt";
-            break;
-        case "ro":
-            language.fullname = "Romanian";
-            break;
-        case "ru":
-            language.fullname = "Russian";
-            language.pattern = "ru";
-            break;
-        case "sa":
-            language.fullname = "Sanskrit";
-            break;
-        case "sh":
-            language.fullname = "Serbo-Croatian";
-            break;
-        case "sk":
-            language.fullname = "Slovak";
-            language.pattern = "sk";
-            language.isrighttoleft = false;
-            break;
-        case "sl":
-            language.fullname = "Slovene";
-            language.pattern = "sl";
-            break;
-        case "so":
-            language.fullname = "Somali";
-            break;
-        case "sq":
-            language.fullname = "Albanian";
-            break;
-        case "sr":
-            language.fullname = "Serbian";
-            break;
-        case "sv":
-            language.fullname = "Swedish";
-            language.pattern = "sv";
-            break;
-        case "sw":
-            language.fullname = "Swahili";
-            break;
-        case "ta":
-            language.fullname = "Tamil";
-            language.pattern = "ta";
-            break;
-        case "te":
-            language.fullname = "Telugu";
-            language.pattern = "te";
-            break;
-        case "th":
-            language.fullname = "Thai";
-            break;
-        case "tl":
-            language.fullname = "Tagalog";
-            break;
-        case "tlh":
-            language.fullname = "Klingon";
-            break;
-        case "tn":
-            language.fullname = "Setswana";
-            break;
-        case "tr":
-            language.fullname = "Turkish";
-            language.pattern = "tr";
-            break;
-        case "ts":
-            language.fullname = "Tsonga";
-            break;
-        case "tw":
-            language.fullname = "Tiwi";
-            break;
-        case "uk":
-            language.fullname = "Ukrainian";
-            language.pattern = "uk";
-            break;
-        case "ur":
-            language.fullname = "Urdu";
-            language.isrighttoleft = true;
-            break;
-        case "uz":
-            language.fullname = "Uzbek";
-            break;
-        case "ve":
-            language.fullname = "Venda";
-            break;
-        case "vi":
-            language.fullname = "Vietnamese";
-            break;
-        case "xh":
-            language.fullname = "Xhosa";
-            break;
-        case "zh":
-            language.fullname = "Chinese";
-            break;
-        case "zh_TW":
-            language.fullname = "Traditional Chinese (Taiwan)";
-            break;
-        default:
-            language.fullname = "";
-    }
+    const language = {
+        shortname: selectedTextLanguage,
+        isrighttoleft: languageInfo.isrighttoleft || false,
+        pattern: languageInfo.pattern || "en-us",
+        fullname: languageInfo.fullname
+    };
 
     // load the pattern script
-    var patternJS = "../lib/guess_language/language_patterns/" + language.pattern + ".js";
-    $.ajax({
-        async: false,
-        url: patternJS,
-        dataType: "script",
-    });
+    const patternJS = `../lib/guess_language/language_patterns/${language.pattern}.js`;
+    try {
+        await fetch(patternJS);
+    } catch (error) {
+        console.error('[Sprint Reader] Error loading language pattern script:', error.message);
+    }
 
     return language;
 }
@@ -557,42 +330,45 @@ function htmlEntitiesDecode(str) {
 //------------------------------------------------------------------------------
 // Replace all SVG images with inline SVG
 function insertSVG() {
-    jQuery(document).ready(function () {
-        jQuery("img.svg").each(function () {
+    // Use jQuery's newer .on() method for attaching event handlers
+    jQuery(document).on('DOMContentLoaded', function() {
+        jQuery("img.svg").each(function() {
             var $img = jQuery(this);
             var imgID = $img.attr("id");
             var imgClass = $img.attr("class");
             var imgURL = $img.attr("src");
 
-            jQuery.get(
-                imgURL,
-                function (data) {
-                    // Get the SVG tag, ignore the rest
-                    var $svg = jQuery(data).find("svg");
+            // Use fetch API instead of jQuery.get to avoid potential CSP issues
+            fetch(imgURL)
+                .then(response => response.text())
+                .then(data => {
+                    // Parse the SVG string
+                    var parser = new DOMParser();
+                    var xmlDoc = parser.parseFromString(data, "image/svg+xml");
+                    var $svg = jQuery(xmlDoc.documentElement);
 
                     // Add replaced image's ID to the new SVG
                     if (typeof imgID !== "undefined") {
-                        $svg = $svg.attr("id", imgID);
-                    }
-                    // Add replaced image's classes to the new SVG
-                    if (typeof imgClass !== "undefined") {
-                        $svg = $svg.attr("class", imgClass + " replaced-svg");
+                        $svg.attr("id", imgID);
                     }
 
-                    // Remove any invalid XML tags as per http://validator.w3.org
-                    $svg = $svg.removeAttr("xmlns:a");
+                    // Add replaced image's classes to the new SVG
+                    if (typeof imgClass !== "undefined") {
+                        $svg.attr("class", imgClass + " replaced-svg");
+                    }
+
+                    // Remove any invalid XML tags
+                    $svg.removeAttr("xmlns:a");
 
                     // Replace image with new SVG
                     $img.replaceWith($svg);
-                },
-                "xml",
-            );
-        });
-    });
 
-    $(window).load(function () {
-        // Update the css for the github_logo class (path)
-        jQuery(".github_logo path").css("fill", colorSentenceBorder);
+                    // Update the css for the github_logo class (path)
+                    // This is moved inside to ensure it runs after SVG replacement
+                    jQuery(".github_logo path").css("fill", colorSentenceBorder);
+                })
+                .catch(error => console.error('Error fetching SVG:', error));
+        });
     });
 }
 

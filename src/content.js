@@ -7,196 +7,167 @@
 //
 //------------------------------------------------------------------------------
 
+let mouseX, mouseY;
+let hotKeyEnabled = false;
+let autoSelectEnabled = false;
+let hoveredElement;
+
+const OUTLINE_ELEMENT_CLASS = "outlineElement_SR";
+const NOTIFICATION_CLASS = "autoselectNotification_SR";
+const NOTIFICATION_TEXT = "Sprint Reader Auto-selection Enabled";
+
 // This event is triggered on mouseup
-document.addEventListener("mouseup", function (event) {
+document.addEventListener("mouseup", (event) => {
     // 1. See what text is selected
-    var sel = window.getSelection().toString();
+    const selectedText = window.getSelection().toString();
     // 2. Enable this line to see what the selected text is
-    //alert(sel);
+    // console.log(selectedText);
     // 3. Pass the text selection to the background page
-    passSelectionToBackground(sel, false);
+    passSelectionToBackground(selectedText, false);
 });
 
 //------------------------------------------------------------------------------
 // Pass the selected text and variables to the background page
 function passSelectionToBackground(selectedText, openReaderAlso) {
     // Determine if we have a selection or not
-    var haveSelection = selectedText.length;
+    const haveSelection = selectedText.length > 0;
 
     // Determine if the document is right-to-left
-    var direction = is_script_rtl(selectedText);
-    if (typeof direction == "undefined") direction = false;
-    //alert('RTL: ' + direction);
+    const direction = isScriptRTL(selectedText) || false;
+    // console.log('RTL:', direction);
 
     // Send a message back to the service worker
     // The message is any valid JSON string
-    if (openReaderAlso) {
-        if (chrome.runtime?.id) {
-            chrome.runtime.sendMessage({ 
-                target: "background", 
-                type: "openReaderFromContent", 
-                selectedText: selectedText, 
-                haveSelection: haveSelection, 
-                dirRTL: direction 
-            });
-        } else {
-            console.warn("[Sprint Reader] Extension context invalidated");
-        }
+    if (chrome.runtime?.id) {
+        chrome.runtime.sendMessage({
+            target: "background",
+            type: openReaderAlso ? "openReaderFromContent" : "getSelection",
+            selectedText,
+            haveSelection,
+            dirRTL: direction
+        });
     } else {
-        if (chrome.runtime?.id) {
-            chrome.runtime.sendMessage({ 
-                target: "background", 
-                type: "getSelection", 
-                selectedText: selectedText, 
-                haveSelection: haveSelection, 
-                dirRTL: direction 
-            });
-        } else {
-            console.warn("[Sprint Reader] Extension context invalidated");
-        }
+        console.warn("[Sprint Reader] Extension context invalidated");
     }
 }
 
 //------------------------------------------------------------------------------
 // Check for RTL
-function is_script_rtl(t) {
-    var d, s1, s2, bodies;
-
-    //If the browser doesn’t support this, it probably doesn’t support Unicode 5.2
+function isScriptRTL(text) {
     if (!("getBoundingClientRect" in document.documentElement)) return false;
 
-    //Set up a testing DIV
-    d = document.createElement("div");
-    d.style.position = "absolute";
-    d.style.visibility = "hidden";
-    d.style.width = "auto";
-    d.style.height = "auto";
-    d.style.fontSize = "10px";
-    d.style.fontFamily = "'Ahuramzda'";
-    d.appendChild(document.createTextNode(t));
+    const div = document.createElement("div");
+    Object.assign(div.style, {
+        position: "absolute",
+        visibility: "hidden",
+        width: "auto",
+        height: "auto",
+        fontSize: "10px",
+        fontFamily: "'Ahuramzda'"
+    });
 
-    s1 = document.createElement("span");
-    s1.appendChild(document.createTextNode(t));
-    d.appendChild(s1);
+    const createSpan = () => {
+        const span = document.createElement("span");
+        span.textContent = text;
+        return span;
+    };
 
-    s2 = document.createElement("span");
-    s2.appendChild(document.createTextNode(t));
-    d.appendChild(s2);
+    div.appendChild(document.createTextNode(text));
+    div.appendChild(createSpan());
+    div.appendChild(createSpan());
+    div.appendChild(document.createTextNode(text));
 
-    d.appendChild(document.createTextNode(t));
+    const body = document.body;
+    if (body) {
+        body.appendChild(div);
+        const [span1, span2] = div.querySelectorAll("span");
+        const rect1 = span1.getBoundingClientRect();
+        const rect2 = span2.getBoundingClientRect();
+        body.removeChild(div);
 
-    bodies = document.getElementsByTagName("body");
-    if (bodies) {
-        var body, r1, r2;
-
-        body = bodies[0];
-        body.appendChild(d);
-        var r1 = s1.getBoundingClientRect();
-        var r2 = s2.getBoundingClientRect();
-        body.removeChild(d);
-
-        return r1.left > r2.left;
+        return rect1.left > rect2.left;
     }
 
     return false;
 }
 
 //------------------------------------------------------------------------------
-var mouseX;
-var mouseY;
 // Listen for instruction and then return the mouse X,Y coordinates
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-    if (message.target !== "content") {
-        return;
-    }
-
-    if (message.type == "getMouseCoordinates") {
-        sendResponse({
-            x: mouseX,
-            y: mouseY,
-        });
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.target === "content" && message.type === "getMouseCoordinates") {
+        sendResponse({ x: mouseX, y: mouseY });
     }
     return true;
 });
-document.addEventListener("mousemove", function (event) {
+
+document.addEventListener("mousemove", (event) => {
     mouseX = event.clientX;
     mouseY = event.clientY;
 });
 
 //------------------------------------------------------------------------------
 // Hotkey, auto-text selection management
-var hotKeyEnabled = false;
-var autoSelectEnabled = false;
-var keyDown = function (event) {
+const keyDown = async (event) => {
     // Only proceed with auto-selection if it's enabled
-    getHotKeyEnabledStatus();
-    if (hotKeyEnabled == false) {
+    await getHotKeyEnabledStatus();
+    if (!hotKeyEnabled) {
         autoSelectEnabled = false;
         return;
     }
 
     // Check for CONTROL+SHIFT
     if (event.ctrlKey && event.shiftKey) {
-        // Prevent the default action to avoid triggering browser shortcuts
         event.preventDefault();
-        // Toggle the auto-selection
         autoSelectEnabled = !autoSelectEnabled;
-        if (autoSelectEnabled) $("body").append('<div class="' + notificationClass + '">' + notificationText + "</div>");
-        else {
+        
+        if (autoSelectEnabled) {
+            document.body.insertAdjacentHTML('beforeend', `<div class="${NOTIFICATION_CLASS}">${NOTIFICATION_TEXT}</div>`);
+        } else {
             // CONTROL+SHIFT toggle OFF, let's kill all highlights
-            $("body")
-                .find("div:contains(" + notificationText + ")")
-                .remove();
-            $(hoveredEvent).removeClass(outlineElementClass);
-            hoveredEvent = "";
+            document.body.querySelectorAll(`div:contains(${NOTIFICATION_TEXT})`).forEach(el => el.remove());
+            hoveredElement?.classList.remove(OUTLINE_ELEMENT_CLASS);
+            hoveredElement = null;
         }
     }
 
     // If auto select is enabled and the user hits 'e'
     // we select the text and open the reader
-    if (autoSelectEnabled && (event.key === 'e' || event.key === 'E')) {
-        var selectedText = $(hoveredEvent).text();
+    if (autoSelectEnabled && (event.key.toLowerCase() === 'e')) {
+        const selectedText = hoveredElement?.textContent || '';
         passSelectionToBackground(selectedText, true);
     }
 };
-window.addEventListener ? document.addEventListener("keydown", keyDown) : document.attachEvent("keydown", keyDown);
+
+window.addEventListener("keydown", keyDown);
 
 //------------------------------------------------------------------------------
 // Access the extension local storage to determine if the hotkey is enabled
 async function getHotKeyEnabledStatus() {
     try {
-        var key = "madvHotkeySelectionEnabled"; 
-        let c = await chrome.storage.local.get([key]);
-        if (c[key] != undefined) {
-            hotKeyEnabled = c[key];
-        }
-    }
-    catch(error) {
+        const key = "madvHotkeySelectionEnabled";
+        const result = await chrome.storage.local.get([key]);
+        hotKeyEnabled = result[key] ?? false;
+    } catch (error) {
+        console.error("Error getting hotkey status:", error);
         hotKeyEnabled = false;
     }
 }
-getHotKeyEnabledStatus();
 
-var hoveredEvent;
-var outlineElementClass = "outlineElement_SR";
-var notificationClass = "autoselectNotification_SR";
-var notificationText = "Sprint Reader Auto-selection Enabled";
-$(document).ready(function () {
+document.addEventListener("DOMContentLoaded", async () => {
+    await getHotKeyEnabledStatus();
+    if (!hotKeyEnabled) return;
 
-    // Only proceed with auto-selection if it's enabled
-    if (hotKeyEnabled == false) {
-        return;
-    }
+    document.body.addEventListener("mouseover", (event) => {
+        if (autoSelectEnabled) {
+            event.target.classList.add(OUTLINE_ELEMENT_CLASS);
+            hoveredElement = event.target;
+        }
+    });
 
-    $("*")
-        .mouseover(function (event) {
-            if (autoSelectEnabled) {
-                $(event.target).addClass(outlineElementClass);
-                hoveredEvent = event.target;
-            }
-        })
-        .mouseout(function (event) {
-            $(event.target).removeClass(outlineElementClass);
-            hoveredEvent = "";
-        });
+    document.body.addEventListener("mouseout", (event) => {
+        event.target.classList.remove(OUTLINE_ELEMENT_CLASS);
+        if (hoveredElement === event.target) {
+            hoveredElement = null;
+        }
+    });
 });

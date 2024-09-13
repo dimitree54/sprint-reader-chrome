@@ -46,7 +46,8 @@
 		"clipboardRead",
 		"clipboardWrite",
 		"storage",
-		"system.display"
+		"system.display",
+		"scripting"
 	],
 	"host_permissions":[
 		"https://*/*",
