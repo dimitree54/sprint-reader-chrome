@@ -200,7 +200,6 @@ async function openReader(url, w, h, t, l) {
 //------------------------------------------------------------------------------
 // Keyboard Shortcut Management
 let mouseY, mouseX;
-
 chrome.commands.onCommand.addListener(async function (command) {
     if (command === "sprint_read_shortcut") {
         if (selectedText.length) {

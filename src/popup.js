@@ -17,7 +17,7 @@ function init() {
 }
 
 function setTabHeight() {
-    const windowHeight = Math.min(window.innerHeight, 500);
+    const windowHeight = Math.min(window.innerHeight, 600);
     
     // Set the tab control height
     const tabHeight = `${Math.round(windowHeight - 5)}px`;

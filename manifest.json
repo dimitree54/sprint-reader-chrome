@@ -22,8 +22,7 @@
 	},
 	"web_accessible_resources": [{
 		"resources": ["*.png"],
-		"matches": ["<all_urls>"],
-		"extension_ids": []
+		"matches": ["<all_urls>"]
 	}],
     "options_page": "src/welcome.html",
   	"content_scripts": [{
@@ -44,14 +43,8 @@
 		"contextMenus", 
 		"activeTab",
 		"clipboardRead",
-		"clipboardWrite",
 		"storage",
-		"system.display",
-		"scripting"
-	],
-	"host_permissions":[
-		"https://*/*",
-		"http://*/*"
+		"system.display"
 	],
 	"content_security_policy": {
   		"extension_pages": "script-src 'self'; object-src 'self'"

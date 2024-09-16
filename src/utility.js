@@ -331,9 +331,9 @@ function htmlEntitiesDecode(str) {
 // Replace all SVG images with inline SVG
 function insertSVG() {
     // Use jQuery's newer .on() method for attaching event handlers
-    jQuery(document).on('DOMContentLoaded', function() {
-        jQuery("img.svg").each(function() {
-            var $img = jQuery(this);
+    $(document).on('DOMContentLoaded', function() {
+        $("img.svg").each(function() {
+            var $img = $(this);
             var imgID = $img.attr("id");
             var imgClass = $img.attr("class");
             var imgURL = $img.attr("src");
@@ -345,7 +345,7 @@ function insertSVG() {
                     // Parse the SVG string
                     var parser = new DOMParser();
                     var xmlDoc = parser.parseFromString(data, "image/svg+xml");
-                    var $svg = jQuery(xmlDoc.documentElement);
+                    var $svg = $(xmlDoc.documentElement);
 
                     // Add replaced image's ID to the new SVG
                     if (typeof imgID !== "undefined") {
@@ -365,7 +365,7 @@ function insertSVG() {
 
                     // Update the css for the github_logo class (path)
                     // This is moved inside to ensure it runs after SVG replacement
-                    jQuery(".github_logo path").css("fill", colorSentenceBorder);
+                    $(".github_logo path").css("fill", colorSentenceBorder);
                 })
                 .catch(error => console.error('Error fetching SVG:', error));
         });

@@ -109,7 +109,8 @@ document.addEventListener("mousemove", (event) => {
 // Hotkey, auto-text selection management
 const keyDown = async (event) => {
     // Only proceed with auto-selection if it's enabled
-    await getHotKeyEnabledStatus();
+    await getHotKeyEnabledStatus();   
+    setupHotSelection(hotKeyEnabled);   
     if (!hotKeyEnabled) {
         autoSelectEnabled = false;
         return;
@@ -119,14 +120,16 @@ const keyDown = async (event) => {
     if (event.ctrlKey && event.shiftKey) {
         event.preventDefault();
         autoSelectEnabled = !autoSelectEnabled;
-        
+
         if (autoSelectEnabled) {
-            document.body.insertAdjacentHTML('beforeend', `<div class="${NOTIFICATION_CLASS}">${NOTIFICATION_TEXT}</div>`);
+            $("body").append('<div class="' + NOTIFICATION_CLASS + '">' + NOTIFICATION_TEXT + "</div>");
         } else {
             // CONTROL+SHIFT toggle OFF, let's kill all highlights
-            document.body.querySelectorAll(`div:contains(${NOTIFICATION_TEXT})`).forEach(el => el.remove());
-            hoveredElement?.classList.remove(OUTLINE_ELEMENT_CLASS);
-            hoveredElement = null;
+            $("body")
+                .find("div:contains(" + NOTIFICATION_TEXT + ")")
+                .remove();
+                $(hoveredElement).removeClass(OUTLINE_ELEMENT_CLASS);
+            hoveredElement = "";
         }
     }
 
@@ -148,26 +151,34 @@ async function getHotKeyEnabledStatus() {
         const result = await chrome.storage.local.get([key]);
         hotKeyEnabled = result[key] ?? false;
     } catch (error) {
-        console.error("Error getting hotkey status:", error);
+        console.log("[Sprint Reader] Error getting hotkey status:", error);
         hotKeyEnabled = false;
     }
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
-    await getHotKeyEnabledStatus();
-    if (!hotKeyEnabled) return;
+function setupHotSelection(enable) {
+    if (enable) {
+        $("*")
+            .mouseover(function (event) {
+                if (autoSelectEnabled) {
+                    $(event.target).addClass(OUTLINE_ELEMENT_CLASS);
+                    hoveredElement = event.target;
+                }
+            })
+            .mouseout(function (event) {
+                $(event.target).removeClass(OUTLINE_ELEMENT_CLASS);
+                hoveredElement = "";
+            });
+    }
+    else {
+        $("*")
+            .mouseover(null)
+            .mouseout(null);
+    }
+}
 
-    document.body.addEventListener("mouseover", (event) => {
-        if (autoSelectEnabled) {
-            event.target.classList.add(OUTLINE_ELEMENT_CLASS);
-            hoveredElement = event.target;
-        }
-    });
-
-    document.body.addEventListener("mouseout", (event) => {
-        event.target.classList.remove(OUTLINE_ELEMENT_CLASS);
-        if (hoveredElement === event.target) {
-            hoveredElement = null;
-        }
-    });
+$(document).ready(function () {
+    // Only proceed with auto-selection if it's enabled
+    getHotKeyEnabledStatus();
+    setupHotSelection(hotKeyEnabled);    
 });
