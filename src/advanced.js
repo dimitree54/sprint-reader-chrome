@@ -2,370 +2,142 @@
 //
 // 	SPRINT READER
 //	Speed Reading Extension for Google Chrome
-//	Copyright (c) 2013-2015, Anthony Nosek
+//	Copyright (c) 2013-2024, Anthony Nosek
 //	https://github.com/anthonynosek/sprint-reader-chrome/blob/master/LICENSE
 //
 //------------------------------------------------------------------------------
 
-// Have listeners been assigned?
-var listenersExist;
+let listenersExist = false;
 
-// A long list of advanced settings controlled by this screen
-
-// Initialise the screen
-function init() {
-	displayVersion();
-	setEventListeners();	
-	
-	// More Advanced settings
-	getMoreAdvancedSettingsDefaults();
-	getMoreAdvancedSettings();
-	displayMoreAdvancedSettings();
+async function init() {
+    displayVersion();
+    setEventListeners();
+    getMoreAdvancedSettingsDefaults();
+    await getMoreAdvancedSettings();
+    displayMoreAdvancedSettings();
 }
 
 function setEventListeners() {
-	if (!listenersExist) {
-		// ----------------------------------
-		// Advanced settings buttons	
-		var divSaveMoreAdvanced = document.getElementById('btnSaveMoreAdvanced');
-		divSaveMoreAdvanced.addEventListener("click", saveMoreAdvancedSettings, false);
-		
-		var divMoreAdvancedDefaults = document.getElementById('btnRestoreMoreAdvancedDefaults');
-		divMoreAdvancedDefaults.addEventListener("click", restoreMoreAdvancedSettings, false);
-		
-		// Tracking for more advanced default values
-		divSaveMoreAdvanced.addEventListener("click", function(){ trackSaveMoreAdvancedDefaults(madvStaticFocalUnicodeCharacter, 
-																							    madvEnableSpaceInsertion, 
-																							    madvRemoveLastSlideNullOrEmpty,
-																							    madvEnableHyphenatedWordSplit, 
-																							    madvConsolidateHyphenatedWord,
-																							    madvEnableLongWordHyphenation, 
-																							    madvLongWordTriggerCharacterCount,
-																							    madvLongWordMinCharacterPerSlidePostSplit,
-																							    madvLongWordCharacterTriggerDoNotJoin,
-																								madvEnableAcronymDetection,
-																								madvEnableNumberDecimalDetection,
-																								madvDeleteEmptySlides,
-																								madvOptimisedPositionLeftMarginPercent); }, false);
-		
-		listenersExist = true;
-	}
+    if (!listenersExist) {
+        document.getElementById("btnSaveMoreAdvanced").addEventListener("click", saveMoreAdvancedSettings);
+        document.getElementById("btnRestoreMoreAdvancedDefaults").addEventListener("click", restoreMoreAdvancedSettings);
+        listenersExist = true;
+    }
 }
 
-function saveMoreAdvancedSettings() {
-	
-	// Can be an empty string
-	var NEWmadvStaticFocalUnicodeCharacter = document.getElementById('staticfocalunicode').value;	
-	localStorage.setItem("madvStaticFocalUnicodeCharacter", NEWmadvStaticFocalUnicodeCharacter);
-	madvStaticFocalUnicodeCharacter = NEWmadvStaticFocalUnicodeCharacter;
-	
-	var NEWmadvLongWordTriggerCharacterCount = document.getElementById('longwordcharactercounttrigger').value;
-	if (!isNaN(NEWmadvLongWordTriggerCharacterCount)) {
-		localStorage.setItem("madvLongWordTriggerCharacterCount", NEWmadvLongWordTriggerCharacterCount);
-		madvLongWordTriggerCharacterCount = NEWmadvLongWordTriggerCharacterCount;
-	}
-	
-	var NEWmadvLongWordMinCharacterPerSlidePostSplit = document.getElementById('longwordcharacterperslidecountpostsplit').value;
-	if (!isNaN(NEWmadvLongWordMinCharacterPerSlidePostSplit)) {
-		localStorage.setItem("madvLongWordMinCharacterPerSlidePostSplit", NEWmadvLongWordMinCharacterPerSlidePostSplit);
-		madvLongWordMinCharacterPerSlidePostSplit = NEWmadvLongWordMinCharacterPerSlidePostSplit;
-	}
-	
-	var NEWmadvLongWordCharacterTriggerDoNotJoin = document.getElementById('longwordlastslidecharactercount').value;
-	if (!isNaN(NEWmadvLongWordCharacterTriggerDoNotJoin)) {
-		localStorage.setItem("madvLongWordCharacterTriggerDoNotJoin", NEWmadvLongWordCharacterTriggerDoNotJoin);
-		madvLongWordCharacterTriggerDoNotJoin = NEWmadvLongWordCharacterTriggerDoNotJoin;
-	}
-	
-	var NEWmadvEnableSpaceInsertion = document.getElementById('enablespacecharacterinsertion').checked;
-	localStorage.setItem("madvEnableSpaceInsertion", NEWmadvEnableSpaceInsertion);
-	
-	var NEWmadvRemoveLastSlideNullOrEmpty = document.getElementById('removelastslideifnullorempty').checked;
-	localStorage.setItem("madvRemoveLastSlideNullOrEmpty", NEWmadvRemoveLastSlideNullOrEmpty);
-	
-	var NEWmadvEnableHyphenatedWordSplit = document.getElementById('enabledhyphenatedwordsplit').checked;
-	localStorage.setItem("madvEnableHyphenatedWordSplit", NEWmadvEnableHyphenatedWordSplit);
-	
-	var NEWmadvConsolidateHyphenatedWord = document.getElementById('consolidatesinglehyphenatedword').checked;
-	localStorage.setItem("madvConsolidateHyphenatedWord", NEWmadvConsolidateHyphenatedWord);
-	
-	var NEWmadvEnableLongWordHyphenation = document.getElementById('enablehyphenationoflongerwords').checked;
-	localStorage.setItem("madvEnableLongWordHyphenation", NEWmadvEnableLongWordHyphenation);
-	
-	var NEWmadvEnableAcronymDetection = document.getElementById('enableacronymdetection').checked;
-	localStorage.setItem("madvEnableAcronymDetection", NEWmadvEnableAcronymDetection);
-	
-	var NEWmadvEnableNumberDecimalDetection = document.getElementById('enablenumberanddecimaldetection').checked;
-	localStorage.setItem("madvEnableNumberDecimalDetection", NEWmadvEnableNumberDecimalDetection);
-	
-	var NEWmadvDeleteEmptySlides = document.getElementById('deleteemtpyslides').checked;
-	localStorage.setItem("madvDeleteEmptySlides", NEWmadvDeleteEmptySlides);
-	
-	var NEWmadvLargeStepNumberOfSlides = document.getElementById('largestepnumberofslides').value;
-	if (!isNaN(NEWmadvLargeStepNumberOfSlides)) {
-		localStorage.setItem("madvLargeStepNumberOfSlides", NEWmadvLargeStepNumberOfSlides);
-		madvLargeStepNumberOfSlides = NEWmadvLargeStepNumberOfSlides;
-	}
-	
-	var NEWmadvWPMAdjustmentStep = document.getElementById('wpmadjustmentstep').value;
-	if (!isNaN(NEWmadvWPMAdjustmentStep)) {
-		localStorage.setItem("madvWPMAdjustmentStep", NEWmadvWPMAdjustmentStep);
-		madvWPMAdjustmentStep = NEWmadvWPMAdjustmentStep;
-	}
+async function saveMoreAdvancedSettings() {
+    const settings = [
+        { id: "staticfocalunicode", key: "madvStaticFocalUnicodeCharacter", type: "string" },
+        { id: "longwordcharactercounttrigger", key: "madvLongWordTriggerCharacterCount", type: "number" },
+        { id: "longwordcharacterperslidecountpostsplit", key: "madvLongWordMinCharacterPerSlidePostSplit", type: "number" },
+        { id: "longwordlastslidecharactercount", key: "madvLongWordCharacterTriggerDoNotJoin", type: "number" },
+        { id: "enablespacecharacterinsertion", key: "madvEnableSpaceInsertion", type: "boolean" },
+        { id: "removelastslideifnullorempty", key: "madvRemoveLastSlideNullOrEmpty", type: "boolean" },
+        { id: "enabledhyphenatedwordsplit", key: "madvEnableHyphenatedWordSplit", type: "boolean" },
+        { id: "consolidatesinglehyphenatedword", key: "madvConsolidateHyphenatedWord", type: "boolean" },
+        { id: "enablehyphenationoflongerwords", key: "madvEnableLongWordHyphenation", type: "boolean" },
+        { id: "enableacronymdetection", key: "madvEnableAcronymDetection", type: "boolean" },
+        { id: "enablenumberanddecimaldetection", key: "madvEnableNumberDecimalDetection", type: "boolean" },
+        { id: "deleteemtpyslides", key: "madvDeleteEmptySlides", type: "boolean" },
+        { id: "largestepnumberofslides", key: "madvLargeStepNumberOfSlides", type: "number" },
+        { id: "wpmadjustmentstep", key: "madvWPMAdjustmentStep", type: "number" },
+        { id: "basicminimumslideduration", key: "madvBasicMinimumSlideDuration", type: "number" },
+        { id: "wordlengthminimumslideduration", key: "madvWordLengthMinimumSlideDuration", type: "number" },
+        { id: "wordfreqminimumslideduration", key: "madvWordFreqMinimumSlideDuration", type: "number" },
+        { id: "wordfreqhighestfreqslideduration", key: "madvWordFreqHighestFreqSlideDuration", type: "number" },
+        { id: "wordfreqlowestfreqslideduration", key: "madvWordFreqLowestFreqSlideDuration", type: "number" },
+        { id: "alwayshidefocalguide", key: "madvAlwaysHideFocalGuide", type: "boolean" },
+        { id: "optleftmarginpercent", key: "madvOptimisedPositionLeftMarginPercent", type: "number" },
+        { id: "showsentence", key: "madvDisplaySentenceWhenPaused", type: "boolean" },
+        { id: "autohidesentence", key: "madvAutoHideSentence", type: "boolean" },
+        { id: "autohidesentenceseconds", key: "madvAutoHideSentenceSeconds", type: "number" },
+        { id: "showsentenceborder", key: "madvDisplaySentenceTopBorder", type: "boolean" },
+        { id: "sentencereaderopen", key: "madvDisplaySentenceAtReaderOpen", type: "boolean" },
+        { id: "sentencebackwardwordcount", key: "madvSentenceBackwardWordCount", type: "number" },
+        { id: "sentencepositionpercentoffset", key: "madvSentencePositionPercentOffset", type: "number" },
+        { id: "displayprogress", key: "madvDisplayProgress", type: "boolean" },
+        { id: "displaysocial", key: "madvDisplaySocial", type: "boolean" },
+        { id: "displaywpmsummary", key: "madvDisplayWPMSummary", type: "boolean" },
+        { id: "enableautotextselection", key: "madvHotkeySelectionEnabled", type: "boolean" },
+        { id: "saveslideposition", key: "madvSaveSlidePosition", type: "boolean" }
+    ];
 
-	var NEWmadvBasicMinimumSlideDuration = document.getElementById('basicminimumslideduration').value;
-	if (!isNaN(NEWmadvBasicMinimumSlideDuration)) {
-		localStorage.setItem("madvBasicMinimumSlideDuration", NEWmadvBasicMinimumSlideDuration);
-		madvBasicMinimumSlideDuration = NEWmadvBasicMinimumSlideDuration;
-	}
-	
-	var NEWmadvWordLengthMinimumSlideDuration = document.getElementById('wordlengthminimumslideduration').value;
-	if (!isNaN(NEWmadvWordLengthMinimumSlideDuration)) {
-		localStorage.setItem("madvWordLengthMinimumSlideDuration", NEWmadvWordLengthMinimumSlideDuration);
-		madvWordLengthMinimumSlideDuration = NEWmadvWordLengthMinimumSlideDuration;
-	}
-	
-	// Word Frequency Algorithm Advanced Settings
-	var NEWmadvWordFreqMinimumSlideDuration = document.getElementById('wordfreqminimumslideduration').value;
-	if (!isNaN(NEWmadvWordFreqMinimumSlideDuration)) {
-		localStorage.setItem("madvWordFreqMinimumSlideDuration", NEWmadvWordFreqMinimumSlideDuration);
-		madvWordFreqMinimumSlideDuration = NEWmadvWordFreqMinimumSlideDuration;
-	}
-	
-	var NEWmadvWordFreqHighestFreqSlideDuration = document.getElementById('wordfreqhighestfreqslideduration').value;
-	if (!isNaN(NEWmadvWordFreqHighestFreqSlideDuration)) {
-		localStorage.setItem("madvWordFreqHighestFreqSlideDuration", NEWmadvWordFreqHighestFreqSlideDuration);
-		madvWordFreqHighestFreqSlideDuration = NEWmadvWordFreqHighestFreqSlideDuration;
-	}
-	
-	var NEWmadvWordFreqLowestFreqSlideDuration = document.getElementById('wordfreqlowestfreqslideduration').value;
-	if (!isNaN(NEWmadvWordFreqLowestFreqSlideDuration)) {
-		localStorage.setItem("madvWordFreqLowestFreqSlideDuration", NEWmadvWordFreqLowestFreqSlideDuration);
-		madvWordFreqLowestFreqSlideDuration = NEWmadvWordFreqLowestFreqSlideDuration;
-	}
-	// end (Word Frequency Algorithm Advanced Settings)
-	
-	var NEWmadvAlwaysHideFocalGuide = document.getElementById('alwayshidefocalguide').checked;
-	localStorage.setItem("madvAlwaysHideFocalGuide", NEWmadvAlwaysHideFocalGuide);
-	
-	var NEWmadvOptimisedPositionLeftMarginPercent = document.getElementById('optleftmarginpercent').value;
-	if (!isNaN(NEWmadvOptimisedPositionLeftMarginPercent)) {
-		localStorage.setItem("madvOptimisedPositionLeftMarginPercent", NEWmadvOptimisedPositionLeftMarginPercent);
-		madvOptimisedPositionLeftMarginPercent = NEWmadvOptimisedPositionLeftMarginPercent;
-	}
-	
-	var NEWmadvDisplaySentenceWhenPaused = document.getElementById('showsentence').checked;
-	localStorage.setItem("madvDisplaySentenceWhenPaused", NEWmadvDisplaySentenceWhenPaused);
-	
-	var NEWmadvAutoHideSentence = document.getElementById('autohidesentence').checked;
-	localStorage.setItem("madvAutoHideSentence", NEWmadvAutoHideSentence);
-	
-	var NEWmadvAutoHideSentenceSeconds = document.getElementById('autohidesentenceseconds').value;
-	if (!isNaN(NEWmadvAutoHideSentenceSeconds)) {
-		localStorage.setItem("madvAutoHideSentenceSeconds", NEWmadvAutoHideSentenceSeconds);
-		madvAutoHideSentenceSeconds = NEWmadvAutoHideSentenceSeconds;
-	}
-	
-	var NEWmadvDisplaySentenceTopBorder = document.getElementById('showsentenceborder').checked;
-	localStorage.setItem("madvDisplaySentenceTopBorder", NEWmadvDisplaySentenceTopBorder);
-	
-	var NEWmadvDisplaySentenceAtReaderOpen = document.getElementById('sentencereaderopen').checked;
-	localStorage.setItem("madvDisplaySentenceAtReaderOpen", NEWmadvDisplaySentenceAtReaderOpen);
-	
-	var NEWmadvSentenceBackwardWordCount = document.getElementById('sentencebackwardwordcount').value;
-	if (!isNaN(NEWmadvSentenceBackwardWordCount)) {
-		localStorage.setItem("madvSentenceBackwardWordCount", NEWmadvSentenceBackwardWordCount);
-		madvSentenceBackwardWordCount = NEWmadvSentenceBackwardWordCount;
-	}
-	
-	var NEWmadvSentencePositionPercentOffset = document.getElementById('sentencepositionpercentoffset').value;
-	if (!isNaN(NEWmadvSentencePositionPercentOffset)) {
-		localStorage.setItem("madvSentencePositionPercentOffset", NEWmadvSentencePositionPercentOffset);
-		madvSentencePositionPercentOffset = NEWmadvSentencePositionPercentOffset;
-	}
-	
-	var NEWmadvLargeStepNumberOfSlides = document.getElementById('largestepnumberofslides').value;
-	if (!isNaN(NEWmadvLargeStepNumberOfSlides)) {
-		localStorage.setItem("madvLargeStepNumberOfSlides", NEWmadvLargeStepNumberOfSlides);
-		madvLargeStepNumberOfSlides = NEWmadvLargeStepNumberOfSlides;
-	}
-	
-	var NEWmadvDisplayProgress = document.getElementById('displayprogress').checked;
-	localStorage.setItem("madvDisplayProgress", NEWmadvDisplayProgress);
-	
-	var NEWmadvDisplaySocial = document.getElementById('displaysocial').checked;
-	localStorage.setItem("madvDisplaySocial", NEWmadvDisplaySocial);
-	
-	var NEWmadvDisplayWPMSummary = document.getElementById('displaywpmsummary').checked;
-	localStorage.setItem("madvDisplayWPMSummary", NEWmadvDisplayWPMSummary);
-	
-	var NEWmadvHotkeySelectionEnabled = document.getElementById('enableautotextselection').checked;
-	localStorage.setItem("madvHotkeySelectionEnabled", NEWmadvHotkeySelectionEnabled);
-	
-	var NEWmadvSaveSlidePosition = document.getElementById('saveslideposition').checked;
-	localStorage.setItem("madvSaveSlidePosition", NEWmadvSaveSlidePosition);
-	
-	// Close the advanced settings tab
-	//chrome.tabs.getCurrent(function(tab) {
-	//	chrome.tabs.remove(tab.id, function() { });
-	//});
-	
-	alert('Please restart Sprint Reader for these changes to take effect');
+    for (const setting of settings) {
+        const element = document.getElementById(setting.id);
+        let value;
+
+        switch (setting.type) {
+            case "string":
+                value = element.value;
+                break;
+            case "number":
+                value = parseFloat(element.value);
+                if (isNaN(value)) continue;
+                break;
+            case "boolean":
+                value = element.checked;
+                break;
+        }
+
+        await saveToLocal(setting.key, value);
+        window[setting.key] = value;
+    }
+
+    alert("Please restart Sprint Reader for these changes to take effect");
 }
 
 function restoreMoreAdvancedSettings() {
-	getMoreAdvancedSettingsDefaults();
-	displayMoreAdvancedSettings();
-	saveMoreAdvancedSettings();
+    getMoreAdvancedSettingsDefaults();
+    displayMoreAdvancedSettings();
+    saveMoreAdvancedSettings();
 }
 
 function displayMoreAdvancedSettings() {
-	// Display the more advanced settings on the screen	
-	document.getElementById('staticfocalunicode').value = madvStaticFocalUnicodeCharacter;	
-	
-	if (madvEnableSpaceInsertion == 'true') {
-		$('#enablespacecharacterinsertion').prop('checked', 'true');
-	}
-	else {
-		$('#enablespacecharacterinsertion').removeAttr('checked');
-	}
-	
-	if (madvRemoveLastSlideNullOrEmpty == 'true') {
-		$('#removelastslideifnullorempty').prop('checked', 'true');
-	}
-	else {
-		$('#removelastslideifnullorempty').removeAttr('checked');
-	}
-	
-	if (madvEnableHyphenatedWordSplit == 'true') {
-		$('#enabledhyphenatedwordsplit').prop('checked', 'true');
-	}
-	else {
-		$('#enabledhyphenatedwordsplit').removeAttr('checked');
-	}
-	
-	if (madvConsolidateHyphenatedWord == 'true') {
-		$('#consolidatesinglehyphenatedword').prop('checked', 'true');
-	}
-	else {
-		$('#consolidatesinglehyphenatedword').removeAttr('checked');
-	}
-	
-	if (madvEnableLongWordHyphenation == 'true') {
-		$('#enablehyphenationoflongerwords').prop('checked', 'true');
-	}
-	else {
-		$('#enablehyphenationoflongerwords').removeAttr('checked');
-	}
-		
-	document.getElementById('longwordcharactercounttrigger').value = madvLongWordTriggerCharacterCount;	
-	document.getElementById('longwordcharacterperslidecountpostsplit').value = madvLongWordMinCharacterPerSlidePostSplit;
-	document.getElementById('longwordlastslidecharactercount').value = madvLongWordCharacterTriggerDoNotJoin;
-	
-	if (madvEnableAcronymDetection == 'true') {
-		$('#enableacronymdetection').prop('checked', 'true');
-	}
-	else {
-		$('#enableacronymdetection').removeAttr('checked');
-	}
-	
-	if (madvEnableNumberDecimalDetection == 'true') {
-		$('#enablenumberanddecimaldetection').prop('checked', 'true');
-	}
-	else {
-		$('#enablenumberanddecimaldetection').removeAttr('checked');
-	}
-	
-	if (madvDeleteEmptySlides == 'true') {
-		$('#deleteemtpyslides').prop('checked', 'true');
-	}
-	else {
-		$('#deleteemtpyslides').removeAttr('checked');
-	}
-	
-	document.getElementById('wpmadjustmentstep').value = madvWPMAdjustmentStep;
-	document.getElementById('basicminimumslideduration').value = madvBasicMinimumSlideDuration;
-	document.getElementById('wordlengthminimumslideduration').value = madvWordLengthMinimumSlideDuration;
-	
-	document.getElementById('wordfreqminimumslideduration').value = madvWordFreqMinimumSlideDuration;
-	document.getElementById('wordfreqhighestfreqslideduration').value = madvWordFreqHighestFreqSlideDuration;
-	document.getElementById('wordfreqlowestfreqslideduration').value = madvWordFreqLowestFreqSlideDuration;
-	
-	if (madvAlwaysHideFocalGuide == 'true') {
-		$('#alwayshidefocalguide').prop('checked', 'true');
-	}
-	else {
-		$('#alwayshidefocalguide').removeAttr('checked');
-	}
-	
-	document.getElementById('optleftmarginpercent').value = madvOptimisedPositionLeftMarginPercent;
-	
-	if (madvDisplaySentenceWhenPaused == 'true') {
-		$('#showsentence').prop('checked', 'true');
-	}
-	else {
-		$('#showsentence').removeAttr('checked');
-	}
-	
-	if (madvAutoHideSentence == 'true') {
-		$('#autohidesentence').prop('checked', 'true');
-	}
-	else {
-		$('#autohidesentence').removeAttr('checked');
-	}	
-	
-	if (madvDisplaySentenceTopBorder == 'true') {
-		$('#showsentenceborder').prop('checked', 'true');
-	}
-	else {
-		$('#showsentenceborder').removeAttr('checked');
-	}
-	
-	if (madvDisplaySentenceAtReaderOpen == 'true') {
-		$('#sentencereaderopen').prop('checked', 'true');
-	}
-	else {
-		$('#sentencereaderopen').removeAttr('checked');
-	}
-	
-	if (madvDisplayProgress == 'true') {
-		$('#displayprogress').prop('checked', 'true');
-	}
-	else {
-		$('#displayprogress').removeAttr('checked');
-	}
-	
-	if (madvDisplaySocial == 'true') {
-		$('#displaysocial').prop('checked', 'true');
-	}
-	else {
-		$('#displaysocial').removeAttr('checked');
-	}
-	
-	if (madvDisplayWPMSummary == 'true') {
-		$('#displaywpmsummary').prop('checked', 'true');
-	}
-	else {
-		$('#displaywpmsummary').removeAttr('checked');
-	}
-	
-	document.getElementById('autohidesentenceseconds').value = madvAutoHideSentenceSeconds;
-	document.getElementById('sentencepositionpercentoffset').value = madvSentencePositionPercentOffset;
-	document.getElementById('largestepnumberofslides').value = madvLargeStepNumberOfSlides;
-	
-	if (madvHotkeySelectionEnabled == 'true') {
-		$('#enableautotextselection').prop('checked', 'true');
-	}
-	else {
-		$('#enableautotextselection').removeAttr('checked');
-	}
-	
-	if (madvSaveSlidePosition == 'true') {
-		$('#saveslideposition').prop('checked', 'true');
-	}
-	else {
-		$('#saveslideposition').removeAttr('checked');
-	}
+    const settings = [
+        { id: "staticfocalunicode", key: "madvStaticFocalUnicodeCharacter", type: "value" },
+        { id: "enablespacecharacterinsertion", key: "madvEnableSpaceInsertion", type: "checkbox" },
+        { id: "removelastslideifnullorempty", key: "madvRemoveLastSlideNullOrEmpty", type: "checkbox" },
+        { id: "enabledhyphenatedwordsplit", key: "madvEnableHyphenatedWordSplit", type: "checkbox" },
+        { id: "consolidatesinglehyphenatedword", key: "madvConsolidateHyphenatedWord", type: "checkbox" },
+        { id: "enablehyphenationoflongerwords", key: "madvEnableLongWordHyphenation", type: "checkbox" },
+        { id: "longwordcharactercounttrigger", key: "madvLongWordTriggerCharacterCount", type: "value" },
+        { id: "longwordcharacterperslidecountpostsplit", key: "madvLongWordMinCharacterPerSlidePostSplit", type: "value" },
+        { id: "longwordlastslidecharactercount", key: "madvLongWordCharacterTriggerDoNotJoin", type: "value" },
+        { id: "enableacronymdetection", key: "madvEnableAcronymDetection", type: "checkbox" },
+        { id: "enablenumberanddecimaldetection", key: "madvEnableNumberDecimalDetection", type: "checkbox" },
+        { id: "deleteemtpyslides", key: "madvDeleteEmptySlides", type: "checkbox" },
+        { id: "wpmadjustmentstep", key: "madvWPMAdjustmentStep", type: "value" },
+        { id: "basicminimumslideduration", key: "madvBasicMinimumSlideDuration", type: "value" },
+        { id: "wordlengthminimumslideduration", key: "madvWordLengthMinimumSlideDuration", type: "value" },
+        { id: "wordfreqminimumslideduration", key: "madvWordFreqMinimumSlideDuration", type: "value" },
+        { id: "wordfreqhighestfreqslideduration", key: "madvWordFreqHighestFreqSlideDuration", type: "value" },
+        { id: "wordfreqlowestfreqslideduration", key: "madvWordFreqLowestFreqSlideDuration", type: "value" },
+        { id: "alwayshidefocalguide", key: "madvAlwaysHideFocalGuide", type: "checkbox" },
+        { id: "optleftmarginpercent", key: "madvOptimisedPositionLeftMarginPercent", type: "value" },
+        { id: "showsentence", key: "madvDisplaySentenceWhenPaused", type: "checkbox" },
+        { id: "autohidesentence", key: "madvAutoHideSentence", type: "checkbox" },
+        { id: "showsentenceborder", key: "madvDisplaySentenceTopBorder", type: "checkbox" },
+        { id: "sentencereaderopen", key: "madvDisplaySentenceAtReaderOpen", type: "checkbox" },
+        { id: "displayprogress", key: "madvDisplayProgress", type: "checkbox" },
+        { id: "displaysocial", key: "madvDisplaySocial", type: "checkbox" },
+        { id: "displaywpmsummary", key: "madvDisplayWPMSummary", type: "checkbox" },
+        { id: "autohidesentenceseconds", key: "madvAutoHideSentenceSeconds", type: "value" },
+        { id: "sentencepositionpercentoffset", key: "madvSentencePositionPercentOffset", type: "value" },
+        { id: "largestepnumberofslides", key: "madvLargeStepNumberOfSlides", type: "value" },
+        { id: "enableautotextselection", key: "madvHotkeySelectionEnabled", type: "checkbox" },
+        { id: "saveslideposition", key: "madvSaveSlidePosition", type: "checkbox" }
+    ];
+
+    for (const setting of settings) {
+        const element = document.getElementById(setting.id);
+        const value = window[setting.key];
+
+        if (setting.type === "checkbox") {
+            element.checked = value;
+        } else {
+            element.value = value;
+        }
+    }
 }
 
-document.addEventListener("DOMContentLoaded", init, false);
+document.addEventListener("DOMContentLoaded", init);

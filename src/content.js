@@ -2,171 +2,183 @@
 //
 // 	SPRINT READER
 //	Speed Reading Extension for Google Chrome
-//	Copyright (c) 2013-2015, Anthony Nosek
+//	Copyright (c) 2013-2024, Anthony Nosek
 //	https://github.com/anthonynosek/sprint-reader-chrome/blob/master/LICENSE
 //
 //------------------------------------------------------------------------------
 
-// This event is triggered on mouseup
-document.addEventListener('mouseup',function(event) {
-	// 1. See what text is selected
-    var sel = window.getSelection().toString();
-	// 2. Enable this line to see what the selected text is
-	//alert(sel);
-	// 3. Pass the text selection to the background page
-	passSelectionToBackground(sel, false);
-})
+let mouseX, mouseY;
+let hotKeyEnabled = false;
+let autoSelectEnabled = false;
+let hoveredElement;
 
+const OUTLINE_ELEMENT_CLASS = "outlineElement_SR";
+const NOTIFICATION_CLASS = "autoselectNotification_SR";
+const NOTIFICATION_TEXT = "Sprint Reader Auto-selection Enabled";
+
+// This event is triggered on mouseup
+document.addEventListener("mouseup", (event) => {
+    // 1. See what text is selected
+    const selectedText = window.getSelection().toString();
+    // 2. Enable this line to see what the selected text is
+    // console.log(selectedText);
+    // 3. Pass the text selection to the background page
+    passSelectionToBackground(selectedText, false);
+});
+
+//------------------------------------------------------------------------------
 // Pass the selected text and variables to the background page
 function passSelectionToBackground(selectedText, openReaderAlso) {
-	// Determine if we have a selection or not
-	var haveSelection = false;
-	if(selectedText.length) { haveSelection = true; }
-	
-	// Determine if the document is right-to-left	
-	var direction = is_script_rtl(selectedText);
-	if (typeof direction == 'undefined') direction = false;
-	//alert('RTL: ' + direction);
-	
-	// Send a message back to the background page
-	// The message is any valid JSON string
-	if (openReaderAlso) {
-		chrome.runtime.sendMessage({ 'message':'openReader',
-									 'selectedText': selectedText,
-									 'haveSelection': haveSelection,
-									 'dirRTL': direction }, function(response){})
-	}
-	else {
-		chrome.runtime.sendMessage({ 'message':'getSelection',
-								   	 'selectedText': selectedText,
-								   	 'haveSelection': haveSelection,
-								   	 'dirRTL': direction }, function(response){})
-	}
+    // Determine if we have a selection or not
+    const haveSelection = selectedText.length > 0;
+
+    // Determine if the document is right-to-left
+    const direction = isScriptRTL(selectedText) || false;
+    // console.log('RTL:', direction);
+
+    // Send a message back to the service worker
+    // The message is any valid JSON string
+    if (chrome.runtime?.id) {
+        chrome.runtime.sendMessage({
+            target: "background",
+            type: openReaderAlso ? "openReaderFromContent" : "getSelection",
+            selectedText,
+            haveSelection,
+            dirRTL: direction
+        });
+    } else {
+        console.warn("[Sprint Reader] Extension context invalidated");
+    }
 }
 
+//------------------------------------------------------------------------------
 // Check for RTL
-function is_script_rtl(t) {
-    var d, s1, s2, bodies;
+function isScriptRTL(text) {
+    if (!("getBoundingClientRect" in document.documentElement)) return false;
 
-    //If the browser doesn’t support this, it probably doesn’t support Unicode 5.2
-    if (!("getBoundingClientRect" in document.documentElement))
-        return false;
+    const div = document.createElement("div");
+    Object.assign(div.style, {
+        position: "absolute",
+        visibility: "hidden",
+        width: "auto",
+        height: "auto",
+        fontSize: "10px",
+        fontFamily: "'Ahuramzda'"
+    });
 
-    //Set up a testing DIV
-    d = document.createElement('div');
-    d.style.position = 'absolute';
-    d.style.visibility = 'hidden';
-    d.style.width = 'auto';
-    d.style.height = 'auto';
-    d.style.fontSize = '10px';
-    d.style.fontFamily = "'Ahuramzda'";
-    d.appendChild(document.createTextNode(t));
+    const createSpan = () => {
+        const span = document.createElement("span");
+        span.textContent = text;
+        return span;
+    };
 
-    s1 = document.createElement("span");
-    s1.appendChild(document.createTextNode(t));
-    d.appendChild(s1);
+    div.appendChild(document.createTextNode(text));
+    div.appendChild(createSpan());
+    div.appendChild(createSpan());
+    div.appendChild(document.createTextNode(text));
 
-    s2 = document.createElement("span");
-    s2.appendChild(document.createTextNode(t));
-    d.appendChild(s2);
+    const body = document.body;
+    if (body) {
+        body.appendChild(div);
+        const [span1, span2] = div.querySelectorAll("span");
+        const rect1 = span1.getBoundingClientRect();
+        const rect2 = span2.getBoundingClientRect();
+        body.removeChild(div);
 
-    d.appendChild(document.createTextNode(t));
-
-    bodies = document.getElementsByTagName('body');
-    if (bodies) {
-        var body, r1, r2;
-
-        body = bodies[0];
-        body.appendChild(d);
-        var r1 = s1.getBoundingClientRect();
-        var r2 = s2.getBoundingClientRect();
-        body.removeChild(d);
-
-        return r1.left > r2.left;
+        return rect1.left > rect2.left;
     }
 
-    return false;	
+    return false;
 }
 
-var x;
-var y;
+//------------------------------------------------------------------------------
 // Listen for instruction and then return the mouse X,Y coordinates
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    if (request.action == 'getMouseCoordinates') {
-		sendResponse({ 'x':x,'y':y });
-	}
-});
-
-document.addEventListener('mousemove',function(event) {
-	x = event.x;
-    y = event.y;
-})
-
-// Access the extension local storage to determine if the hotkey is enabled
-var hotKeyEnabled = 'false';
-chrome.runtime.sendMessage({message: "getHotkeyEnabledStatus"}, function(response) {
-  	hotKeyEnabled = response.status;
-	//console.log(response.status);
-});
-
-// Hotkey, auto-text selection management
-var keys = {};
-var autoSelectEnabled = false;
-var keyDown = function(event){
-	keys[event.which] = true;
-	
-	// Only proceed with auto-selection if it's enabled
-	if (hotKeyEnabled == 'false') {
-		autoSelectEnabled = false;
-		return;	
-	}	
-	    
-	// Check for CONTROL+ALT
-    if(keys.hasOwnProperty(17) && keys.hasOwnProperty(18)) {
-		// Toggle the auto-selection
-        window.autoSelectEnabled = !window.autoSelectEnabled;
-		if (window.autoSelectEnabled) $('body').append('<div class="' + notificationClass + '">' + notificationText + '</div>');
-		else {
-			// CONTROL+ALT toggle OFF, let's kill all highlights
-			$('body').find('div:contains(' + notificationText + ')').remove();
-			$(hoveredEvent).removeClass(outlineElementClass);		
-			hoveredEvent = "";
-		}
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.target === "content" && message.type === "getMouseCoordinates") {
+        sendResponse({ x: mouseX, y: mouseY });
     }
-	
-	// If auto select is enabled and the user hits 'Z'
-	// we select the text and open the reader
-	if (window.autoSelectEnabled && event.keyCode === 90) {
-		var selectedText = $(hoveredEvent).text();
-		passSelectionToBackground(selectedText, true);
-	}
-};
-window.addEventListener? document.addEventListener('keydown', keyDown) : document.attachEvent('keydown', keyDown);
+    return true;
+});
 
-var keyUp = function(event){
-	delete keys[event.which];
-};
-window.addEventListener? document.addEventListener('keyup', keyUp) : document.attachEvent('keyup', keyUp);
+document.addEventListener("mousemove", (event) => {
+    mouseX = event.clientX;
+    mouseY = event.clientY;
+});
 
-var hoveredEvent;
-var outlineElementClass = 'outlineElement_SR';
-var notificationClass = 'autoselectNotification_SR';
-var notificationText = "Sprint Reader Auto-selection Enabled";
-$(document).ready(function(){	
-	// Only proceed with auto-selection if it's enabled
-	if (hotKeyEnabled == 'false') {
-		return;	
-	}
-		
-	$('*')
-	.mouseover(function(event) {
-      	if (autoSelectEnabled) {
-			$(event.target).addClass(outlineElementClass);			
-			hoveredEvent = event.target;
-		}
-    })
-    .mouseout(function(event) {
-      	$(event.target).removeClass(outlineElementClass);		
-		hoveredEvent = "";
-    });
+//------------------------------------------------------------------------------
+// Hotkey, auto-text selection management
+const keyDown = async (event) => {
+    // Only proceed with auto-selection if it's enabled
+    await getHotKeyEnabledStatus();   
+    setupHotSelection(hotKeyEnabled);   
+    if (!hotKeyEnabled) {
+        autoSelectEnabled = false;
+        return;
+    }
+
+    // Check for CONTROL+SHIFT
+    if (event.ctrlKey && event.shiftKey) {
+        event.preventDefault();
+        autoSelectEnabled = !autoSelectEnabled;
+
+        if (autoSelectEnabled) {
+            $("body").append('<div class="' + NOTIFICATION_CLASS + '">' + NOTIFICATION_TEXT + "</div>");
+        } else {
+            // CONTROL+SHIFT toggle OFF, let's kill all highlights
+            $("body")
+                .find("div:contains(" + NOTIFICATION_TEXT + ")")
+                .remove();
+                $(hoveredElement).removeClass(OUTLINE_ELEMENT_CLASS);
+            hoveredElement = "";
+        }
+    }
+
+    // If auto select is enabled and the user hits 'e'
+    // we select the text and open the reader
+    if (autoSelectEnabled && (event.key.toLowerCase() === 'e')) {
+        const selectedText = hoveredElement?.textContent || '';
+        passSelectionToBackground(selectedText, true);
+    }
+};
+
+window.addEventListener("keydown", keyDown);
+
+//------------------------------------------------------------------------------
+// Access the extension local storage to determine if the hotkey is enabled
+async function getHotKeyEnabledStatus() {
+    try {
+        const key = "madvHotkeySelectionEnabled";
+        const result = await chrome.storage.local.get([key]);
+        hotKeyEnabled = result[key] ?? false;
+    } catch (error) {
+        console.log("[Sprint Reader] Error getting hotkey status:", error);
+        hotKeyEnabled = false;
+    }
+}
+
+function setupHotSelection(enable) {
+    if (enable) {
+        $("*")
+            .mouseover(function (event) {
+                if (autoSelectEnabled) {
+                    $(event.target).addClass(OUTLINE_ELEMENT_CLASS);
+                    hoveredElement = event.target;
+                }
+            })
+            .mouseout(function (event) {
+                $(event.target).removeClass(OUTLINE_ELEMENT_CLASS);
+                hoveredElement = "";
+            });
+    }
+    else {
+        $("*")
+            .mouseover(null)
+            .mouseout(null);
+    }
+}
+
+$(document).ready(function () {
+    // Only proceed with auto-selection if it's enabled
+    getHotKeyEnabledStatus();
+    setupHotSelection(hotKeyEnabled);    
 });

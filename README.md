@@ -1,10 +1,10 @@
-﻿﻿![Sprint Reader](https://raw.githubusercontent.com/anthonynosek/sprint-reader-chrome/master/src/graphics/icon128.png?raw=true)
+![Sprint Reader](https://raw.githubusercontent.com/anthonynosek/sprint-reader-chrome/master/src/graphics/icon128.png?raw=true)
 
 # Sprint Reader
 
 <a href="http://tinyurl.com/lggjhxr">**Sprint Reader**</a> is an easy to use (Google Chrome) speed reading extension. 
 
-> Current (stable) version: 2.5.0
+> Current (stable) version: 3.0.0
 
 Simply select text on a webpage, right-click and select `Sprint read selected text` from the menu. This will launch the reader window, the selected text is displayed word-by-word in a fixed focal position. The duration of each slide is calculated based upon a word-per-minute (WPM) setting.
 
@@ -36,10 +36,6 @@ Key features of Sprint Reader:
  
 ## <a name="team-members"></a>Team Members
 * Anthony Nosek (<anthonynosek@gmail.com>)
-
-## <a name="social"></a>Sprint Reader on Social Media
-
-Sprint Reader has a ﻿![Facebook](https://raw.githubusercontent.com/anthonynosek/sprint-reader-chrome/master/src/graphics/facebook_16x16.png?raw=true) [ Facebook](https://www.facebook.com/SprintReader) page for the latest developments, interesting articles and updates from the Sprint Reader team. Check back for new tips and suggestions from our sprinters.
 
 ## <a name="useful-resources"></a>Useful Resources
 
@@ -73,7 +69,7 @@ See the [Wiki](https://github.com/anthonynosek/sprint-reader-chrome/wiki) for fu
 
 ## <a name="license"></a>License
 
-Copyright (c) 2013-2020, Anthony Nosek  
+Copyright (c) 2013-2024, Anthony Nosek
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
