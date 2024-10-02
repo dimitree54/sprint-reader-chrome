@@ -2,7 +2,7 @@
 	"manifest_version": 3,
   	"name": "Sprint Reader - Speed Reading Extension",
   	"description": "Speed reading made easy, train yourself to read 1800+ words per minute. Rapid serial visual presentation (RSVP) at its best!",
-  	"version": "3.0.0",
+  	"version": "3.0.1",
   	"icons": { 
 		"16": "src/graphics/icon16.png",
         "48": "src/graphics/icon48.png",
@@ -33,8 +33,10 @@
 	"commands": {
 		"sprint_read_shortcut": {
 			"suggested_key": {
+				"default": "Ctrl+Shift+E",
 				"windows": "Ctrl+Shift+E",
-				"mac": "MacCtrl+Shift+E"
+				"mac": "MacCtrl+Shift+E",
+				"linux": "Ctrl+Shift+E"
 			},
 			"description": "Sprint read selected text"
 		}
