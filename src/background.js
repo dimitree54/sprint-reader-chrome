@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 //
-// SPRINT READER
-// Speed Reading Extension for Google Chrome
-// Copyright (c) 2013-2024, Anthony Nosek
-// https://github.com/anthonynosek/sprint-reader-chrome/blob/master/LICENSE
+//  SPRINT READER
+//  Speed Reading Extension for Google Chrome
+//  Copyright (c) 2013-2025, Anthony Nosek
+//  https://github.com/anthonynosek/sprint-reader-chrome/blob/master/LICENSE
 //
 //------------------------------------------------------------------------------
 
@@ -25,17 +25,34 @@ function onInstall() {
 }
 
 function onUpdate() {
+    console.log(`[Sprint Reader] Showing update page`);
     chrome.tabs.create({ url: "src/updated.html" });
 }
 
-function checkAndUpdateVersion() {
+function checkAndUpdateVersion(details) {
     const currentVersion = getVersion();
-    chrome.storage.local.get(["version"], (result) => {
-        const prevVersion = result.version;
 
-        if (typeof prevVersion === "undefined") {
+    if (details.reason === 'chrome_update') {
+        chrome.storage.local.set({ version: currentVersion });
+        return;
+    }
+
+    chrome.storage.local.get(["version"], (result) => {
+        const previousVersion = result.version;
+
+        if (previousVersion === currentVersion) {
+            console.log(`[Sprint Reader] Version already set to v${currentVersion}, no action required`);
+            return;
+        }
+
+        if (details.reason === 'install') {
             onInstall();
-        } else {
+        } else if (details.reason === 'update') {
+            if (typeof previousVersion === 'undefined') {
+                console.log(`[Sprint Reader] Updated, but no previous version found in storage, treating as a major update to v${currentVersion}`);
+            } else {
+                console.log(`[Sprint Reader] Updated from v${previousVersion} to v${currentVersion}`);
+            }
             onUpdate();
         }
 

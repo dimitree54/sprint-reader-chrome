@@ -1,9 +1,9 @@
 //------------------------------------------------------------------------------
 //
-// SPRINT READER
-// Speed Reading Extension for Google Chrome
-// Copyright (c) 2013-2024, Anthony Nosek
-// https://github.com/anthonynosek/sprint-reader-chrome/blob/master/LICENSE
+//  SPRINT READER
+//  Speed Reading Extension for Google Chrome
+//  Copyright (c) 2013-2025, Anthony Nosek
+//  https://github.com/anthonynosek/sprint-reader-chrome/blob/master/LICENSE
 //
 //------------------------------------------------------------------------------
 
