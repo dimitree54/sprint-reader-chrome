@@ -221,3 +221,8 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+# Build artifacts
+dist-firefox/
+
+dist-safari/
+SafariBuild/

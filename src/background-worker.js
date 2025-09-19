@@ -8,7 +8,8 @@
 //------------------------------------------------------------------------------
 
 try {
-    self.importScripts("background.js");
+    self.importScripts("../lib/browser-polyfill.js", "background.js");
+    console.log('[Sprint Reader] Background worker initialised');
 } catch (e) {
     console.error("[Sprint Reader] Error initiating background worker");
     console.error(e);

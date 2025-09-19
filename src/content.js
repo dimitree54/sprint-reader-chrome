@@ -7,10 +7,21 @@
 //
 //------------------------------------------------------------------------------
 
-let mouseX, mouseY;
-let hotKeyEnabled = false;
-let autoSelectEnabled = false;
-let hoveredElement;
+(() => {
+    if (typeof window !== 'undefined') {
+        if (window.__sprintReaderContentInjected) {
+            console.log('[Sprint Reader] Content script already initialised, skipping duplicate injection');
+            return;
+        }
+        window.__sprintReaderContentInjected = true;
+    }
+
+    console.log('[Sprint Reader] Content script initialised');
+
+    let mouseX, mouseY;
+    let hotKeyEnabled = false;
+    let autoSelectEnabled = false;
+    let hoveredElement;
 
 const OUTLINE_ELEMENT_CLASS = "outlineElement_SR";
 const NOTIFICATION_CLASS = "autoselectNotification_SR";
@@ -38,7 +49,8 @@ function passSelectionToBackground(selectedText, openReaderAlso) {
 
     // Send a message back to the service worker
     // The message is any valid JSON string
-    if (chrome.runtime?.id) {
+    if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
+        console.log('[Sprint Reader] Sending selection to background', { length: selectedText.length, haveSelection });
         chrome.runtime.sendMessage({
             target: "background",
             type: openReaderAlso ? "openReaderFromContent" : "getSelection",
@@ -177,8 +189,9 @@ function setupHotSelection(enable) {
     }
 }
 
-$(document).ready(function () {
-    // Only proceed with auto-selection if it's enabled
-    getHotKeyEnabledStatus();
-    setupHotSelection(hotKeyEnabled);    
-});
+    $(document).ready(function () {
+        // Only proceed with auto-selection if it's enabled
+        getHotKeyEnabledStatus();
+        setupHotSelection(hotKeyEnabled);    
+    });
+})();

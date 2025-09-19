@@ -16,7 +16,6 @@
         	"128": "src/graphics/icon128.png"
 		}
   	},
-	"minimum_chrome_version": "109",
 	"background": {
 		"service_worker": "src/background-worker.js"
 	},
@@ -28,7 +27,7 @@
   	"content_scripts": [{
       	"matches": ["http://*/*", "https://*/*"],
 		"css": ["src/css/stylepage.css"],
-      	"js": ["lib/jquery/jquery.min.js", "src/content.js"]
+     	"js": ["lib/browser-polyfill.js", "lib/jquery/jquery.min.js", "src/content.js"]
     }],
 	"commands": {
 		"sprint_read_shortcut": {
@@ -44,10 +43,16 @@
 	"permissions": [
 		"contextMenus", 
 		"activeTab",
-		"clipboardRead",
+		"tabs",
 		"storage",
-		"system.display"
+		"clipboardRead"
 	],
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "sprint-reader@sprint-reader.app",
+			"strict_min_version": "109.0"
+		}
+	},
 	"content_security_policy": {
   		"extension_pages": "script-src 'self'; object-src 'self'"
 	}

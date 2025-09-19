@@ -7,12 +7,17 @@
 //
 //------------------------------------------------------------------------------
 
-// Load utility script
-try {
-    importScripts("utility.js");
-} catch (e) {
-    console.error('[Sprint Reader] Error loading utility script:', e);
+// Load utility script when running in a worker context (MV3)
+if (typeof self !== "undefined" && typeof self.importScripts === "function") {
+    try {
+        self.importScripts("utility.js");
+        console.log('[Sprint Reader] Background script (worker) loaded utility.js');
+    } catch (e) {
+        console.error('[Sprint Reader] Error loading utility script in worker context:', e);
+    }
 }
+
+console.log('[Sprint Reader] Background script initialised');
 
 //------------------------------------------------------------------------------
 // Version Management
@@ -76,6 +81,11 @@ async function receiveMessage(message, sender, sendResponse) {
     selectedText = "";
     dirRTL = false;
 
+    console.log('[Sprint Reader] Background received message', message.type, {
+        haveSelection: message.haveSelection,
+        textLength: message.selectedText ? message.selectedText.length : 0
+    });
+
     switch (message.type) {
         case "getSelection":
             haveSelection = message.haveSelection;
@@ -115,28 +125,61 @@ function getFromStorage(key) {
 
 //------------------------------------------------------------------------------
 // Context Menu Management
-chrome.runtime.onInstalled.addListener(() => {
-    const contexts = ["page", "selection"];
-    contexts.forEach((context, index) => {
-        const title = context === "page" ? "Sprint read last saved selection" : "Sprint read selected text";
-        chrome.contextMenus.create({
-            title: title,
-            contexts: [context],
-            id: index.toString(),
+const menusApi = (typeof chrome !== 'undefined' && chrome.contextMenus)
+    || (typeof chrome !== 'undefined' && chrome.menus)
+    || (typeof browser !== 'undefined' && (browser.contextMenus || browser.menus));
+
+if (menusApi) {
+    chrome.runtime.onInstalled.addListener(() => {
+        const contexts = ["page", "selection"];
+        contexts.forEach((context, index) => {
+            const title = context === "page" ? "Sprint read last saved selection" : "Sprint read selected text";
+            try {
+                menusApi.create({
+                    title,
+                    contexts: [context],
+                    id: index.toString(),
+                });
+            } catch (error) {
+                console.error('[Sprint Reader] Failed to create context menu item', error);
+            }
         });
     });
-});
 
-chrome.contextMenus.onClicked.addListener(async (context) => {
-    if (context.menuItemId === "1") {
-        const message = {
-            target: "background",
-            type: "openReaderFromContextMenu",
-            selectionText: context.selectionText,
-        };
-        receiveMessage(message);
-    }
-});
+    menusApi.onClicked.addListener(async (context, tab) => {
+        console.log('[Sprint Reader] Context menu onClicked', {
+            id: context.menuItemId,
+            selectionLength: context.selectionText ? context.selectionText.length : 0,
+            contexts: context.contexts,
+            pageUrl: context.pageUrl,
+        });
+
+        const menuId = context.menuItemId;
+        const isSelectionMenu = menuId === "1" || menuId === 1;
+        const isLastSavedMenu = menuId === "0" || menuId === 0;
+
+        if (isSelectionMenu) {
+            const message = {
+                target: "background",
+                type: "openReaderFromContextMenu",
+                selectionText: context.selectionText,
+            };
+            receiveMessage(message);
+            return;
+        }
+
+        if (isLastSavedMenu) {
+            const message = {
+                target: "background",
+                type: "openReaderFromContextMenu",
+                selectionText: "",
+            };
+            receiveMessage(message);
+        }
+    });
+} else {
+    console.warn('[Sprint Reader] Context menus API not available in this environment');
+}
 
 //------------------------------------------------------------------------------
 // Window Management
@@ -147,6 +190,26 @@ chrome.windows.onRemoved.addListener(async (windowId) => {
         readerWindowId = null;
     }
 });
+
+async function getDisplayBounds() {
+    const fallback = { width: 1280, height: 720, left: 0, top: 0 };
+
+    try {
+        const lastFocused = await chrome.windows.getLastFocused({ populate: false });
+        if (lastFocused && typeof lastFocused.width === "number" && typeof lastFocused.height === "number") {
+            return {
+                width: lastFocused.width,
+                height: lastFocused.height,
+                left: typeof lastFocused.left === "number" ? lastFocused.left : fallback.left,
+                top: typeof lastFocused.top === "number" ? lastFocused.top : fallback.top,
+            };
+        }
+    } catch (error) {
+        console.warn("[Sprint Reader] Unable to determine window bounds, using defaults.", error);
+    }
+
+    return fallback;
+}
 
 async function openReaderWindowSetup(saveToLocal, text, haveSelect, directionRTL) {
     if (saveToLocal) {
@@ -163,10 +226,9 @@ async function openReaderWindowSetup(saveToLocal, text, haveSelect, directionRTL
 }
 
 async function openReaderWindow() {
-    const displays = await chrome.system.display.getInfo();
-    const primaryDisplay = displays[0];
-    const screenWidth = primaryDisplay.bounds.width;
-    const screenHeight = primaryDisplay.bounds.height;
+    const bounds = await getDisplayBounds();
+    const screenWidth = bounds.width;
+    const screenHeight = bounds.height;
 
     const readerWidthPercentOfScreen = 0.7;
     const readerHeightPercentOfScreen = 0.53;
@@ -181,8 +243,11 @@ async function openReaderWindow() {
     width = Math.max(width, 880);
     height = Math.max(height, 550);
 
-    const top = Math.round(screenHeight - screenHeight * readerHeightPercentOfScreen - percentOfScreenWidth);
-    const left = Math.round(screenWidth - screenWidth * readerWidthPercentOfScreen - percentOfScreenWidth);
+    const topOffset = screenHeight - screenHeight * readerHeightPercentOfScreen - percentOfScreenWidth;
+    const leftOffset = screenWidth - screenWidth * readerWidthPercentOfScreen - percentOfScreenWidth;
+
+    const top = Math.round((bounds.top || 0) + Math.max(topOffset, 0));
+    const left = Math.round((bounds.left || 0) + Math.max(leftOffset, 0));
 
     await openReader("src/reader.html", Math.round(width), Math.round(height), top, left);
 }
@@ -201,16 +266,22 @@ async function openReader(url, w, h, t, l) {
     }
 
     if (readerWindowId === null) {
-        const createdWindow = await chrome.windows.create({
-            url: url,
-            type: "popup",
-            width: w,
-            height: h,
-            top: t,
-            left: l,
-            focused: true,
-        });
-        readerWindowId = createdWindow.id;
+        try {
+            const readerUrl = chrome.runtime.getURL(url);
+            console.log('[Sprint Reader] Opening reader window', { url: readerUrl, width: w, height: h, top: t, left: l });
+            const createdWindow = await chrome.windows.create({
+                url: readerUrl,
+                type: "popup",
+                width: w,
+                height: h,
+                top: t,
+                left: l,
+                focused: true,
+            });
+            readerWindowId = createdWindow?.id ?? null;
+        } catch (error) {
+            console.error('[Sprint Reader] Failed to create reader window', error);
+        }
     }
 }
 
@@ -218,6 +289,7 @@ async function openReader(url, w, h, t, l) {
 // Keyboard Shortcut Management
 let mouseY, mouseX;
 chrome.commands.onCommand.addListener(async function (command) {
+    console.log('[Sprint Reader] Command triggered', command);
     if (command === "sprint_read_shortcut") {
         if (selectedText.length) {
             openReaderWindowSetup(true, selectedText, haveSelection, dirRTL);
