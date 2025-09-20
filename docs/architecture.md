@@ -84,7 +84,7 @@ scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 ### 3.3 Popup (`src/popup/index.ts`)
 
 * Loads persisted reader preferences (currently words-per-minute).
-* Provides a single-line text field where users can paste content; a `Ctrl+V`/`Cmd+V` paste or `Enter` key submission immediately triggers the `openReaderFromPopup` message.
+* Provides a single-line text field where users can paste content and submit it via the **Speed read it** button, which then triggers the `openReaderFromPopup` message.
 * Persists preference mutations immediately to keep the background worker and reader in sync.
 
 ### 3.4 Reader UI (Modular Architecture)

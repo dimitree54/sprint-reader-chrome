@@ -146,7 +146,7 @@ async function openReaderWindow(): Promise<void> {
 }
 
 async function openReaderWindowSetup(
-  _saveToLocal: boolean,
+  saveToLocal: boolean,
   text: string,
   haveSelection: boolean,
   directionRTL: boolean,
@@ -158,16 +158,26 @@ async function openReaderWindowSetup(
     timestamp: Date.now(),
   };
 
-  await persistSelection(latestSelection);
+  if (saveToLocal) {
+    await persistSelection(latestSelection);
+  }
 
   await openReaderWindow();
 }
 
 function updateSelectionFromMessage(message: BackgroundMessage) {
+  const text = 'selectionText' in message && typeof message.selectionText === 'string'
+    ? message.selectionText
+    : 'selectedText' in message
+      ? message.selectedText
+      : '';
+  const hasSelection = 'haveSelection' in message ? message.haveSelection : text.length > 0;
+  const isRTL = 'dirRTL' in message ? message.dirRTL : false;
+
   latestSelection = {
-    text: message.selectedText,
-    hasSelection: message.haveSelection,
-    isRTL: message.dirRTL,
+    text,
+    hasSelection,
+    isRTL,
     timestamp: Date.now(),
   };
 }
@@ -232,7 +242,7 @@ async function handleInstall(details: typeof browser.runtime.OnInstalledDetailsT
 
 async function createContextMenus() {
   try {
-    browser.contextMenus.removeAll();
+    await browser.contextMenus.removeAll();
   } catch (error) {
     // Ignore remove errors when menus don't exist yet.
   }

@@ -6,7 +6,7 @@
 
 Simply select text on a webpage, right-click and select `10x your reading speed - read selected text` from the menu. This launches the reader window where selected text is displayed word-by-word in a fixed focal position. The duration of each slide is calculated based on your word-per-minute (WPM) setting.
 
-Prefer to paste something manually? Click the extension icon, drop your text into the popup, and press **Ctrl+V/Cmd+V** (or **Enter** after typing) to open the reader instantly with that content.
+Prefer to paste something manually? Click the extension icon, drop your text into the popup, and then press **Speed read it** to open the reader with that content.
 
 ## What makes this special
 
