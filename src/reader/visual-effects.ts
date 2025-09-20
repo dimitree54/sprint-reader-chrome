@@ -77,7 +77,16 @@ export function applyFlickerEffect(wordElement: HTMLElement, wordItem: WordItem,
  * Based on the longest word that will be displayed
  */
 export function calculateOptimalFontSizeForText(wordItems: WordItem[]): string {
-  const viewportWidth = window.innerWidth;
+export function calculateOptimalFontSizeForText(wordItems: WordItem[]): string {
+  // Prefer the content container width to avoid overestimating space
+  const container = document.querySelector('.reader__main') as HTMLElement | null;
+  const containerWidth = container?.clientWidth ?? window.innerWidth;
+  let availableWidth = containerWidth;
+  if (container) {
+    const cs = getComputedStyle(container);
+    const paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    availableWidth = Math.max(0, containerWidth - paddingX);
+  }
 
   // Find the longest word in the actual text
   const longestWordLength = Math.max(...wordItems.map(item => item.text.length));
@@ -89,8 +98,7 @@ export function calculateOptimalFontSizeForText(wordItems: WordItem[]): string {
   const effectiveLength = Math.max(longestWordLength, maxTheoreticalLength);
 
   // Reserve 15% margin on each side for safety (30% total)
-  const availableWidth = viewportWidth * 0.7;
-
+  availableWidth *= 0.7;
   // More accurate character width estimation
   // For font-weight: 600 with letter-spacing: 0.04em, characters are roughly 0.65 of font size
   const charWidthRatio = 0.65;
