@@ -361,4 +361,49 @@ test.describe('Sprint Reader extension (Chrome)', () => {
 
     await readerPage.close();
   });
+
+  test('opens reader from popup with manual text input', async ({ context, extensionId }) => {
+    // Open popup page directly
+    const popupPage = await context.newPage();
+    await popupPage.goto(`chrome-extension://${extensionId}/pages/popup.html`);
+    await popupPage.waitForLoadState('domcontentloaded');
+
+    // Find the input field and button
+    const textInput = popupPage.locator('#inputTextToRead');
+    const speedReadButton = popupPage.locator('#speedReadButton');
+
+    // Verify initial state - button should be disabled
+    await expect(speedReadButton).toBeDisabled();
+
+    // Enter test text
+    const testText = 'This is a test text for speed reading from popup.';
+    await textInput.fill(testText);
+
+    // Button should now be enabled
+    await expect(speedReadButton).toBeEnabled();
+
+    // Set up promise to wait for reader window
+    const readerPagePromise = context.waitForEvent('page', {
+      predicate: (p) => p.url().startsWith(`chrome-extension://${extensionId}/pages/reader.html`),
+      timeout: 10_000,
+    });
+
+    // Click the speed read button
+    await speedReadButton.click();
+
+    // Wait for reader page to open
+    const readerPage = await readerPagePromise;
+    await readerPage.waitForLoadState('domcontentloaded');
+    await readerPage.bringToFront();
+
+    // Verify the reader loaded with our text
+    await waitForReaderToStart(readerPage);
+
+    // Verify the input field was cleared
+    await expect(textInput).toHaveValue('');
+    await expect(speedReadButton).toBeDisabled();
+
+    await readerPage.close();
+    await popupPage.close();
+  });
 });

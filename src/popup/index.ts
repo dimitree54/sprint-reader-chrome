@@ -1,59 +1,44 @@
 import { getBrowser } from '../platform/browser';
 import type { BackgroundMessage } from '../common/messages';
-import { readReaderPreferences, writeReaderPreferences, type ReaderPreferences } from '../common/storage';
 
 const browser = getBrowser();
 
 type PopupElements = {
   inputText: HTMLInputElement;
-  inputWpm: HTMLInputElement;
+  speedReadButton: HTMLButtonElement;
+  menuEntryTextSpan: HTMLSpanElement;
 };
 
-let currentPreferences: ReaderPreferences | undefined;
 
-function parseWordsPerMinute(value: string): number {
-  const parsed = Number.parseInt(value, 10);
-  if (Number.isNaN(parsed)) {
-    return 400;
-  }
-
-  return Math.min(Math.max(parsed, 100), 2000);
-}
-
-async function loadPreferences(elements: PopupElements) {
-  const prefs = await readReaderPreferences();
-  currentPreferences = prefs;
-  elements.inputWpm.value = String(prefs.wordsPerMinute);
-}
-
-async function sendOpenReaderMessage(selectionText: string, elements: PopupElements) {
-  const wordsPerMinute = parseWordsPerMinute(elements.inputWpm.value);
-
+async function sendOpenReaderMessage(selectionText: string) {
   const message: BackgroundMessage = {
     target: 'background',
     type: 'openReaderFromPopup',
     selectionText,
-    wordsPerMinute,
+    wordsPerMinute: 400, // Default speed
   };
 
   await browser.runtime.sendMessage(message);
 }
 
-async function registerEvents(elements: PopupElements) {
-  let pasteTriggered = false;
-
-  function updateStoredPreferences(wordsPerMinute: number) {
-    if (!currentPreferences) {
-      return;
+async function loadMenuEntryText(elements: PopupElements) {
+  try {
+    const response = await browser.runtime.sendMessage({
+      target: 'background',
+      type: 'getMenuEntryText'
+    });
+    if (response?.menuEntryText) {
+      elements.menuEntryTextSpan.textContent = response.menuEntryText;
     }
+  } catch (error) {
+    console.warn('Failed to load menu entry text:', error);
+  }
+}
 
-    const nextPreferences: ReaderPreferences = {
-      ...currentPreferences,
-      wordsPerMinute,
-    };
-
-    currentPreferences = nextPreferences;
-    void writeReaderPreferences(nextPreferences);
+async function registerEvents(elements: PopupElements) {
+  function updateButtonState() {
+    const text = elements.inputText.value.trim();
+    elements.speedReadButton.disabled = text.length === 0;
   }
 
   async function triggerReadFromInput() {
@@ -64,48 +49,28 @@ async function registerEvents(elements: PopupElements) {
 
     elements.inputText.value = '';
     elements.inputText.blur();
-    await sendOpenReaderMessage(text, elements);
+    updateButtonState();
+    await sendOpenReaderMessage(text);
   }
 
-  elements.inputText.addEventListener('keydown', (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
-      pasteTriggered = true;
-      return;
-    }
+  elements.inputText.addEventListener('input', updateButtonState);
 
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      void triggerReadFromInput();
-    }
-  });
-
-  elements.inputText.addEventListener('paste', () => {
-    pasteTriggered = true;
-  });
-
-  elements.inputText.addEventListener('input', () => {
-    if (!pasteTriggered) {
-      return;
-    }
-
-    pasteTriggered = false;
+  elements.speedReadButton.addEventListener('click', () => {
     void triggerReadFromInput();
   });
 
-  elements.inputWpm.addEventListener('change', () => {
-    const wordsPerMinute = parseWordsPerMinute(elements.inputWpm.value);
-    elements.inputWpm.value = String(wordsPerMinute);
-    updateStoredPreferences(wordsPerMinute);
-  });
+  // Initialize button state
+  updateButtonState();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
   const elements: PopupElements = {
     inputText: document.getElementById('inputTextToRead') as HTMLInputElement,
-    inputWpm: document.getElementById('inputWpm') as HTMLInputElement,
+    speedReadButton: document.getElementById('speedReadButton') as HTMLButtonElement,
+    menuEntryTextSpan: document.getElementById('menuEntryText') as HTMLSpanElement,
   };
 
-  await loadPreferences(elements);
+  await loadMenuEntryText(elements);
   await registerEvents(elements);
 });
 

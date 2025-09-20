@@ -7,7 +7,7 @@ import path from 'node:path';
 const EXTENSION_PATH = path.resolve(__dirname, '../../dist/chrome');
 
 async function createTempUserDataDir() {
-  const prefix = path.join(os.tmpdir(), 'sprint-reader-playwright-');
+  const prefix = path.join(os.tmpdir(), 'speed-reader-playwright-');
   return fs.mkdtemp(prefix);
 }
 

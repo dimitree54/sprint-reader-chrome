@@ -13,29 +13,22 @@
     </header>
     <main class="popup__main" role="main">
       <section class="popup__section">
-        <p class="popup__description">Paste text into the field below to sprint-read it immediately.</p>
+        <p class="popup__description">Select any text on the page, right-click and choose '<span id="menuEntryText">Speed read selected text</span>' from the menu.</p>
+        <p class="popup__or">OR</p>
         <label class="popup__field popup__field--stacked" for="inputTextToRead">
-          <span class="popup__field-label">Paste text here to read quickly</span>
           <input
             id="inputTextToRead"
             type="text"
             class="popup__text-input"
-            placeholder="Paste text here to read quickly"
+            placeholder="Paste any text here"
             autocomplete="off"
           />
-          <span class="popup__hint">Press Ctrl+V / Cmd+V to paste or Enter to read what you typed.</span>
         </label>
       </section>
-      <section class="popup__section">
-        <h2 class="popup__subtitle">Quick Settings</h2>
-        <label class="popup__field">
-          <span class="popup__field-label">Words per minute</span>
-          <input id="inputWpm" type="number" min="100" max="2000" step="50" value="400" class="popup__input" />
-        </label>
-      </section>
+        <button id="speedReadButton" class="popup__speed-read-button" disabled>Speed read it</button>
     </main>
     <footer class="popup__footer">
-      <a href="https://sprint-reader.com" target="_blank" rel="noreferrer">Help &amp; Support</a>
+      <a href="https://speed-reader.com" target="_blank" rel="noreferrer">Help &amp; Support</a>
     </footer>
     <script type="module" src="../scripts/popup.js"></script>
   </body>

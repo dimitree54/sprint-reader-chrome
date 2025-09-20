@@ -41,7 +41,7 @@
     }
   ],
   "commands": {
-    "sprint_read_shortcut": {
+    "speed_read_shortcut": {
       "suggested_key": {
         "default": "Ctrl+Shift+E",
         "mac": "MacCtrl+Shift+E"

@@ -1,4 +1,4 @@
-# 10x your reading speed
+# 10x your reading speed with AI*
 
 **10x your reading speed** is a multi-browser speed reading extension that supercharges your reading with RSVP (Rapid Serial Visual Presentation) technology enhanced by AI preprocessing.
 

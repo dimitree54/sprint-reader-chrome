@@ -28,6 +28,8 @@ let latestSelection: SelectionState = {
 let readerWindowId: number | undefined;
 let cachedPrefs: ReaderPreferences | undefined;
 
+const CONTEXT_MENU_TITLE = 'Speed read selected text';
+
 function htmlEncode(value: string): string {
   return value.replace(/[&<>'"]/g, (char) => {
     switch (char) {
@@ -127,7 +129,7 @@ async function openReaderWindow(): Promise<void> {
       await browser.runtime.sendMessage({ target: 'reader', type: 'refreshReader' });
       return;
     } catch (error) {
-      console.warn('[Sprint Reader] Failed to focus reader window, opening a new one.', error);
+      console.warn('[Speed Reader] Failed to focus reader window, opening a new one.', error);
       readerWindowId = undefined;
     }
   }
@@ -206,6 +208,9 @@ async function handleMessage(rawMessage: RuntimeMessage, _sender: unknown, sendR
         await openReaderWindowSetup(true, providedText, true, false);
         return true;
       }
+    case 'getMenuEntryText':
+      sendResponse({ menuEntryText: CONTEXT_MENU_TITLE });
+      return true;
     default:
       return undefined;
   }
@@ -234,11 +239,11 @@ async function createContextMenus() {
   try {
     browser.contextMenus.create({
       id: 'read-selection',
-      title: 'Sprint read selected text',
+      title: CONTEXT_MENU_TITLE,
       contexts: ['selection'],
     });
   } catch (error) {
-    console.warn('[Sprint Reader] Failed to create context menu entry', 'read-selection', error);
+    console.warn('[Speed Reader] Failed to create context menu entry', 'read-selection', error);
   }
 }
 
@@ -256,7 +261,7 @@ browser.windows.onRemoved.addListener((windowId) => {
 });
 
 browser.commands.onCommand.addListener(async (command) => {
-  if (command !== 'sprint_read_shortcut') {
+  if (command !== 'speed_read_shortcut') {
     return;
   }
 

@@ -23,6 +23,10 @@ export type BackgroundMessage =
       selectionText: string;
       haveSelection: boolean;
       dirRTL: boolean;
+    }
+  | {
+      target: 'background';
+      type: 'getMenuEntryText';
     };
 
 export type ReaderMessage =
