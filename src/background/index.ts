@@ -3,11 +3,9 @@ import type { BackgroundMessage, RuntimeMessage } from '../common/messages';
 import {
   readReaderPreferences,
   readSelection,
-  readSelectionHistory,
   setInStorage,
   writeReaderPreferences,
   writeSelection,
-  STORAGE_KEYS,
   type ReaderPreferences,
   type StoredSelection,
 } from '../common/storage';
@@ -115,13 +113,9 @@ async function persistPreferences(prefs: ReaderPreferences) {
   await writeReaderPreferences(prefs);
 }
 
-async function persistSelection(selection: SelectionState, shouldPersist: boolean) {
+async function persistSelection(selection: SelectionState) {
   const storedSelection = toStoredSelection(selection);
-  if (shouldPersist) {
-    await writeSelection(storedSelection);
-  } else {
-    await setInStorage({ [STORAGE_KEYS.selection]: storedSelection });
-  }
+  await writeSelection(storedSelection);
 }
 
 async function openReaderWindow(): Promise<void> {
@@ -150,14 +144,11 @@ async function openReaderWindow(): Promise<void> {
 }
 
 async function openReaderWindowSetup(
-  saveToLocal: boolean,
+  _saveToLocal: boolean,
   text: string,
   haveSelection: boolean,
   directionRTL: boolean,
 ): Promise<void> {
-  const prefs = await ensurePreferences();
-  const shouldPersist = saveToLocal ? prefs.persistSelection : false;
-
   latestSelection = {
     text,
     hasSelection: haveSelection,
@@ -165,7 +156,7 @@ async function openReaderWindowSetup(
     timestamp: Date.now(),
   };
 
-  await persistSelection(latestSelection, shouldPersist);
+  await persistSelection(latestSelection);
 
   await openReaderWindow();
 }
@@ -199,17 +190,22 @@ async function handleMessage(rawMessage: RuntimeMessage, _sender: unknown, sendR
       await openReaderWindowSetup(true, message.selectionText, message.selectionText.length > 0, false);
       return true;
     case 'openReaderFromPopup':
-      await persistPreferences({
-        wordsPerMinute: message.wordsPerMinute,
-        persistSelection: message.persistSelection,
-      });
+      {
+        const prefs = await ensurePreferences();
+        const updatedPrefs: ReaderPreferences = {
+          ...prefs,
+          wordsPerMinute: message.wordsPerMinute,
+        };
+        await persistPreferences(updatedPrefs);
 
-      if (message.selectionText && message.selectionText.length > 0) {
-        await openReaderWindowSetup(true, message.selectionText, true, false);
-      } else {
-        await openReaderWindowSetup(true, latestSelection.text, latestSelection.hasSelection, latestSelection.isRTL);
+        const providedText = message.selectionText?.trim() ?? '';
+        if (providedText.length === 0) {
+          return true;
+        }
+
+        await openReaderWindowSetup(true, providedText, true, false);
+        return true;
       }
-      return true;
     default:
       return undefined;
   }
@@ -235,25 +231,14 @@ async function createContextMenus() {
     // Ignore remove errors when menus don't exist yet.
   }
 
-  const menuEntries: Array<{ id: string; title: string; contexts: chrome.contextMenus.ContextType[] }> = [
-    {
+  try {
+    browser.contextMenus.create({
       id: 'read-selection',
       title: 'Sprint read selected text',
       contexts: ['selection'],
-    },
-    {
-      id: 'read-last',
-      title: 'Sprint read last saved selection',
-      contexts: ['page'],
-    },
-  ];
-
-  for (const entry of menuEntries) {
-    try {
-      browser.contextMenus.create(entry);
-    } catch (error) {
-      console.warn('[Sprint Reader] Failed to create context menu entry', entry.id, error);
-    }
+    });
+  } catch (error) {
+    console.warn('[Sprint Reader] Failed to create context menu entry', 'read-selection', error);
   }
 }
 
@@ -261,13 +246,6 @@ browser.contextMenus.onClicked.addListener(async (info) => {
   if (info.menuItemId === 'read-selection' && info.selectionText) {
     await openReaderWindowSetup(true, info.selectionText, true, false);
     return;
-  }
-
-  if (info.menuItemId === 'read-last') {
-    const history = await readSelectionHistory();
-    const lastStored = history[0];
-    const snapshot = lastStored ? fromStoredSelection(lastStored) : latestSelection;
-    await openReaderWindowSetup(false, snapshot.text, snapshot.hasSelection, snapshot.isRTL);
   }
 });
 

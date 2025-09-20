@@ -6,6 +6,8 @@
 
 Simply select text on a webpage, right-click and select `10x your reading speed - read selected text` from the menu. This launches the reader window where selected text is displayed word-by-word in a fixed focal position. The duration of each slide is calculated based on your word-per-minute (WPM) setting.
 
+Prefer to paste something manually? Click the extension icon, drop your text into the popup, and press **Ctrl+V/Cmd+V** (or **Enter** after typing) to open the reader instantly with that content.
+
 ## What makes this special
 
 On top of traditional **Rapid Serial Visual Presentation** (RSVP), we've added **LLM pre-processing** to further accelerate your reading comprehension. Studies show that the habit of internally "sounding out" (sub-vocalising) words is a limiting factor that prevents faster reading speeds. RSVP eliminates this by not displaying words long enough for sub-vocalisation to occur.

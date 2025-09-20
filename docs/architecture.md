@@ -65,13 +65,12 @@ scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 
 * Responsibilities
   * Tracks the latest selection synchronised from content scripts.
-  * Persists reader preferences and selection history via `storage.ts` helpers.
+  * Persists reader preferences and the most recent selection via `storage.ts` helpers.
   * Owns the reader window lifecycle (`openReaderWindowSetup`) and exposes the function on `globalThis` for Playwright automation and integration tests.
   * Generates context-menu commands and keyboard shortcuts that route back into the shared open-reader workflow.
   * Normalises install/update flows by opening the welcome/updated pages from `static/pages`.
 
 * Key collaborators
-  * `readSelectionHistory()` to fetch history when the "read last" menu item is triggered.
   * `BrowserAPI` shim to use `chrome.*` or `browser.*` without scattering feature detection.
   * Runtime message contracts from `common/messages.ts` so that all callers share the same schema.
 
@@ -84,8 +83,8 @@ scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 
 ### 3.3 Popup (`src/popup/index.ts`)
 
-* Loads persisted reader preferences (words-per-minute, persist-selection toggle).
-* Sends a single `openReaderFromPopup` message that the background worker interprets, either replaying the last saved text or opening with explicit input.
+* Loads persisted reader preferences (currently words-per-minute).
+* Provides a single-line text field where users can paste content; a `Ctrl+V`/`Cmd+V` paste or `Enter` key submission immediately triggers the `openReaderFromPopup` message.
 * Persists preference mutations immediately to keep the background worker and reader in sync.
 
 ### 3.4 Reader UI (Modular Architecture)
@@ -122,7 +121,7 @@ The reader implementation follows a modular architecture with clear separation o
 ## 4. Cross-Cutting Modules
 
 * `platform/browser.ts`: resolves the runtime API once and caches it, collapsing the Chrome/Firefox/Safari divergence into a single entry point.
-* `common/storage.ts`: wraps the callback-driven storage API with promise helpers, defines canonical keys, and centralises history management.
+* `common/storage.ts`: wraps the callback-driven storage API with promise helpers, defines canonical keys, and centralises preference/selection persistence.
 * `common/messages.ts`: enumerates every structured message exchanged between contexts, enabling exhaustive checks during refactors.
 
 ## 5. Build & Packaging Pipeline
@@ -165,5 +164,5 @@ Each command prepares a fully self-contained directory that can be zipped for st
 ## 8. Future Evolution
 
 * Expand the manifest overrides to capture Firefox-specific permission tweaks (e.g., action button behaviour) and Safari-specific entitlements.
-* Introduce dedicated unit tests for the reader timing logic and storage history helpers.
+* Introduce dedicated unit tests for the reader timing logic and storage helpers.
 * Integrate localisation by moving human-readable strings into a shared message catalog consumed across contexts.

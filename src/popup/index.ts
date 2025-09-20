@@ -1,71 +1,111 @@
 import { getBrowser } from '../platform/browser';
 import type { BackgroundMessage } from '../common/messages';
-import { readReaderPreferences, writeReaderPreferences } from '../common/storage';
+import { readReaderPreferences, writeReaderPreferences, type ReaderPreferences } from '../common/storage';
 
 const browser = getBrowser();
 
 type PopupElements = {
-  btnReadSelection: HTMLButtonElement;
-  btnReadLast: HTMLButtonElement;
+  inputText: HTMLInputElement;
   inputWpm: HTMLInputElement;
-  checkboxPersist: HTMLInputElement;
 };
+
+let currentPreferences: ReaderPreferences | undefined;
+
+function parseWordsPerMinute(value: string): number {
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isNaN(parsed)) {
+    return 400;
+  }
+
+  return Math.min(Math.max(parsed, 100), 2000);
+}
 
 async function loadPreferences(elements: PopupElements) {
   const prefs = await readReaderPreferences();
+  currentPreferences = prefs;
   elements.inputWpm.value = String(prefs.wordsPerMinute);
-  elements.checkboxPersist.checked = prefs.persistSelection;
 }
 
-async function sendOpenReaderMessage(selectionText: string | undefined, elements: PopupElements) {
-  const wordsPerMinute = Number.parseInt(elements.inputWpm.value, 10) || 400;
-  const persistSelection = elements.checkboxPersist.checked;
+async function sendOpenReaderMessage(selectionText: string, elements: PopupElements) {
+  const wordsPerMinute = parseWordsPerMinute(elements.inputWpm.value);
 
   const message: BackgroundMessage = {
     target: 'background',
     type: 'openReaderFromPopup',
     selectionText,
     wordsPerMinute,
-    persistSelection,
   };
 
   await browser.runtime.sendMessage(message);
 }
 
 async function registerEvents(elements: PopupElements) {
-  elements.btnReadSelection.addEventListener('click', () => {
-    void sendOpenReaderMessage('', elements);
+  let pasteTriggered = false;
+
+  function updateStoredPreferences(wordsPerMinute: number) {
+    if (!currentPreferences) {
+      return;
+    }
+
+    const nextPreferences: ReaderPreferences = {
+      ...currentPreferences,
+      wordsPerMinute,
+    };
+
+    currentPreferences = nextPreferences;
+    void writeReaderPreferences(nextPreferences);
+  }
+
+  async function triggerReadFromInput() {
+    const text = elements.inputText.value.trim();
+    if (text.length === 0) {
+      return;
+    }
+
+    elements.inputText.value = '';
+    elements.inputText.blur();
+    await sendOpenReaderMessage(text, elements);
+  }
+
+  elements.inputText.addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
+      pasteTriggered = true;
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      void triggerReadFromInput();
+    }
   });
 
-  elements.btnReadLast.addEventListener('click', () => {
-    void sendOpenReaderMessage(undefined, elements);
+  elements.inputText.addEventListener('paste', () => {
+    pasteTriggered = true;
+  });
+
+  elements.inputText.addEventListener('input', () => {
+    if (!pasteTriggered) {
+      return;
+    }
+
+    pasteTriggered = false;
+    void triggerReadFromInput();
   });
 
   elements.inputWpm.addEventListener('change', () => {
-    const value = Number.parseInt(elements.inputWpm.value, 10) || 400;
-    void writeReaderPreferences({
-      wordsPerMinute: value,
-      persistSelection: elements.checkboxPersist.checked,
-    });
-  });
-
-  elements.checkboxPersist.addEventListener('change', () => {
-    const value = Number.parseInt(elements.inputWpm.value, 10) || 400;
-    void writeReaderPreferences({
-      wordsPerMinute: value,
-      persistSelection: elements.checkboxPersist.checked,
-    });
+    const wordsPerMinute = parseWordsPerMinute(elements.inputWpm.value);
+    elements.inputWpm.value = String(wordsPerMinute);
+    updateStoredPreferences(wordsPerMinute);
   });
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
   const elements: PopupElements = {
-    btnReadSelection: document.getElementById('btnReadSelection') as HTMLButtonElement,
-    btnReadLast: document.getElementById('btnReadLast') as HTMLButtonElement,
+    inputText: document.getElementById('inputTextToRead') as HTMLInputElement,
     inputWpm: document.getElementById('inputWpm') as HTMLInputElement,
-    checkboxPersist: document.getElementById('inputPersistSelection') as HTMLInputElement,
   };
 
   await loadPreferences(elements);
   await registerEvents(elements);
 });
+

@@ -15,7 +15,6 @@ export type BackgroundMessage =
       target: 'background';
       type: 'openReaderFromPopup';
       selectionText?: string;
-      persistSelection: boolean;
       wordsPerMinute: number;
     }
   | {
