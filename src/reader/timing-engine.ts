@@ -193,7 +193,8 @@ export function createChunks(words: string[], settings: TimingSettings): WordIte
     while (j < words.length &&
            chunkWords.length < settings.chunkSize &&
            words[j].length <= 3 &&
-           !/[.!?]/.test(words[j])) { // Don't chunk across sentences
+           !/[.!?]/.test(words[j]) &&    // Don't chunk across sentences
+           !/\n/.test(words[j])) {       // Don't chunk across paragraphs
       chunkWords.push(words[j]);
       j++;
     }
