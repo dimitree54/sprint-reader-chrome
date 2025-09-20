@@ -1,0 +1,13 @@
+{
+  "background": {
+    "scripts": ["scripts/background.js"],
+    "service_worker": null,
+    "type": null
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "sprint-reader@sprint-reader.app",
+      "strict_min_version": "109.0"
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "Sprint Reader - Speed Reading Extension",
+  "version": "3.0.3",
+  "description": "Speed reading made easy, train yourself to read 1800+ words per minute.",
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "pages/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon16.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "scripts/background.js",
+    "type": "module"
+  },
+  "options_page": "pages/welcome.html",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "pages/reader.html",
+        "assets/icons/*.png",
+        "assets/icons/*.svg",
+        "assets/images/*.png",
+        "styles/*.css"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "permissions": ["contextMenus", "activeTab", "tabs", "storage", "clipboardRead"],
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["scripts/content.js"],
+      "css": ["styles/content.css"]
+    }
+  ],
+  "commands": {
+    "sprint_read_shortcut": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E",
+        "mac": "MacCtrl+Shift+E"
+      },
+      "description": "Sprint read selected text"
+    }
+  }
+}

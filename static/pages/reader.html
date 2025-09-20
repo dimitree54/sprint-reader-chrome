@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Sprint Reader</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../styles/reader.css" />
+  </head>
+  <body>
+    <header class="reader__header">
+      <h1 class="reader__title">Sprint Reader</h1>
+      <div class="reader__meta">
+        <span id="labelStatus" class="reader__status">Loading...</span>
+        <span id="labelProgress" class="reader__progress" aria-live="polite"></span>
+      </div>
+    </header>
+    <main class="reader__main" role="main">
+      <div id="word" class="reader__word" aria-live="assertive" aria-atomic="true"></div>
+    </main>
+    <footer class="reader__controls">
+      <button id="btnPlay" class="reader__button">Play</button>
+      <button id="btnRestart" class="reader__button reader__button--secondary">Restart</button>
+      <label class="reader__slider-label">
+        <span>Words per minute</span>
+        <input id="sliderWpm" type="range" min="100" max="2000" step="50" value="400" />
+        <span id="wpmValue" class="reader__wpm-value">400</span>
+      </label>
+    </footer>
+    <script type="module" src="../scripts/reader.js"></script>
+  </body>
+</html>

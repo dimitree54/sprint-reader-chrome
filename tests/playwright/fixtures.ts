@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-const EXTENSION_PATH = path.resolve(__dirname, '../..');
+const EXTENSION_PATH = path.resolve(__dirname, '../../dist/chrome');
 
 async function createTempUserDataDir() {
   const prefix = path.join(os.tmpdir(), 'sprint-reader-playwright-');
@@ -24,6 +24,7 @@ export const test = base.extend<ExtensionFixtures>({
 
     const context = await chromium.launchPersistentContext(userDataDir, {
       headless: false,
+      ignoreHTTPSErrors: true,
       args: [
         `--disable-extensions-except=${EXTENSION_PATH}`,
         `--load-extension=${EXTENSION_PATH}`,
