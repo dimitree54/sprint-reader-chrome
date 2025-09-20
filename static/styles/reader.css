@@ -103,7 +103,7 @@ body.reader--light {
 }
 
 .reader__word {
-  font-size: clamp(48px, 12vw, 128px);
+  font-size: 128px; /* Default size, will be overridden by dynamic calculation */
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: none;
