@@ -1,68 +1,90 @@
-![Sprint Reader](https://raw.githubusercontent.com/anthonynosek/sprint-reader-chrome/master/src/graphics/icon128.png?raw=true)
+# 10x your reading speed
 
-# Sprint Reader
+**10x your reading speed** is a multi-browser speed reading extension that supercharges your reading with RSVP (Rapid Serial Visual Presentation) technology enhanced by AI preprocessing.
 
-<a href="http://tinyurl.com/lggjhxr">**Sprint Reader**</a> is an easy to use (Google Chrome) speed reading extension. 
+> Current version: 3.0.3
 
-> Current (stable) version: 3.0.3
+Simply select text on a webpage, right-click and select `10x your reading speed - read selected text` from the menu. This launches the reader window where selected text is displayed word-by-word in a fixed focal position. The duration of each slide is calculated based on your word-per-minute (WPM) setting.
 
-Simply select text on a webpage, right-click and select `Sprint read selected text` from the menu. This will launch the reader window, the selected text is displayed word-by-word in a fixed focal position. The duration of each slide is calculated based upon a word-per-minute (WPM) setting.
+## What makes this special
 
-This method of reading is known as **Rapid Serial Visual Presentation** or RSVP for short. Studies have shown the habit of internally "sounding out" (sub-vocalising) words is a limiting factor which prevents faster reading speeds from being obtained. RSVP eliminates the "sounding out" of words as individual words are not displayed long enough for sub-vocalisation to occur.
+On top of traditional **Rapid Serial Visual Presentation** (RSVP), we've added **LLM pre-processing** to further accelerate your reading comprehension. Studies show that the habit of internally "sounding out" (sub-vocalising) words is a limiting factor that prevents faster reading speeds. RSVP eliminates this by not displaying words long enough for sub-vocalisation to occur.
 
-RSVP proves that humans can absorb information much faster than standard reading rates with the same level of comprehension.
+Our AI preprocessing optimizes text before presentation, allowing you to absorb information even faster than standard RSVP while maintaining the same level of comprehension.
 
-Key features of Sprint Reader:  
-> Multiple colour schemes  
-> Optimal letter highlighting  
-> Automatic language detection  
-> Adjustable font and font size  
-> Adjustable word-per-minute (WPM)  
-> Intelligent hyphenation of words  
-> Focal guides to improve attention  
-> Adjustable words-per-slide (chunk size)  
-> Provision for different display algorithms  
-> Optimal word positioning to improve comprehension  
+## Key Features
+
+> Multiple colour schemes
+> Optimal letter highlighting
+> Automatic language detection
+> Adjustable font and font size
+> Adjustable word-per-minute (WPM)
+> Intelligent hyphenation of words
+> Focal guides to improve attention
+> Adjustable words-per-slide (chunk size)
+> Provision for different display algorithms
+> Optimal word positioning to improve comprehension
 > Optional grammar delays
+> **Multi-browser support** (Chrome, Firefox, Safari)
+> **AI-powered text preprocessing** for enhanced comprehension
 
 ## Table of Contents
- 
-* [Team Members](#team-members)
-* [Sprint Reader on Social Media](#social)
+
+* [Original Attribution](#original-attribution)
 * [Getting Started](#getting-started)
+* [Multi-Browser Support](#multi-browser-support)
 * [Automated Testing](#automated-testing)
 * [Useful Resources](#useful-resources)
-* [Developers Guide (Wiki)](#developers-guide)
+* [Developers Guide](#developers-guide)
 * [License](#license)
- 
-## <a name="team-members"></a>Team Members
-* Anthony Nosek (<anthonynosek@gmail.com>)
 
-## <a name="useful-resources"></a>Useful Resources
+## <a name="original-attribution"></a>Original Attribution
 
-- [Google Chrome Extensions Official Site](https://developer.chrome.com/extensions)
-- [Google Chrome Extensions Getting Started Guide](https://developer.chrome.com/extensions/getstarted)
-- [Google Chrome Extensions Overview](https://developer.chrome.com/extensions/overview)
-- [Google Chrome Extensions Developers Guide](https://developer.chrome.com/extensions/devguide)
+This extension is based on **Sprint Reader** originally created by Anthony Nosek. We've enhanced it with:
+- AI-powered text preprocessing
+- Multi-browser support (Chrome, Firefox, Safari)
+- Modernized architecture and UI improvements
+
+Original Sprint Reader: Copyright (c) 2013-2025, Anthony Nosek. Used under BSD license terms.
 
 ## <a name="getting-started"></a>Getting Started
 
-We've made it easy for you to write code and develop new features for Sprint Reader. **To start: Download the source code** and load the extension into Google Chrome (Developer mode).
+### Installation from Source
 
-From the official [Google Chrome](https://developer.chrome.com/extensions/getstarted) website:
+1. Download or clone this repository
+2. Build the extension for your target browser:
 
-> Extensions that you download from the Chrome Web Store are packaged up as .crx files, which is great for distribution, but not so great for development. Recognizing this, Chrome gives you a quick way of loading up your working directory for testing. Let's do that now.
+```bash
+npm install
+npm run build:chrome    # For Chrome
+npm run build:firefox   # For Firefox
+npm run build:safari    # For Safari
+```
 
-> 1. Visit `chrome://extensions` in your browser (or open up the Chrome menu by clicking the icon to the far right of the Omnibox. The menu's icon is three horizontal bars.. and select **Extensions** under the **Tools** menu to get to the same place).
-> 2. Ensure that the **Developer mode** checkbox in the top right-hand corner is checked.
-> 3. Click **Load unpacked extension…** to pop up a file-selection dialog.
-> 4. Navigate to the directory in which your extension files live, and select it.
+3. Load the extension in your browser:
 
-> Alternatively, you can drag and drop the directory where your extension files live onto `chrome://extensions` in your browser to load it.
+**Chrome:**
+- Visit `chrome://extensions`
+- Enable **Developer mode**
+- Click **Load unpacked** and select `dist/chrome/`
 
-> If the extension is valid, it'll be loaded up and active right away! If it's invalid, an error message will be displayed at the top of the page. Correct the error, and try again.
+**Firefox:**
+- Visit `about:debugging`
+- Click **This Firefox** → **Load Temporary Add-on**
+- Select any file in `dist/firefox/`
 
-Once you've loaded Sprint Reader into Google Chrome you can begin to edit code and add functionality! _Good luck and keep us updated with what you're planning to add / achieve / fix!_
+**Safari:**
+- Use `safari-web-extension-converter` on `dist/safari/`
+
+## <a name="multi-browser-support"></a>Multi-Browser Support
+
+This extension supports all major browsers through a unified build system:
+
+- **Chrome**: Full Manifest V3 support with service worker background scripts
+- **Firefox**: MV3 compatible with Gecko-specific optimizations
+- **Safari**: Ready for conversion to native Safari extension
+
+Each browser target produces an optimized distribution in `dist/<browser>/`.
 
 ## <a name="automated-testing"></a>Automated Testing
 
@@ -74,11 +96,22 @@ npx playwright install chromium
 npm test
 ```
 
-The keyboard shortcut scenario seeds the background selection state before invoking the same helper used by the shortcut listener. Chrome blocks automation from firing global extension shortcuts directly, but the test still exercises the reader flow end to end.
+Tests exercise the complete reader flow including background worker APIs, reader window lifecycle, and RSVP playback behavior.
+
+## <a name="useful-resources"></a>Useful Resources
+
+- [Chrome Extensions Official Site](https://developer.chrome.com/extensions)
+- [Firefox WebExtensions](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions)
+- [Safari Web Extensions](https://developer.apple.com/documentation/safariservices/safari_web_extensions)
+- [WebExtensions API](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API)
 
 ## <a name="developers-guide"></a>Developers Guide
 
-See the [Wiki](https://github.com/anthonynosek/sprint-reader-chrome/wiki) for full documentation, operational details and other information. You should also consult the [CONTRIBUTING.md](https://github.com/anthonynosek/sprint-reader-chrome/blob/master/CONTRIBUTING.md) file located at the root of the Sprint Reader project.
+See `docs/architecture.md` for detailed technical documentation covering:
+- Extension architecture and execution contexts
+- Build system and browser targeting
+- Message passing and state management
+- Testing strategy
 
 ## <a name="license"></a>License
 

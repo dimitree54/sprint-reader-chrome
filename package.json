@@ -1,7 +1,7 @@
 {
-  "name": "sprint-reader-chrome",
+  "name": "10x-reading-speed",
   "version": "1.0.0",
-  "description": "Automation tooling and tests for the Sprint Reader browser extension.",
+  "description": "Automation tooling and tests for the 10x your reading speed browser extension.",
   "scripts": {
     "build": "node ./scripts/build-extension.mjs chrome",
     "build:chrome": "node ./scripts/build-extension.mjs chrome",
