@@ -4,7 +4,7 @@ _Last updated: February 2025_
 
 ## 1. High-Level Overview
 
-Sprint Reader is a cross-browser WebExtension that delivers a Rapid Serial Visual Presentation (RSVP) reading experience. The codebase is structured around four execution contexts that share a modular TypeScript core:
+Sprint Reader is a cross-browser WebExtension that delivers a Rapid Serial Visual Presentation (RSVP) reading experience using an advanced word frequency and entropy-based timing algorithm. The codebase is structured around four execution contexts that share a modular TypeScript core:
 
 ```mermaid
 graph TD
@@ -88,6 +88,7 @@ scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 
 * Fetches the latest stored selection and preferences and renders them into `static/pages/reader.html`.
 * Provides play/pause, restart, and speed adjustment controls with real-time progress feedback.
+* Implements the advanced RSVP reading algorithm with adaptive timing and optimal letter positioning (see `docs/reading_algorithm.md`).
 * Keeps playback state in a dedicated module-level state object so that UI rendering and timers remain predictable.
 * Listens for the `refreshReader` runtime message to reload content when the background window requests a refresh (e.g., reopening the reader while it is already focused).
 
