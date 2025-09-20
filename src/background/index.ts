@@ -205,7 +205,8 @@ async function handleMessage(rawMessage: RuntimeMessage, _sender: unknown, sendR
           return true;
         }
 
-        await openReaderWindowSetup(true, providedText, true, false);
+        // Do not persist manual popup input.
+        await openReaderWindowSetup(false, providedText, true, false);
         return true;
       }
     case 'getMenuEntryText':
