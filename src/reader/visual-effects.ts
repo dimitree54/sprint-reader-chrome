@@ -13,7 +13,7 @@ export type VisualSettings = {
 };
 
 export function wrapLettersInSpans (text: string): string {
-  const escape = (value: string) =>
+  const escapeHtml = (value: string) =>
     value
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -22,7 +22,7 @@ export function wrapLettersInSpans (text: string): string {
       .replace(/'/g, '&#39;')
 
   return [...text]
-    .map((char, index) => `<span class="char${index + 1}">${escape(char)}</span>`)
+    .map((char, index) => `<span class="char${index + 1}">${escapeHtml(char)}</span>`)
     .join('')
 }
 
@@ -30,6 +30,7 @@ export function highlightOptimalLetter (wordElement: HTMLElement, wordItem: Word
   if (!settings.highlightOptimalLetter) return
 
   const letterPosition = wordItem.optimalLetterPosition
+  if (letterPosition < 1) return
   const charElement = wordElement.querySelector(`.char${letterPosition}`) as HTMLElement
   if (charElement) {
     charElement.style.color = settings.highlightOptimalLetterColor
@@ -42,7 +43,10 @@ export function calculateOptimalLetterCenterPosition (wordElement: HTMLElement, 
 
   // Find the span element for the optimal letter
   const optimalLetterSpan = wordElement.querySelector(`.char${optimalPosition}`) as HTMLElement
-  if (!optimalLetterSpan) return 0
+  if (!optimalLetterSpan) {
+    const wordRect = wordElement.getBoundingClientRect()
+    return wordRect.left + wordRect.width / 2
+  }
 
   // Get the current center position of the optimal letter relative to the viewport
   const letterRect = optimalLetterSpan.getBoundingClientRect()
@@ -130,6 +134,7 @@ export function setOptimalWordPositioning (wordElement: HTMLElement, wordItem: W
 
   // Get the current position of the optimal letter center
   const currentLetterCenterX = calculateOptimalLetterCenterPosition(wordElement, wordItem)
+  if (currentLetterCenterX === 0) return
 
   // Calculate how much to move to center the optimal letter
   const viewportCenterX = window.innerWidth / 2

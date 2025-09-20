@@ -280,19 +280,17 @@ browser.commands.onCommand.addListener(async (command: string) => {
     return
   }
 
-  browser.tabs.query({ active: true, currentWindow: true }, (tabs: chrome.tabs.Tab[]) => {
-    const tabId = tabs[0]?.id
-    if (!tabId) return
+  const tabs = await browser.tabs.query({ active: true, currentWindow: true })
+  const tabId = tabs[0]?.id
+  if (!tabId) return
 
-    browser.tabs.sendMessage(
-      tabId,
-      { target: 'content', type: 'getMouseCoordinates' },
-      async (response: any) => {
-        const coords = response ?? { x: 0, y: 0 }
-        browser.tabs.sendMessage(tabId, { target: 'content', type: 'showSelectionHint', x: coords.x, y: coords.y })
-      }
-    )
-  })
+  try {
+    const response = await browser.tabs.sendMessage(tabId, { target: 'content', type: 'getMouseCoordinates' })
+    const coords = (response as { x: number, y: number } | undefined) ?? { x: 0, y: 0 }
+    await browser.tabs.sendMessage(tabId, { target: 'content', type: 'showSelectionHint', x: coords.x, y: coords.y })
+  } catch (error) {
+    console.error('Failed to show selection hint', error)
+  }
 })
 
 browser.runtime.onInstalled.addListener((details: chrome.runtime.InstalledDetails) => {

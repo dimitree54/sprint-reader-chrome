@@ -32,9 +32,9 @@ export async function getFromStorage<T> (keys: string[]): Promise<Partial<Record
   if ('storage' in browser && 'local' in browser.storage && 'get' in browser.storage.local) {
     return promisify((resolve, reject) => {
       browser.storage.local.get(keys, (items: Record<string, T>) => {
-        const error = (browser.runtime as typeof browser.runtime & { lastError?: Error }).lastError
+        const error = (browser.runtime as typeof browser.runtime & { lastError?: { message?: string } }).lastError
         if (error) {
-          reject(error)
+          reject(new Error(error.message ?? 'Unknown runtime error'))
         } else {
           resolve(items)
         }
@@ -48,9 +48,9 @@ export async function setInStorage (items: Record<string, unknown>): Promise<voi
   if ('storage' in browser && 'local' in browser.storage && 'set' in browser.storage.local) {
     await promisify<void>((resolve, reject) => {
       browser.storage.local.set(items, () => {
-        const error = (browser.runtime as typeof browser.runtime & { lastError?: Error }).lastError
+        const error = (browser.runtime as typeof browser.runtime & { lastError?: { message?: string } }).lastError
         if (error) {
-          reject(error)
+          reject(new Error(error.message ?? 'Unknown runtime error'))
         } else {
           resolve()
         }
