@@ -1,6 +1,15 @@
 import { getBrowser } from '../platform/browser';
 import { readReaderPreferences, readSelection, writeReaderPreferences } from '../common/storage';
 import type { ReaderMessage } from '../common/messages';
+import { preprocessText } from './text-processor';
+import { createChunks, type WordItem, type TimingSettings } from './timing-engine';
+import {
+  wrapLettersInSpans,
+  highlightOptimalLetter,
+  setOptimalWordPositioning,
+  applyFlickerEffect,
+  type VisualSettings
+} from './visual-effects';
 
 const browser = getBrowser();
 
@@ -9,78 +18,6 @@ function decodeHtml(input: string): string {
   element.innerHTML = input;
   return element.value;
 }
-
-function assignOptimalLetterPosition(text: string): number {
-  // Algorithm from the original engine.js
-  const length = text.length;
-  if (length === 1) return 1;
-  if (length >= 1 && length <= 4) return 2;
-  if (length >= 5 && length <= 9) return 3;
-  return 4;
-}
-
-function createWordItem(text: string): WordItem {
-  return {
-    text,
-    optimalLetterPosition: assignOptimalLetterPosition(text),
-  };
-}
-
-function wrapLettersInSpans(text: string): string {
-  return text
-    .split('')
-    .map((char, index) => `<span class="char${index + 1}">${char}</span>`)
-    .join('');
-}
-
-function highlightOptimalLetter(wordElement: HTMLElement, wordItem: WordItem) {
-  if (!state.highlightOptimalLetter) return;
-
-  const letterPosition = wordItem.optimalLetterPosition;
-  const charElement = wordElement.querySelector(`.char${letterPosition}`) as HTMLElement;
-  if (charElement) {
-    charElement.style.color = state.highlightOptimalLetterColor;
-  }
-}
-
-function calculateOptimalLetterCenterPosition(wordItem: WordItem): number {
-  const wordElement = document.getElementById('word');
-  if (!wordElement) return 0;
-
-  // Get the optimal letter position (1-based index)
-  const optimalPosition = wordItem.optimalLetterPosition;
-
-  // Find the span element for the optimal letter
-  const optimalLetterSpan = wordElement.querySelector(`.char${optimalPosition}`) as HTMLElement;
-  if (!optimalLetterSpan) return 0;
-
-  // Get the current center position of the optimal letter relative to the viewport
-  const letterRect = optimalLetterSpan.getBoundingClientRect();
-  const letterCenterX = letterRect.left + letterRect.width / 2;
-
-  return letterCenterX;
-}
-
-function setOptimalWordPositioning(wordElement: HTMLElement, wordItem: WordItem) {
-  // Reset any previous transforms (keep the translateY(-50%) from CSS)
-  wordElement.style.transform = 'translateY(-50%)';
-
-  // Get the current position of the optimal letter center
-  const currentLetterCenterX = calculateOptimalLetterCenterPosition(wordItem);
-
-  // Calculate how much to move to center the optimal letter
-  const viewportCenterX = window.innerWidth / 2;
-  const translateX = viewportCenterX - currentLetterCenterX;
-
-  // Apply the transform to center the optimal letter (combine with vertical centering)
-  wordElement.style.transform = `translateY(-50%) translateX(${translateX}px)`;
-}
-
-type WordItem = {
-  text: string;
-  optimalLetterPosition: number;
-  pixelOffsetToOptimalLetter?: number;
-};
 
 type ReaderState = {
   words: string[];
@@ -92,6 +29,12 @@ type ReaderState = {
   persistSelection: boolean;
   highlightOptimalLetter: boolean;
   highlightOptimalLetterColor: string;
+  pauseAfterComma: boolean;
+  pauseAfterPeriod: boolean;
+  pauseAfterParagraph: boolean;
+  chunkSize: number;
+  wordFlicker: boolean;
+  wordFlickerPercent: number;
 };
 
 const state: ReaderState = {
@@ -104,7 +47,32 @@ const state: ReaderState = {
   persistSelection: true,
   highlightOptimalLetter: true,
   highlightOptimalLetterColor: '#FF8C00',
+  pauseAfterComma: true,
+  pauseAfterPeriod: true,
+  pauseAfterParagraph: true,
+  chunkSize: 1,
+  wordFlicker: false,
+  wordFlickerPercent: 10,
 };
+
+function getTimingSettings(): TimingSettings {
+  return {
+    wordsPerMinute: state.wordsPerMinute,
+    pauseAfterComma: state.pauseAfterComma,
+    pauseAfterPeriod: state.pauseAfterPeriod,
+    pauseAfterParagraph: state.pauseAfterParagraph,
+    chunkSize: state.chunkSize,
+  };
+}
+
+function getVisualSettings(): VisualSettings {
+  return {
+    highlightOptimalLetter: state.highlightOptimalLetter,
+    highlightOptimalLetterColor: state.highlightOptimalLetterColor,
+    wordFlicker: state.wordFlicker,
+    wordFlickerPercent: state.wordFlickerPercent,
+  };
+}
 
 function renderWord() {
   const wordElement = document.getElementById('word');
@@ -120,21 +88,30 @@ function renderWord() {
     const wrappedText = wrapLettersInSpans(currentWordItem.text);
     wordElement.innerHTML = wrappedText;
 
+    const visualSettings = getVisualSettings();
+
     // Apply optimal letter highlighting
-    highlightOptimalLetter(wordElement, currentWordItem);
+    highlightOptimalLetter(wordElement, currentWordItem, visualSettings);
 
     // Apply optimal word positioning after a brief delay to ensure rendering is complete
     requestAnimationFrame(() => {
       setOptimalWordPositioning(wordElement, currentWordItem);
     });
+
+    // Apply word flicker effect if enabled
+    if (state.playing) {
+      applyFlickerEffect(wordElement, currentWordItem, visualSettings);
+    }
   } else {
     wordElement.textContent = '';
   }
 
   statusElement.textContent = state.playing ? 'Playing' : 'Paused';
-  if (state.words.length > 0) {
-    const percent = Math.min(100, Math.round(((state.index + 1) / state.words.length) * 100));
-    progressElement.textContent = `${percent}% • ${state.index + 1} / ${state.words.length}`;
+  if (state.wordItems.length > 0) {
+    const shown = Math.min(state.index + 1, state.wordItems.length);
+    const total = state.wordItems.length;
+    const percent = Math.min(100, Math.round((shown / total) * 100));
+    progressElement.textContent = `${percent}% • ${shown} / ${total}`;
   } else {
     progressElement.textContent = '';
   }
@@ -146,6 +123,11 @@ function renderWord() {
 }
 
 function calculateDelay(): number {
+  const currentWordItem = state.wordItems[state.index];
+  if (currentWordItem) {
+    const delay = (currentWordItem.duration ?? 0) + (currentWordItem.postdelay ?? 0);
+    return Math.max(delay, 20);
+  }
   return Math.max(60_000 / Math.max(100, state.wordsPerMinute), 20);
 }
 
@@ -154,23 +136,23 @@ function scheduleNextWord() {
     return;
   }
 
-  if (state.index >= state.words.length - 1) {
+  if (state.index >= state.wordItems.length - 1) {
     state.playing = false;
     renderWord();
     return;
   }
 
-  state.index += 1;
-  renderWord();
+  state.index++;
   state.timerId = setTimeout(scheduleNextWord, calculateDelay());
+  renderWord();
 }
 
 function stopPlayback() {
+  state.playing = false;
   if (state.timerId) {
     clearTimeout(state.timerId);
     state.timerId = undefined;
   }
-  state.playing = false;
 }
 
 function startPlayback() {
@@ -182,7 +164,13 @@ function startPlayback() {
 
 function setWords(words: string[]) {
   state.words = words;
-  state.wordItems = words.map(createWordItem);
+
+  // Use advanced preprocessing and chunking
+  const rawText = words.join(' ');
+  const preprocessedWords = preprocessText(rawText);
+  const timingSettings = getTimingSettings();
+  state.wordItems = createChunks(preprocessedWords, timingSettings);
+
   state.index = 0;
   renderWord();
 }
@@ -192,6 +180,12 @@ async function loadSelection() {
   const prefs = await readReaderPreferences();
   state.wordsPerMinute = prefs.wordsPerMinute;
   state.persistSelection = prefs.persistSelection;
+  state.pauseAfterComma = prefs.pauseAfterComma;
+  state.pauseAfterPeriod = prefs.pauseAfterPeriod;
+  state.pauseAfterParagraph = prefs.pauseAfterParagraph;
+  state.chunkSize = prefs.chunkSize;
+  state.wordFlicker = prefs.wordFlicker;
+  state.wordFlickerPercent = prefs.wordFlickerPercent;
 
   const slider = document.getElementById('sliderWpm') as HTMLInputElement | null;
   const wpmValue = document.getElementById('wpmValue');
@@ -205,34 +199,29 @@ async function loadSelection() {
   const rawText = selection?.text ? decodeHtml(selection.text) : '';
   const normalised = rawText.replace(/\s+/g, ' ').trim();
   const words = normalised.length > 0 ? normalised.split(' ') : [];
+
   setWords(words);
-  state.playing = false;
-  renderWord();
 }
 
 function registerControls() {
   const playButton = document.getElementById('btnPlay');
-  const restartButton = document.getElementById('btnRestart');
-  const slider = document.getElementById('sliderWpm') as HTMLInputElement | null;
-
   playButton?.addEventListener('click', () => {
-    if (state.words.length === 0) {
-      return;
-    }
     if (state.playing) {
       stopPlayback();
     } else {
       startPlayback();
     }
+    renderWord();
   });
 
+  const restartButton = document.getElementById('btnRestart');
   restartButton?.addEventListener('click', () => {
+    stopPlayback();
     state.index = 0;
-    if (!state.playing) {
-      renderWord();
-    }
+    renderWord();
   });
 
+  const slider = document.getElementById('sliderWpm') as HTMLInputElement | null;
   slider?.addEventListener('input', () => {
     const value = Number.parseInt(slider.value, 10) || 400;
     state.wordsPerMinute = value;
@@ -243,8 +232,23 @@ function registerControls() {
       wpmValue.textContent = String(value);
     }
 
+    // Recalculate timing for all words with new WPM
+    const rawText = state.words.join(' ');
+    const preprocessedWords = preprocessText(rawText);
+    const timingSettings = getTimingSettings();
+    state.wordItems = createChunks(preprocessedWords, timingSettings);
+
     renderWord();
-    void writeReaderPreferences({ wordsPerMinute: value, persistSelection: state.persistSelection });
+    void writeReaderPreferences({
+      wordsPerMinute: value,
+      persistSelection: state.persistSelection,
+      pauseAfterComma: state.pauseAfterComma,
+      pauseAfterPeriod: state.pauseAfterPeriod,
+      pauseAfterParagraph: state.pauseAfterParagraph,
+      chunkSize: state.chunkSize,
+      wordFlicker: state.wordFlicker,
+      wordFlickerPercent: state.wordFlickerPercent,
+    });
   });
 }
 
@@ -254,11 +258,14 @@ function registerMessageListener() {
     if (message.target !== 'reader') {
       return undefined;
     }
-    if (message.type === 'refreshReader') {
-      void loadSelection();
-      return true;
+
+    switch (message.type) {
+      case 'refreshReader':
+        void loadSelection();
+        return true;
+      default:
+        return undefined;
     }
-    return undefined;
   });
 }
 
@@ -267,3 +274,8 @@ document.addEventListener('DOMContentLoaded', () => {
   registerControls();
   registerMessageListener();
 });
+
+// Expose state for testing
+if (typeof globalThis !== 'undefined') {
+  (globalThis as any).state = state;
+}

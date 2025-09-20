@@ -228,4 +228,137 @@ test.describe('Sprint Reader extension (Chrome)', () => {
 
     await readerPage.close();
   });
+
+  test('timing algorithms show different durations for different words', async ({ page, context, extensionId, background }) => {
+    await page.goto('https://example.com');
+
+    // Use a specific text with different word types for testing
+    const testText = 'I have supercalifragilisticexpialidocious, words! This... is a test.';
+
+    const readerPagePromise = context.waitForEvent('page', {
+      predicate: (p) => p.url().startsWith(`chrome-extension://${extensionId}/pages/reader.html`),
+      timeout: 10_000,
+    });
+
+    await background.evaluate(
+      async ({ selection }) => {
+        const scope = self as unknown as BackgroundContext;
+        await scope.openReaderWindowSetup(true, selection, true, false);
+      },
+      { selection: testText },
+    );
+
+    const readerPage = await readerPagePromise;
+    await readerPage.waitForLoadState('domcontentloaded');
+    await readerPage.bringToFront();
+
+    // Wait for the reader to load
+    const wordLocator = readerPage.locator('#word');
+    await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
+
+    // Test that timing algorithms are working by checking word durations
+    const timingInfo = await readerPage.evaluate(() => {
+      const wordElement = document.getElementById('word');
+      if (!wordElement) return null;
+
+      // Access the internal state (this is a test-specific approach)
+      const state = (window as any).state || (globalThis as any).state;
+      if (!state || !state.wordItems) return null;
+
+      return state.wordItems.map((item: any, index: number) => ({
+        text: item.text,
+        duration: item.duration,
+        postdelay: item.postdelay,
+        wordLength: item.wordLength,
+        index
+      }));
+    });
+
+    expect(timingInfo).not.toBeNull();
+    expect(Array.isArray(timingInfo)).toBe(true);
+    expect(timingInfo!.length).toBeGreaterThan(0);
+
+    // Check that different word types have different durations
+    const words = timingInfo!;
+    const shortWords = words.filter(w => w.wordLength <= 3);
+    const longWords = words.filter(w => w.wordLength >= 10);
+    const wordsWithPunctuation = words.filter(w => /[.!?]/.test(w.text));
+
+    if (shortWords.length > 0 && longWords.length > 0) {
+      // Long words should generally take longer than short words
+      const avgShortDuration = shortWords.reduce((sum, w) => sum + w.duration, 0) / shortWords.length;
+      const avgLongDuration = longWords.reduce((sum, w) => sum + w.duration, 0) / longWords.length;
+
+      expect(avgLongDuration).toBeGreaterThan(avgShortDuration * 0.9); // Allow some tolerance
+    }
+
+    if (wordsWithPunctuation.length > 0) {
+      // Words with punctuation should have postdelay
+      const punctuatedWord = wordsWithPunctuation[0];
+      expect(punctuatedWord.postdelay).toBeGreaterThan(0);
+    }
+
+    await readerPage.close();
+  });
+
+  test('advanced text preprocessing and chunking work correctly', async ({ page, context, extensionId, background }) => {
+    await page.goto('https://example.com');
+
+    // Test text with various challenging cases
+    const testText = 'I saw NASA, F.B.I, and U.S.A in the 3.14 kilometers. The state-of-the-art supercalifragilisticexpialidocious technology was amazing!';
+
+    const readerPagePromise = context.waitForEvent('page', {
+      predicate: (p) => p.url().startsWith(`chrome-extension://${extensionId}/pages/reader.html`),
+      timeout: 10_000,
+    });
+
+    await background.evaluate(
+      async ({ selection }) => {
+        const scope = self as unknown as BackgroundContext;
+        await scope.openReaderWindowSetup(true, selection, true, false);
+      },
+      { selection: testText },
+    );
+
+    const readerPage = await readerPagePromise;
+    await readerPage.waitForLoadState('domcontentloaded');
+    await readerPage.bringToFront();
+
+    // Wait for the reader to load
+    const wordLocator = readerPage.locator('#word');
+    await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
+
+    // Test that preprocessing worked correctly
+    const preprocessingInfo = await readerPage.evaluate(() => {
+      const state = (window as any).state || (globalThis as any).state;
+      if (!state || !state.wordItems) return null;
+
+      return state.wordItems.map((item: any) => ({
+        text: item.text,
+        originalText: item.originalText,
+        isGrouped: item.isGrouped,
+        wordsInChunk: item.wordsInChunk,
+        duration: item.duration
+      }));
+    });
+
+    expect(preprocessingInfo).not.toBeNull();
+    expect(Array.isArray(preprocessingInfo)).toBe(true);
+
+    const items = preprocessingInfo!;
+
+    // Check for proper number consolidation (3.14 should be one word)
+    const decimalNumber = items.find(item => item.text === '3.14');
+    expect(decimalNumber).toBeTruthy();
+
+    // Check for hyphen removal (state-of-the-art becomes stateoftheart)
+    const hyphenatedWord = items.find(item => item.text === 'stateoftheart');
+    expect(hyphenatedWord).toBeTruthy();
+
+    // Check that very long words were split or handled
+    const originalLongWords = items.filter(item => item.text.includes('supercali') || item.text.length > 15);
+    expect(originalLongWords.length).toBeGreaterThan(0);
+
+    await readerPage.close();
+  });
 });

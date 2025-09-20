@@ -44,7 +44,11 @@ src/
   content/         → Text selection capture and UX hints for web pages.
   platform/        → Thin abstraction that resolves the `chrome`/`browser` runtime.
   popup/           → Action popup with quick-start controls.
-  reader/          → RSVP player UI and playback logic.
+  reader/          → RSVP player UI and playback logic (modular architecture):
+    index.ts       → Main reader controller and UI event handling.
+    timing-engine.ts → Word frequency analysis, timing calculations, chunking.
+    text-processor.ts → Advanced text preprocessing (hyphen, acronym, number handling).
+    visual-effects.ts → Letter highlighting, positioning, flicker effects.
 static/
   assets/          → Icons and imagery shared across contexts.
   pages/           → HTML documents for popup, reader, welcome, updated pages.
@@ -75,8 +79,8 @@ scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 
 * Observes `selectionchange`, keyboard, and mouse events to extract the active selection.
 * Detects right-to-left languages with a Unicode range heuristic and forwards the normalised state to the background worker.
-* Renders an unobtrusive hint bubble (`.sprint-reader__selection-hint`) that anchors near the cursor, encouraging users to trigger the shortcut.
 * Responds to background requests for mouse coordinates when the keyboard shortcut executes without a cached selection.
+* Streamlined implementation focused purely on text selection capture without UI hints.
 
 ### 3.3 Popup (`src/popup/index.ts`)
 
@@ -84,12 +88,36 @@ scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 * Sends a single `openReaderFromPopup` message that the background worker interprets, either replaying the last saved text or opening with explicit input.
 * Persists preference mutations immediately to keep the background worker and reader in sync.
 
-### 3.4 Reader UI (`src/reader/index.ts`)
+### 3.4 Reader UI (Modular Architecture)
 
+The reader implementation follows a modular architecture with clear separation of concerns:
+
+#### 3.4.1 Main Controller (`src/reader/index.ts`)
 * Fetches the latest stored selection and preferences and renders them into `static/pages/reader.html`.
 * Provides play/pause, restart, and speed adjustment controls with real-time progress feedback.
-* Keeps playback state in a dedicated module-level state object so that UI rendering and timers remain predictable.
-* Listens for the `refreshReader` runtime message to reload content when the background window requests a refresh (e.g., reopening the reader while it is already focused).
+* Coordinates between timing engine, text processor, and visual effects modules.
+* Keeps playback state in a dedicated module-level state object for predictable UI rendering and timers.
+* Listens for the `refreshReader` runtime message to reload content when the background window requests a refresh.
+
+#### 3.4.2 Timing Engine (`src/reader/timing-engine.ts`)
+* Implements the advanced word frequency and Shannon entropy-based timing algorithm.
+* Contains a database of common English word frequencies for adaptive timing calculations.
+* Handles chunking logic for grouping short words (≤3 characters) for improved reading flow.
+* Calculates punctuation-based pauses (×1.5 for commas, ×2.0 for periods, ×3.5 for paragraphs).
+* Manages optimal letter positioning calculations based on word length.
+
+#### 3.4.3 Text Processor (`src/reader/text-processor.ts`)
+* Advanced text preprocessing for optimal RSVP reading experience.
+* Handles hyphenated word consolidation for better reading flow.
+* Consolidates acronyms (e.g., "U S A" → "USA") for improved comprehension.
+* Preserves numbers with decimals and commas (e.g., "3.14", "1,000").
+* Splits very long words (>17 characters) at optimal break points.
+
+#### 3.4.4 Visual Effects (`src/reader/visual-effects.ts`)
+* Implements pixel-perfect optimal letter highlighting and positioning.
+* Handles word flicker effects for improved concentration.
+* Manages CSS transforms for precise letter centering in the viewport.
+* Wraps individual letters in spans for granular styling control.
 
 ## 4. Cross-Cutting Modules
 
@@ -124,8 +152,15 @@ Each command prepares a fully self-contained directory that can be zipped for st
 ## 7. Testing Strategy
 
 * Playwright tests are executed against the built Chrome bundle (`dist/chrome`). The `npm test` script automatically runs the build before launching the browser.
-* Tests exercise the background worker APIs directly (`openReaderWindowSetup`), wait for the reader window, and verify playback behaviour by asserting that words progress after toggling play.
-* The modular architecture keeps shared utilities isolated, which will ease future unit-test coverage; modules under `src/common` and `src/platform` can be imported directly by Jest/Vitest in future work.
+* Tests exercise the background worker APIs directly (`openReaderWindowSetup`), wait for the reader window, and verify playbook behaviour by asserting that words progress after toggling play.
+* Comprehensive coverage includes:
+  * Reader window opening and basic playback functionality
+  * Optimal letter highlighting and pixel-perfect centering verification
+  * Advanced timing algorithm validation with word frequency differences
+  * Text preprocessing capabilities (hyphen removal, acronym consolidation, number preservation)
+  * Chunking logic for short word grouping
+* The modular reader architecture (`timing-engine.ts`, `text-processor.ts`, `visual-effects.ts`) enables isolated unit testing of individual algorithms.
+* Future unit-test coverage can directly import modules under `src/common`, `src/platform`, and `src/reader` for Jest/Vitest testing.
 
 ## 8. Future Evolution
 
