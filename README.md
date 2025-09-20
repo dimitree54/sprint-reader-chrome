@@ -30,6 +30,7 @@ Key features of Sprint Reader:
 * [Team Members](#team-members)
 * [Sprint Reader on Social Media](#social)
 * [Getting Started](#getting-started)
+* [Automated Testing](#automated-testing)
 * [Useful Resources](#useful-resources)
 * [Developers Guide (Wiki)](#developers-guide)
 * [License](#license)
@@ -62,6 +63,18 @@ From the official [Google Chrome](https://developer.chrome.com/extensions/getsta
 > If the extension is valid, it'll be loaded up and active right away! If it's invalid, an error message will be displayed at the top of the page. Correct the error, and try again.
 
 Once you've loaded Sprint Reader into Google Chrome you can begin to edit code and add functionality! _Good luck and keep us updated with what you're planning to add / achieve / fix!_
+
+## <a name="automated-testing"></a>Automated Testing
+
+End-to-end regression tests run on Chromium via [Playwright](https://playwright.dev/).
+
+```bash
+npm install
+npx playwright install chromium
+npm test
+```
+
+The keyboard shortcut scenario seeds the background selection state before invoking the same helper used by the shortcut listener. Chrome blocks automation from firing global extension shortcuts directly, but the test still exercises the reader flow end to end.
 
 ## <a name="developers-guide"></a>Developers Guide
 

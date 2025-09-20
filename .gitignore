@@ -226,3 +226,11 @@ dist-firefox/
 
 dist-safari/
 SafariBuild/
+
+#############
+## Node / Playwright
+#############
+
+node_modules/
+playwright-report/
+test-results/

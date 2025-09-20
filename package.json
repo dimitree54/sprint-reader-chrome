@@ -1,0 +1,16 @@
+{
+  "name": "sprint-reader-chrome",
+  "version": "1.0.0",
+  "description": "Automation tooling and tests for the Sprint Reader browser extension.",
+  "scripts": {
+    "test": "playwright test",
+    "test:debug": "PWDEBUG=1 playwright test",
+    "test:ui": "playwright test --ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^24.5.2",
+    "typescript": "^5.9.2",
+    "yazl": "^3.3.1"
+  }
+}
