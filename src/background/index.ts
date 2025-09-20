@@ -222,7 +222,6 @@ async function handleMessage(rawMessage: RuntimeMessage, _sender: unknown, sendR
     case 'getMenuEntryText':
       sendResponse({ menuEntryText: CONTEXT_MENU_TITLE });
       return true;
-    }
     default:
       return undefined;
   }
