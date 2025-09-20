@@ -82,8 +82,8 @@ export async function readReaderPreferences (): Promise<ReaderPreferences> {
     pauseAfterComma: result[STORAGE_KEYS.readerPrefs]?.pauseAfterComma ?? true,
     pauseAfterPeriod: result[STORAGE_KEYS.readerPrefs]?.pauseAfterPeriod ?? true,
     pauseAfterParagraph: result[STORAGE_KEYS.readerPrefs]?.pauseAfterParagraph ?? true,
-    chunkSize: result[STORAGE_KEYS.readerPrefs]?.chunkSize ?? 1,
-    wordFlicker: result[STORAGE_KEYS.readerPrefs]?.wordFlicker ?? false,
+    chunkSize: result[STORAGE_KEYS.readerPrefs]?.chunkSize ?? 3,
+    wordFlicker: result[STORAGE_KEYS.readerPrefs]?.wordFlicker ?? true,
     wordFlickerPercent: result[STORAGE_KEYS.readerPrefs]?.wordFlickerPercent ?? 10,
     theme: result[STORAGE_KEYS.readerPrefs]?.theme ?? 'dark'
   }

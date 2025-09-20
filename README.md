@@ -29,6 +29,7 @@ Our AI preprocessing optimizes text before presentation, allowing you to absorb 
 > Optional grammar delays
 > **Multi-browser support** (Chrome, Firefox, Safari)
 > **AI-powered text preprocessing** for enhanced comprehension
+> Keyboard shortcut helper that nudges you to select text when none is highlighted
 
 ## Table of Contents
 

@@ -3,6 +3,7 @@
  * Handles letter highlighting, word positioning, and flicker effects
  */
 
+import { escapeHtml } from '../common/html'
 import type { WordItem } from './timing-engine'
 
 export type VisualSettings = {
@@ -13,14 +14,6 @@ export type VisualSettings = {
 };
 
 export function wrapLettersInSpans (text: string): string {
-  const escapeHtml = (value: string) =>
-    value
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;')
-
   return [...text]
     .map((char, index) => `<span class="char${index + 1}">${escapeHtml(char)}</span>`)
     .join('')

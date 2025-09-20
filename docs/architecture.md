@@ -1,6 +1,6 @@
 # 10x your reading speed - Extension Architecture
 
-_Last updated: February 2025_
+_Last updated: September 2025_
 
 ## 1. High-Level Overview
 
@@ -39,16 +39,31 @@ All entry points are authored as ES modules that import from shared packages ins
 
 ```
 src/
-  background/      → Service worker orchestration, context menus, command handling.
-  common/          → Cross-context utilities (storage, message contracts).
+  background/      → Modular MV3 service worker composed of:
+    index.ts           → Bootstraps state priming, listeners, and testing hooks.
+    state.ts           → Caches the latest selection, reader window id, and preferences.
+    selection.ts       → HTML encode/decode helpers plus storage synchronisation.
+    preferences.ts     → Reader preference caching and persistence.
+    reader-window.ts   → Reader window lifecycle (focus/create + setup).
+    message-handler.ts → Runtime message router that coordinates selection + preferences.
+    listeners.ts       → Commands, context menus, install, and message wiring.
+    testing-hooks.ts   → Exposes global Playwright helpers.
+  common/          → Cross-context utilities (storage, message contracts, HTML + theme helpers).
   content/         → Text selection capture and UX hints for web pages.
-  platform/        → Thin abstraction that resolves the `chrome`/`browser` runtime.
+  platform/        → Runtime resolver split into `browser.ts`, `types.ts`, `wrap-chrome.ts`.
   popup/           → Action popup with quick-start controls.
-  reader/          → RSVP player UI and playback logic (modular architecture):
-    index.ts       → Main reader controller and UI event handling.
-    timing-engine.ts → Word frequency analysis, timing calculations, chunking.
-    text-processor.ts → Advanced text preprocessing (acronym, number handling).
-    visual-effects.ts → Letter highlighting, positioning, flicker effects.
+  reader/          → RSVP player UI assembled from focused modules:
+    index.ts            → Entrypoint that wires selection loading, controls, messaging.
+    state.ts            → Central playback state container + shared helpers.
+    selection-loader.ts → Loads stored selection/preferences and syncs UI controls.
+    controls.ts         → DOM event bindings (playback, WPM slider, theme toggle, resize).
+    playback.ts         → Timer management and playback progression.
+    render.ts           → Word rendering, progress display, play/pause visuals.
+    text.ts             → Word preprocessing glue and chunk/font recalculation.
+    timing/             → Split timing engine (`types.ts`, `word-analysis.ts`, `durations.ts`, `chunking.ts`).
+    timing-engine.ts    → Barrel file exporting the timing helpers above.
+    text-processor.ts   → Advanced text preprocessing (acronyms, numbers, hyphenation).
+    visual-effects.ts   → Letter highlighting, positioning, flicker effects.
 static/
   assets/          → Icons and imagery shared across contexts.
   pages/           → HTML documents for popup, reader, welcome, updated pages.
@@ -69,6 +84,7 @@ scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
   * Owns the reader window lifecycle (`openReaderWindowSetup`) and exposes the function on `globalThis` for Playwright automation and integration tests.
   * Generates context-menu commands and keyboard shortcuts that route back into the shared open-reader workflow.
   * Normalises install/update flows by opening the welcome/updated pages from `static/pages`.
+  * Delegates responsibilities to focused modules: `state.ts` (cached selection + prefs), `selection.ts` (storage sync), `reader-window.ts` (window lifecycle), `message-handler.ts` (runtime messages), and `listeners.ts` (events + commands).
 
 * Key collaborators
   * `BrowserAPI` shim to use `chrome.*` or `browser.*` without scattering feature detection.
@@ -79,7 +95,7 @@ scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 * Observes `selectionchange`, keyboard, and mouse events to extract the active selection.
 * Detects right-to-left languages with a Unicode range heuristic and forwards the normalised state to the background worker.
 * Responds to background requests for mouse coordinates when the keyboard shortcut executes without a cached selection.
-* Streamlined implementation focused purely on text selection capture without UI hints.
+* Displays a transient tooltip near the cursor when the shortcut fires without a selection, guiding users to highlight text before retrying.
 
 ### 3.3 Popup (`src/popup/index.ts`)
 
@@ -91,28 +107,32 @@ scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 
 The reader implementation follows a modular architecture with clear separation of concerns:
 
-#### 3.4.1 Main Controller (`src/reader/index.ts`)
-* Fetches the latest stored selection and preferences and renders them into `static/pages/reader.html`.
-* Provides play/pause, restart, and speed adjustment controls with real-time progress feedback.
-* Coordinates between timing engine, text processor, and visual effects modules.
-* Keeps playback state in a dedicated module-level state object for predictable UI rendering and timers.
-* Listens for the `refreshReader` runtime message to reload content when the background window requests a refresh.
+#### 3.4.1 Bootstrap & Messaging (`src/reader/index.ts`, `selection-loader.ts`, `messages.ts`)
+* `index.ts` attaches a DOM-ready hook, then triggers selection loading, control registration, and runtime listener wiring.
+* `selection-loader.ts` fetches stored preferences/selection, normalises HTML, rebuilds timing chunks, and synchronises slider/theme UI.
+* `messages.ts` listens for `refreshReader` runtime events and reuses the loader to refresh the view on demand.
 
-#### 3.4.2 Timing Engine (`src/reader/timing-engine.ts`)
-* Implements the advanced word frequency and Shannon entropy-based timing algorithm.
-* Contains a database of common English word frequencies for adaptive timing calculations.
-* Handles chunking logic for grouping short words (≤3 characters) for improved reading flow.
-* Calculates punctuation-based pauses (×1.5 for commas, ×2.0 for periods, ×3.5 for paragraphs).
-* Manages optimal letter positioning calculations based on word length.
+#### 3.4.2 State & Playback (`src/reader/state.ts`, `playback.ts`, `controls.ts`, `render.ts`, `text.ts`)
+* `state.ts` centralises the reader's playback state and surfaces helpers for timing/visual configuration.
+* `text.ts` bridges preprocessing, chunk generation, and optimal font sizing whenever the active text or WPM changes.
+* `render.ts` updates the DOM with the current word, status, and progress while delegating highlighting/flicker to `visual-effects.ts`.
+* `playback.ts` manages timers, scheduling, and play/pause transitions, keeping state mutations predictable.
+* `controls.ts` binds UI events (play/pause/restart, WPM slider, theme toggle, resize) to the playback/state modules and persists preference changes.
 
-#### 3.4.3 Text Processor (`src/reader/text-processor.ts`)
+#### 3.4.3 Timing Engine (`src/reader/timing/…`, `timing-engine.ts`)
+* `timing/word-analysis.ts` stores the word-frequency corpus, entropy calculation, punctuation heuristics, and optimal letter selection.
+* `timing/durations.ts` converts analysis results + preference flags into precise word/punctuation timing.
+* `timing/chunking.ts` produces `WordItem` chunks, grouping short words and applying timing bonuses where appropriate.
+* `timing-engine.ts` re-exports the split modules as a single import surface for the reader UI.
+
+#### 3.4.4 Text Processor (`src/reader/text-processor.ts`)
 * Advanced text preprocessing for optimal RSVP reading experience.
 * Preserves hyphenated words as-is for natural reading flow.
 * Consolidates acronyms (e.g., "U S A" → "USA") for improved comprehension.
 * Preserves numbers with decimals and commas (e.g., "3.14", "1,000").
 * Splits very long words (>17 characters) at optimal break points.
 
-#### 3.4.4 Visual Effects (`src/reader/visual-effects.ts`)
+#### 3.4.5 Visual Effects (`src/reader/visual-effects.ts`)
 * Implements pixel-perfect optimal letter highlighting and positioning.
 * Handles word flicker effects for improved concentration.
 * Manages CSS transforms for precise letter centering in the viewport.
@@ -120,9 +140,11 @@ The reader implementation follows a modular architecture with clear separation o
 
 ## 4. Cross-Cutting Modules
 
-* `platform/browser.ts`: resolves the runtime API once and caches it, collapsing the Chrome/Firefox/Safari divergence into a single entry point.
+* `platform/browser.ts`: resolves the runtime API once, exposes a shared `browser` singleton, and uses wrapper helpers from `platform/types.ts` + `platform/wrap-chrome.ts` to collapse Chrome/Firefox/Safari differences.
 * `common/storage.ts`: wraps the callback-driven storage API with promise helpers, defines canonical keys, and centralises preference/selection persistence.
 * `common/messages.ts`: enumerates every structured message exchanged between contexts, enabling exhaustive checks during refactors.
+* `common/html.ts`: ensures consistent HTML encoding/decoding for stored selections and rendered reader output.
+* `common/theme.ts`: applies theme classes/dataset toggles so the popup and reader stay visually aligned.
 
 ## 5. Build & Packaging Pipeline
 

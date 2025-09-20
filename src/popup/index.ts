@@ -1,11 +1,15 @@
-import { getBrowser } from '../platform/browser'
+import { applyThemeToElement } from '../common/theme'
 import type { BackgroundMessage } from '../common/messages'
 import {
   readReaderPreferences,
   type ReaderTheme
 } from '../common/storage'
+import { browser } from '../platform/browser'
 
-const browser = getBrowser()
+const THEME_OPTIONS = {
+  lightClass: 'popup--light',
+  darkClass: 'popup--dark'
+} as const
 
 type PopupElements = {
   inputText: HTMLInputElement;
@@ -15,21 +19,10 @@ type PopupElements = {
 
 let currentTheme: ReaderTheme = 'dark'
 
-function applyTheme (theme: ReaderTheme) {
-  const body = document.body
-  if (!body) {
-    return
-  }
-
-  body.classList.toggle('popup--light', theme === 'light')
-  body.classList.toggle('popup--dark', theme !== 'light')
-  body.dataset.theme = theme
-}
-
 async function loadPreferences () {
   const prefs = await readReaderPreferences()
   currentTheme = prefs.theme
-  applyTheme(currentTheme)
+  applyThemeToElement(document.body, currentTheme, THEME_OPTIONS)
 }
 
 async function sendOpenReaderMessage (selectionText: string) {

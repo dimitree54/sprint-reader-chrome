@@ -1,0 +1,72 @@
+import { startPlayback, stopPlayback } from './playback'
+import { persistPreferences, syncThemeToggle } from './preferences'
+import { renderCurrentWord } from './render'
+import { state } from './state'
+import { rebuildWordItems, updateOptimalFontSize } from './text'
+
+function updateWpmDisplay (value: number): void {
+  const wpmValue = document.getElementById('wpmValue')
+  if (wpmValue) {
+    wpmValue.textContent = String(value)
+  }
+}
+
+function attachPlaybackControls (): void {
+  const playButton = document.getElementById('btnPlay')
+  playButton?.addEventListener('click', () => {
+    if (state.playing) {
+      stopPlayback()
+    } else {
+      startPlayback()
+    }
+    renderCurrentWord()
+  })
+
+  const restartButton = document.getElementById('btnRestart')
+  restartButton?.addEventListener('click', () => {
+    stopPlayback()
+    state.index = 0
+    renderCurrentWord()
+  })
+}
+
+function attachSpeedControl (): void {
+  const slider = document.getElementById('sliderWpm') as HTMLInputElement | null
+  slider?.addEventListener('input', () => {
+    const value = Number.parseInt(slider.value, 10) || 400
+    state.wordsPerMinute = value
+    updateWpmDisplay(value)
+
+    rebuildWordItems()
+    renderCurrentWord()
+    persistPreferences()
+  })
+}
+
+function attachThemeToggle (): void {
+  const themeToggle = document.getElementById('toggleTheme') as HTMLInputElement | null
+  themeToggle?.addEventListener('change', () => {
+    syncThemeToggle(Boolean(themeToggle.checked))
+    persistPreferences()
+  })
+}
+
+function attachResizeHandler (): void {
+  let resizeTimeout: ReturnType<typeof setTimeout> | undefined
+  window.addEventListener('resize', () => {
+    if (resizeTimeout) {
+      clearTimeout(resizeTimeout)
+    }
+    resizeTimeout = setTimeout(() => {
+      updateOptimalFontSize()
+      renderCurrentWord()
+    }, 150)
+  })
+}
+
+export function registerControls (): void {
+  attachPlaybackControls()
+  attachSpeedControl()
+  attachThemeToggle()
+  attachResizeHandler()
+}
