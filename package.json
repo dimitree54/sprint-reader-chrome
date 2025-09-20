@@ -10,6 +10,8 @@
   "devDependencies": {
     "@playwright/test": "^1.55.0",
     "@types/node": "^24.5.2",
+    "eslint": "^8.57.1",
+    "eslint-config-standard": "^17.1.0",
     "typescript": "^5.9.2",
     "yazl": "^3.3.1"
   }
