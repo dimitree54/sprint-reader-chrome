@@ -106,9 +106,13 @@ export function preprocessText(text: string): string[] {
   // Step 1: Handle hyphenated words
   const dehyphenated = handleHyphenatedWords(text);
 
-  // Step 2: Split into words
-  const normalized = dehyphenated.replace(/\s+/g, ' ').trim();
+  // Step 2: Preserve paragraph breaks, then normalize other whitespace
+  const PARA = '¶¶';
+  const preserved = dehyphenated.replace(/\r?\n\r?\n/g, ` ${PARA} `);
+  const normalized = preserved.replace(/\s+/g, ' ').trim();
   let words = normalized.length > 0 ? normalized.split(' ') : [];
+  // Restore paragraph markers as actual double newlines so downstream can detect
+  words = words.map(w => (w === PARA ? '\n\n' : w));
 
   // Step 3: Consolidate acronyms
   words = consolidateAcronyms(words);
@@ -124,4 +128,5 @@ export function preprocessText(text: string): string[] {
   });
 
   return finalWords;
+}
 }
