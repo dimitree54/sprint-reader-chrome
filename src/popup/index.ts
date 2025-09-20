@@ -1,11 +1,11 @@
-import { getBrowser } from '../platform/browser';
-import type { BackgroundMessage } from '../common/messages';
+import { getBrowser } from '../platform/browser'
+import type { BackgroundMessage } from '../common/messages'
 import {
   readReaderPreferences,
-  type ReaderTheme,
-} from '../common/storage';
+  type ReaderTheme
+} from '../common/storage'
 
-const browser = getBrowser();
+const browser = getBrowser()
 
 type PopupElements = {
   inputText: HTMLInputElement;
@@ -13,89 +13,88 @@ type PopupElements = {
   menuEntryTextSpan: HTMLSpanElement;
 };
 
-let currentTheme: ReaderTheme = 'dark';
+let currentTheme: ReaderTheme = 'dark'
 
-function applyTheme(theme: ReaderTheme) {
-  const body = document.body;
+function applyTheme (theme: ReaderTheme) {
+  const body = document.body
   if (!body) {
-    return;
+    return
   }
 
-  body.classList.toggle('popup--light', theme === 'light');
-  body.classList.toggle('popup--dark', theme !== 'light');
-  body.dataset.theme = theme;
+  body.classList.toggle('popup--light', theme === 'light')
+  body.classList.toggle('popup--dark', theme !== 'light')
+  body.dataset.theme = theme
 }
 
-async function loadPreferences() {
-  const prefs = await readReaderPreferences();
-  currentTheme = prefs.theme;
-  applyTheme(currentTheme);
+async function loadPreferences () {
+  const prefs = await readReaderPreferences()
+  currentTheme = prefs.theme
+  applyTheme(currentTheme)
 }
 
-async function sendOpenReaderMessage(selectionText: string) {
-  const prefs = await readReaderPreferences();
+async function sendOpenReaderMessage (selectionText: string) {
+  const prefs = await readReaderPreferences()
   const message: BackgroundMessage = {
     target: 'background',
     type: 'openReaderFromPopup',
     selectionText,
     wordsPerMinute: prefs.wordsPerMinute,
-    theme: currentTheme,
-  };
+    theme: currentTheme
+  }
 
-  await browser.runtime.sendMessage(message);
+  await browser.runtime.sendMessage(message)
 }
 
-async function loadMenuEntryText(elements: PopupElements) {
+async function loadMenuEntryText (elements: PopupElements) {
   try {
     const response = await browser.runtime.sendMessage({
       target: 'background',
       type: 'getMenuEntryText'
-    });
+    })
     if (response?.menuEntryText) {
-      elements.menuEntryTextSpan.textContent = response.menuEntryText;
+      elements.menuEntryTextSpan.textContent = response.menuEntryText
     }
   } catch (error) {
-    console.warn('Failed to load menu entry text:', error);
+    console.warn('Failed to load menu entry text:', error)
   }
 }
 
-async function registerEvents(elements: PopupElements) {
-  function updateButtonState() {
-    const text = elements.inputText.value.trim();
-    elements.speedReadButton.disabled = text.length === 0;
+async function registerEvents (elements: PopupElements) {
+  function updateButtonState () {
+    const text = elements.inputText.value.trim()
+    elements.speedReadButton.disabled = text.length === 0
   }
 
-  async function triggerReadFromInput() {
-    const text = elements.inputText.value.trim();
+  async function triggerReadFromInput () {
+    const text = elements.inputText.value.trim()
     if (text.length === 0) {
-      return;
+      return
     }
 
-    elements.inputText.value = '';
-    elements.inputText.blur();
-    updateButtonState();
-    await sendOpenReaderMessage(text);
+    elements.inputText.value = ''
+    elements.inputText.blur()
+    updateButtonState()
+    await sendOpenReaderMessage(text)
   }
 
-  elements.inputText.addEventListener('input', updateButtonState);
+  elements.inputText.addEventListener('input', updateButtonState)
 
   elements.speedReadButton.addEventListener('click', () => {
-    void triggerReadFromInput();
-  });
+    triggerReadFromInput().catch(console.error)
+  })
 
   // Initialize button state
-  updateButtonState();
+  updateButtonState()
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
   const elements: PopupElements = {
     inputText: document.getElementById('inputTextToRead') as HTMLInputElement,
     speedReadButton: document.getElementById('speedReadButton') as HTMLButtonElement,
-    menuEntryTextSpan: document.getElementById('menuEntryText') as HTMLSpanElement,
-  };
+    menuEntryTextSpan: document.getElementById('menuEntryText') as HTMLSpanElement
+  }
 
-  await loadPreferences();
-  await loadMenuEntryText(elements);
-  await registerEvents(elements);
-});
-
+  await loadPreferences()
+  await loadMenuEntryText(elements)
+  await registerEvents(elements)
+})

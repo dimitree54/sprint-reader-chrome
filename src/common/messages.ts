@@ -1,4 +1,4 @@
-import type { ReaderTheme } from './storage';
+import type { ReaderTheme } from './storage'
 
 export type BackgroundMessage =
   | {

@@ -1,5 +1,5 @@
-import { getBrowser } from '../platform/browser';
-import type { BackgroundMessage, RuntimeMessage } from '../common/messages';
+import { getBrowser } from '../platform/browser'
+import type { BackgroundMessage, RuntimeMessage } from '../common/messages'
 import {
   readReaderPreferences,
   readSelection,
@@ -7,10 +7,10 @@ import {
   writeReaderPreferences,
   writeSelection,
   type ReaderPreferences,
-  type StoredSelection,
-} from '../common/storage';
+  type StoredSelection
+} from '../common/storage'
 
-const browser = getBrowser();
+const browser = getBrowser()
 
 type SelectionState = {
   text: string;
@@ -23,114 +23,114 @@ let latestSelection: SelectionState = {
   text: '',
   hasSelection: false,
   isRTL: false,
-  timestamp: Date.now(),
-};
-let readerWindowId: number | undefined;
-let cachedPrefs: ReaderPreferences | undefined;
+  timestamp: Date.now()
+}
+let readerWindowId: number | undefined
+let cachedPrefs: ReaderPreferences | undefined
 
-const CONTEXT_MENU_TITLE = 'Speed read selected text';
+const CONTEXT_MENU_TITLE = 'Speed read selected text'
 
-function htmlEncode(value: string): string {
+function htmlEncode (value: string): string {
   return value.replace(/[&<>'"]/g, (char) => {
     switch (char) {
       case '&':
-        return '&amp;';
+        return '&amp;'
       case '<':
-        return '&lt;';
+        return '&lt;'
       case '>':
-        return '&gt;';
+        return '&gt;'
       case "'":
-        return '&#39;';
+        return '&#39;'
       case '"':
-        return '&quot;';
+        return '&quot;'
       default:
-        return char;
+        return char
     }
-  });
+  })
 }
 
-function htmlDecode(value: string): string {
+function htmlDecode (value: string): string {
   return value.replace(/&(#?(x?))(\w+);/g, (_match, prefix, isHex, code) => {
     if (!prefix) {
       switch (code) {
         case 'lt':
-          return '<';
+          return '<'
         case 'gt':
-          return '>';
+          return '>'
         case 'amp':
-          return '&';
+          return '&'
         case 'quot':
-          return '"';
+          return '"'
         case '#39':
         case 'apos':
-          return "'";
+          return "'"
         default:
-          return code;
+          return code
       }
     }
 
-    const base = isHex ? 16 : 10;
-    const charCode = Number.parseInt(code, base);
+    const base = isHex ? 16 : 10
+    const charCode = Number.parseInt(code, base)
     if (Number.isNaN(charCode)) {
-      return code;
+      return code
     }
-    return String.fromCodePoint(charCode);
-  });
+    return String.fromCodePoint(charCode)
+  })
 }
 
-function toStoredSelection(selection: SelectionState): StoredSelection {
+function toStoredSelection (selection: SelectionState): StoredSelection {
   return {
     text: htmlEncode(selection.text),
     hasSelection: selection.hasSelection,
     isRTL: selection.isRTL,
-    timestamp: selection.timestamp,
-  };
+    timestamp: selection.timestamp
+  }
 }
 
-function fromStoredSelection(selection: StoredSelection): SelectionState {
+function fromStoredSelection (selection: StoredSelection): SelectionState {
   return {
     text: htmlDecode(selection.text),
     hasSelection: selection.hasSelection,
     isRTL: selection.isRTL,
-    timestamp: selection.timestamp,
-  };
+    timestamp: selection.timestamp
+  }
 }
 
-async function ensureSelection() {
-  const stored = await readSelection();
+async function ensureSelection () {
+  const stored = await readSelection()
   if (stored) {
-    latestSelection = fromStoredSelection(stored);
+    latestSelection = fromStoredSelection(stored)
   }
 }
 
-async function ensurePreferences() {
+async function ensurePreferences () {
   if (!cachedPrefs) {
-    cachedPrefs = await readReaderPreferences();
+    cachedPrefs = await readReaderPreferences()
   }
-  return cachedPrefs;
+  return cachedPrefs
 }
 
-async function persistPreferences(prefs: ReaderPreferences) {
-  cachedPrefs = prefs;
-  await writeReaderPreferences(prefs);
+async function persistPreferences (prefs: ReaderPreferences) {
+  cachedPrefs = prefs
+  await writeReaderPreferences(prefs)
 }
 
-async function persistSelection(selection: SelectionState) {
-  const storedSelection = toStoredSelection(selection);
-  await writeSelection(storedSelection);
+async function persistSelection (selection: SelectionState) {
+  const storedSelection = toStoredSelection(selection)
+  await writeSelection(storedSelection)
 }
 
-async function openReaderWindow(): Promise<void> {
-  const url = browser.runtime.getURL('pages/reader.html');
+async function openReaderWindow (): Promise<void> {
+  const url = browser.runtime.getURL('pages/reader.html')
 
   if (typeof readerWindowId === 'number') {
     try {
-      await browser.windows.update(readerWindowId, { focused: true });
-      await browser.runtime.sendMessage({ target: 'reader', type: 'refreshReader' });
-      return;
+      await browser.windows.update(readerWindowId, { focused: true })
+      await browser.runtime.sendMessage({ target: 'reader', type: 'refreshReader' })
+      return
     } catch (error) {
-      console.warn('[Speed Reader] Failed to focus reader window, opening a new one.', error);
-      readerWindowId = undefined;
+      console.warn('[Speed Reader] Failed to focus reader window, opening a new one.', error)
+      readerWindowId = undefined
     }
   }
 
@@ -139,111 +139,111 @@ async function openReaderWindow(): Promise<void> {
     type: 'popup',
     width: 960,
     height: 640,
-    focused: true,
-  });
+    focused: true
+  })
 
-  readerWindowId = created?.id ?? undefined;
+  readerWindowId = created?.id ?? undefined
 }
 
-async function openReaderWindowSetup(
+async function openReaderWindowSetup (
   saveToLocal: boolean,
   text: string,
   haveSelection: boolean,
-  directionRTL: boolean,
+  directionRTL: boolean
 ): Promise<void> {
   latestSelection = {
     text,
     hasSelection: haveSelection,
     isRTL: directionRTL,
-    timestamp: Date.now(),
-  };
-
-  if (saveToLocal) {
-    await persistSelection(latestSelection);
+    timestamp: Date.now()
   }
 
-  await openReaderWindow();
+  if (saveToLocal) {
+    await persistSelection(latestSelection)
+  }
+
+  await openReaderWindow()
 }
 
-function updateSelectionFromMessage(message: BackgroundMessage) {
+function updateSelectionFromMessage (message: BackgroundMessage) {
   const text = 'selectionText' in message && typeof message.selectionText === 'string'
     ? message.selectionText
     : 'selectedText' in message
       ? message.selectedText
-      : '';
-  const hasSelection = 'haveSelection' in message ? message.haveSelection : text.length > 0;
-  const isRTL = 'dirRTL' in message ? message.dirRTL : false;
+      : ''
+  const hasSelection = 'haveSelection' in message ? message.haveSelection : text.length > 0
+  const isRTL = 'dirRTL' in message ? message.dirRTL : false
 
   latestSelection = {
     text,
     hasSelection,
     isRTL,
-    timestamp: Date.now(),
-  };
+    timestamp: Date.now()
+  }
 }
 
-async function handleMessage(rawMessage: RuntimeMessage, _sender: unknown, sendResponse: (value?: unknown) => void) {
+async function handleMessage (rawMessage: RuntimeMessage, _sender: unknown, sendResponse: (value?: unknown) => void) {
   if (rawMessage.target !== 'background') {
-    return undefined;
+    return undefined
   }
 
-  const message = rawMessage as BackgroundMessage;
+  const message = rawMessage as BackgroundMessage
 
   switch (message.type) {
     case 'getSelection':
-      updateSelectionFromMessage(message);
-      sendResponse({ ok: true });
-      return true;
+      updateSelectionFromMessage(message)
+      sendResponse({ ok: true })
+      return true
     case 'openReaderFromContent':
-      updateSelectionFromMessage(message);
-      await openReaderWindowSetup(true, message.selectionText, message.haveSelection, message.dirRTL);
-      return true;
+      updateSelectionFromMessage(message)
+      await openReaderWindowSetup(true, message.selectionText, message.haveSelection, message.dirRTL)
+      return true
     case 'openReaderFromContextMenu':
-      await openReaderWindowSetup(true, message.selectionText, message.selectionText.length > 0, false);
-      return true;
+      await openReaderWindowSetup(true, message.selectionText, message.selectionText.length > 0, false)
+      return true
     case 'openReaderFromPopup': {
-      const prefs = await ensurePreferences();
+      const prefs = await ensurePreferences()
       const nextPrefs: ReaderPreferences = {
         ...prefs,
         wordsPerMinute: message.wordsPerMinute,
-        theme: message.theme ?? prefs.theme,
-      };
-      await persistPreferences(nextPrefs);
+        theme: message.theme ?? prefs.theme
+      }
+      await persistPreferences(nextPrefs)
 
-      const providedText = message.selectionText?.trim() ?? '';
+      const providedText = message.selectionText?.trim() ?? ''
       if (providedText.length === 0) {
-        return true;
+        return true
       }
 
       // Do not persist manual popup input.
-      await openReaderWindowSetup(false, providedText, true, false);
-      return true;
+      await openReaderWindowSetup(false, providedText, true, false)
+      return true
     }
     case 'getMenuEntryText':
-      sendResponse({ menuEntryText: CONTEXT_MENU_TITLE });
-      return true;
+      sendResponse({ menuEntryText: CONTEXT_MENU_TITLE })
+      return true
     default:
-      return undefined;
+      return undefined
   }
 }
 
-async function handleInstall(details: typeof browser.runtime.OnInstalledDetailsType) {
-  await ensureSelection();
+async function handleInstall (details: chrome.runtime.InstalledDetails) {
+  await ensureSelection()
 
-  const version = browser.runtime.getManifest().version;
-  await setInStorage({ version });
+  const version = browser.runtime.getManifest().version
+  await setInStorage({ version })
 
   if (details.reason === 'install') {
-    await browser.tabs.create({ url: browser.runtime.getURL('pages/welcome.html') });
+    await browser.tabs.create({ url: browser.runtime.getURL('pages/welcome.html') })
   } else if (details.reason === 'update') {
-    await browser.tabs.create({ url: browser.runtime.getURL('pages/updated.html') });
+    await browser.tabs.create({ url: browser.runtime.getURL('pages/updated.html') })
   }
 }
 
-async function createContextMenus() {
+async function createContextMenus () {
   try {
-    await browser.contextMenus.removeAll();
-  } catch (error) {
+    await browser.contextMenus.removeAll()
+  } catch {
     // Ignore remove errors when menus don't exist yet.
   }
 
@@ -251,59 +251,58 @@ async function createContextMenus() {
     browser.contextMenus.create({
       id: 'read-selection',
       title: CONTEXT_MENU_TITLE,
-      contexts: ['selection'],
-    });
+      contexts: ['selection']
+    })
   } catch (error) {
-    console.warn('[Speed Reader] Failed to create context menu entry', 'read-selection', error);
+    console.warn('[Speed Reader] Failed to create context menu entry', 'read-selection', error)
   }
 }
 
-browser.contextMenus.onClicked.addListener(async (info) => {
+browser.contextMenus.onClicked.addListener(async (info: chrome.contextMenus.OnClickData) => {
   if (info.menuItemId === 'read-selection' && info.selectionText) {
-    await openReaderWindowSetup(true, info.selectionText, true, false);
-    return;
+    await openReaderWindowSetup(true, info.selectionText, true, false)
   }
-});
+})
 
-browser.windows.onRemoved.addListener((windowId) => {
+browser.windows.onRemoved.addListener((windowId: number) => {
   if (readerWindowId && windowId === readerWindowId) {
-    readerWindowId = undefined;
+    readerWindowId = undefined
   }
-});
+})
 
-browser.commands.onCommand.addListener(async (command) => {
+browser.commands.onCommand.addListener(async (command: string) => {
   if (command !== 'speed_read_shortcut') {
-    return;
+    return
   }
 
   if (latestSelection.text.length > 0) {
-    await openReaderWindowSetup(true, latestSelection.text, latestSelection.hasSelection, latestSelection.isRTL);
-    return;
+    await openReaderWindowSetup(true, latestSelection.text, latestSelection.hasSelection, latestSelection.isRTL)
+    return
   }
 
-  browser.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    const tabId = tabs[0]?.id;
-    if (!tabId) return;
+  browser.tabs.query({ active: true, currentWindow: true }, (tabs: chrome.tabs.Tab[]) => {
+    const tabId = tabs[0]?.id
+    if (!tabId) return
 
     browser.tabs.sendMessage(
       tabId,
       { target: 'content', type: 'getMouseCoordinates' },
-      async (response) => {
-        const coords = response ?? { x: 0, y: 0 };
-        browser.tabs.sendMessage(tabId, { target: 'content', type: 'showSelectionHint', x: coords.x, y: coords.y });
-      },
-    );
-  });
-});
+      async (response: any) => {
+        const coords = response ?? { x: 0, y: 0 }
+        browser.tabs.sendMessage(tabId, { target: 'content', type: 'showSelectionHint', x: coords.x, y: coords.y })
+      }
+    )
+  })
+})
 
-browser.runtime.onInstalled.addListener((details) => {
-  handleInstall(details).catch((error) => console.error('Failed to handle install event', error));
-  createContextMenus().catch((error) => console.error('Failed to create context menus', error));
-});
+browser.runtime.onInstalled.addListener((details: chrome.runtime.InstalledDetails) => {
+  handleInstall(details).catch((error) => console.error('Failed to handle install event', error))
+  createContextMenus().catch((error) => console.error('Failed to create context menus', error))
+})
 
-browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  const maybePromise = handleMessage(message as RuntimeMessage, sender, sendResponse);
-  return maybePromise instanceof Promise ? true : maybePromise;
+browser.runtime.onMessage.addListener((message: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
+  const maybePromise = handleMessage(message as RuntimeMessage, sender, sendResponse)
+  return maybePromise instanceof Promise ? true : maybePromise
 });
 
 (globalThis as typeof globalThis & {
@@ -314,10 +313,9 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 (globalThis as typeof globalThis & {
   openReaderWindowSetup?: typeof openReaderWindowSetup;
   receiveMessage?: typeof handleMessage;
-}).receiveMessage = ((message: RuntimeMessage, sender?: unknown, sendResponse?: (value?: unknown) => void) => {
-  void handleMessage(message, sender, sendResponse ?? (() => undefined));
-  return true;
-}) as typeof handleMessage;
+}).receiveMessage = async (message: RuntimeMessage, sender?: unknown, sendResponse?: (value?: unknown) => void) => {
+  return await handleMessage(message, sender ?? {}, sendResponse ?? (() => undefined))
+}
 
-void ensureSelection();
-void ensurePreferences();
+ensureSelection().catch(console.error)
+ensurePreferences().catch(console.error)
