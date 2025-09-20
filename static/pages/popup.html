@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>10x your reading speed</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../styles/popup.css" />
+  </head>
+  <body>
+    <header class="popup__header">
+      <img src="../assets/icons/icon48.png" alt="10x your reading speed" class="popup__logo" width="32" height="32" />
+      <h1 class="popup__title">10x your reading speed</h1>
+    </header>
+    <main class="popup__main" role="main">
+      <section class="popup__section">
+        <p class="popup__description">Select any text on the page, right-click and choose '<span id="menuEntryText">Speed read selected text</span>' from the menu.</p>
+        <p class="popup__or">OR</p>
+        <label class="popup__field popup__field--stacked" for="inputTextToRead">
+          <input
+            id="inputTextToRead"
+            type="text"
+            class="popup__text-input"
+            placeholder="Paste any text here"
+            autocomplete="off"
+          />
+        </label>
+      </section>
+        <button id="speedReadButton" class="popup__speed-read-button" disabled>Speed read it</button>
+    </main>
+    <footer class="popup__footer">
+      <a href="https://speed-reader.com" target="_blank" rel="noreferrer">Help &amp; Support</a>
+    </footer>
+    <script type="module" src="../scripts/popup.js"></script>
+  </body>
+</html>

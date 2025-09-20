@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>10x your reading speed</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../styles/reader.css" />
+  </head>
+  <body>
+    <header class="reader__header">
+      <h1 class="reader__title">10x your reading speed</h1>
+      <div class="reader__header-right">
+        <div class="reader__meta">
+          <span id="labelStatus" class="reader__status">Loading...</span>
+          <span id="labelProgress" class="reader__progress" aria-live="polite"></span>
+        </div>
+        <label class="reader__theme-switch reader__theme-switch--header" for="toggleTheme">
+          <input
+            id="toggleTheme"
+            class="reader__theme-switch-input"
+            type="checkbox"
+            role="switch"
+            aria-label="Toggle light theme"
+          />
+          <span class="reader__theme-switch-track" aria-hidden="true">
+            <span class="reader__theme-switch-icon reader__theme-switch-icon--sun">☀️</span>
+            <span class="reader__theme-switch-icon reader__theme-switch-icon--moon">🌙</span>
+            <span class="reader__theme-switch-thumb"></span>
+          </span>
+        </label>
+      </div>
+    </header>
+    <main class="reader__main" role="main">
+      <div id="word" class="reader__word" aria-live="assertive" aria-atomic="true"></div>
+    </main>
+    <footer class="reader__controls">
+      <div class="reader__controls-group">
+        <button id="btnPlay" class="reader__button">Play</button>
+        <button id="btnRestart" class="reader__button reader__button--secondary">Restart</button>
+      </div>
+      <div class="reader__controls-group reader__controls-group--settings">
+        <label class="reader__slider-label">
+          <span>Words per minute</span>
+          <input id="sliderWpm" type="range" min="100" max="2000" step="50" value="400" />
+          <span id="wpmValue" class="reader__wpm-value">400</span>
+        </label>
+      </div>
+    </footer>
+    <script type="module" src="../scripts/reader.js"></script>
+  </body>
+</html>
