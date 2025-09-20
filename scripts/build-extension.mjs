@@ -58,6 +58,27 @@ function deepMerge(target, source) {
   return source;
 }
 
+function removeNullValues(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(removeNullValues).filter(item => item !== null);
+  }
+
+  if (isPlainObject(obj)) {
+    const result = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== null) {
+        const cleanValue = removeNullValues(value);
+        if (cleanValue !== null) {
+          result[key] = cleanValue;
+        }
+      }
+    }
+    return result;
+  }
+
+  return obj;
+}
+
 async function copyDirectory(source, destination) {
   if (!(await pathExists(source))) {
     return;
@@ -90,6 +111,9 @@ async function writeManifest(browser) {
     const overrideManifest = JSON.parse(await fs.readFile(overridePath, 'utf8'));
     manifest = deepMerge(baseManifest, overrideManifest);
   }
+
+  // Remove null values that were used to override base manifest properties
+  manifest = removeNullValues(manifest);
 
   const distPath = path.join(repoRoot, 'dist', browser);
   await fs.mkdir(distPath, { recursive: true });
