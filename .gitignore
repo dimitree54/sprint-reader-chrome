@@ -234,3 +234,5 @@ SafariBuild/
 node_modules/
 playwright-report/
 test-results/
+
+web-ext-profile/datareporting/*
