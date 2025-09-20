@@ -169,16 +169,16 @@ This ensures that regardless of your reading speed, the **relative timing relati
 
 Sprint Reader includes sophisticated text preprocessing that optimizes text before the timing algorithm runs:
 
-### Hyphenated Word Consolidation
+### Hyphenated Word Preservation
 
-**Problem**: Hyphenated words get split by spaces, disrupting reading flow
-**Solution**: Merge hyphenated components into single units
+**Approach**: Hyphenated words are preserved as-is for natural reading
+**Benefit**: Maintains original meaning and readability
 
 | Original Text | After Processing | Benefit |
 |---------------|------------------|---------|
-| "state-of-the-art technology" | "stateoftheart technology" | Reads as single concept |
-| "twenty-one years old" | "twentyone years old" | Natural number reading |
-| "well-known author" | "wellknown author" | Unified adjective |
+| "state-of-the-art technology" | "state-of-the-art technology" | Preserves compound adjective meaning |
+| "twenty-one years old" | "twenty-one years old" | Maintains proper number format |
+| "AI-powered solution" | "AI-powered solution" | Keeps technical terms intact |
 
 ### Acronym Consolidation
 

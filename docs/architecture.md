@@ -47,7 +47,7 @@ src/
   reader/          → RSVP player UI and playback logic (modular architecture):
     index.ts       → Main reader controller and UI event handling.
     timing-engine.ts → Word frequency analysis, timing calculations, chunking.
-    text-processor.ts → Advanced text preprocessing (hyphen, acronym, number handling).
+    text-processor.ts → Advanced text preprocessing (acronym, number handling).
     visual-effects.ts → Letter highlighting, positioning, flicker effects.
 static/
   assets/          → Icons and imagery shared across contexts.
@@ -107,7 +107,7 @@ The reader implementation follows a modular architecture with clear separation o
 
 #### 3.4.3 Text Processor (`src/reader/text-processor.ts`)
 * Advanced text preprocessing for optimal RSVP reading experience.
-* Handles hyphenated word consolidation for better reading flow.
+* Preserves hyphenated words as-is for natural reading flow.
 * Consolidates acronyms (e.g., "U S A" → "USA") for improved comprehension.
 * Preserves numbers with decimals and commas (e.g., "3.14", "1,000").
 * Splits very long words (>17 characters) at optimal break points.
@@ -156,7 +156,7 @@ Each command prepares a fully self-contained directory that can be zipped for st
   * Reader window opening and basic playback functionality
   * Optimal letter highlighting and pixel-perfect centering verification
   * Advanced timing algorithm validation with word frequency differences
-  * Text preprocessing capabilities (hyphen removal, acronym consolidation, number preservation)
+  * Text preprocessing capabilities (acronym consolidation, number preservation, hyphen preservation)
   * Chunking logic for short word grouping
 * The modular reader architecture (`timing-engine.ts`, `text-processor.ts`, `visual-effects.ts`) enables isolated unit testing of individual algorithms.
 * Future unit-test coverage can directly import modules under `src/common`, `src/platform`, and `src/reader` for Jest/Vitest testing.
