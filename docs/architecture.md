@@ -1,10 +1,10 @@
-# Sprint Reader Extension Architecture
+# 10x your reading speed - Extension Architecture
 
 _Last updated: February 2025_
 
 ## 1. High-Level Overview
 
-Sprint Reader is a cross-browser WebExtension that delivers a Rapid Serial Visual Presentation (RSVP) reading experience. The codebase is structured around four execution contexts that share a modular TypeScript core:
+10x your reading speed is a cross-browser WebExtension that delivers a Rapid Serial Visual Presentation (RSVP) reading experience enhanced with AI preprocessing. The codebase is structured around four execution contexts that share a modular TypeScript core:
 
 ```mermaid
 graph TD

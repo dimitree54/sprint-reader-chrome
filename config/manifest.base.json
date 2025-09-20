@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Sprint Reader - Speed Reading Extension",
+  "name": "10x your reading speed",
   "version": "3.0.3",
-  "description": "Speed reading made easy, train yourself to read 1800+ words per minute.",
+  "description": "10x your reading speed with RSVP and AI-powered preprocessing. Multi-browser speed reading extension.",
   "icons": {
     "16": "assets/icons/icon16.png",
     "48": "assets/icons/icon48.png",
@@ -27,7 +27,6 @@
         "pages/reader.html",
         "assets/icons/*.png",
         "assets/icons/*.svg",
-        "assets/images/*.png",
         "styles/*.css"
       ],
       "matches": ["<all_urls>"]
@@ -47,7 +46,7 @@
         "default": "Ctrl+Shift+E",
         "mac": "MacCtrl+Shift+E"
       },
-      "description": "Sprint read selected text"
+      "description": "10x your reading speed - read selected text"
     }
   }
 }
