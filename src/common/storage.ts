@@ -7,6 +7,8 @@ export type StoredSelection = {
   timestamp: number;
 };
 
+export type ReaderTheme = 'dark' | 'light';
+
 export type ReaderPreferences = {
   wordsPerMinute: number;
   pauseAfterComma: boolean;
@@ -15,6 +17,7 @@ export type ReaderPreferences = {
   chunkSize: number;
   wordFlicker: boolean;
   wordFlickerPercent: number;
+  theme: ReaderTheme;
 };
 
 const browser = getBrowser();
@@ -82,6 +85,7 @@ export async function readReaderPreferences(): Promise<ReaderPreferences> {
     chunkSize: result[STORAGE_KEYS.readerPrefs]?.chunkSize ?? 1,
     wordFlicker: result[STORAGE_KEYS.readerPrefs]?.wordFlicker ?? false,
     wordFlickerPercent: result[STORAGE_KEYS.readerPrefs]?.wordFlickerPercent ?? 10,
+    theme: result[STORAGE_KEYS.readerPrefs]?.theme ?? 'dark',
   };
 }
 

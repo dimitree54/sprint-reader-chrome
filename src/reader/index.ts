@@ -1,5 +1,10 @@
 import { getBrowser } from '../platform/browser';
-import { readReaderPreferences, readSelection, writeReaderPreferences } from '../common/storage';
+import {
+  readReaderPreferences,
+  readSelection,
+  writeReaderPreferences,
+  type ReaderTheme,
+} from '../common/storage';
 import type { ReaderMessage } from '../common/messages';
 import { preprocessText } from './text-processor';
 import { createChunks, type WordItem, type TimingSettings } from './timing-engine';
@@ -8,6 +13,7 @@ import {
   highlightOptimalLetter,
   setOptimalWordPositioning,
   applyFlickerEffect,
+  calculateOptimalFontSizeForText,
   type VisualSettings
 } from './visual-effects';
 
@@ -34,6 +40,8 @@ type ReaderState = {
   chunkSize: number;
   wordFlicker: boolean;
   wordFlickerPercent: number;
+  optimalFontSize: string;
+  theme: ReaderTheme;
 };
 
 const state: ReaderState = {
@@ -51,7 +59,34 @@ const state: ReaderState = {
   chunkSize: 1,
   wordFlicker: false,
   wordFlickerPercent: 10,
+  optimalFontSize: '128px',
+  theme: 'dark',
 };
+
+function applyTheme(theme: ReaderTheme) {
+  const body = document.body;
+  if (!body) {
+    return;
+  }
+
+  body.classList.toggle('reader--light', theme === 'light');
+  body.classList.toggle('reader--dark', theme !== 'light');
+  body.dataset.theme = theme;
+}
+
+function persistReaderPreferences() {
+  void writeReaderPreferences({
+    wordsPerMinute: state.wordsPerMinute,
+    persistSelection: true, // Fixed value since we don't use it in UI
+    pauseAfterComma: state.pauseAfterComma,
+    pauseAfterPeriod: state.pauseAfterPeriod,
+    pauseAfterParagraph: state.pauseAfterParagraph,
+    chunkSize: state.chunkSize,
+    wordFlicker: state.wordFlicker,
+    wordFlickerPercent: state.wordFlickerPercent,
+    theme: state.theme,
+  });
+}
 
 function getTimingSettings(): TimingSettings {
   return {
@@ -82,6 +117,9 @@ function renderWord() {
 
   const currentWordItem = state.wordItems[state.index];
   if (currentWordItem) {
+    // Apply the pre-calculated font size
+    wordElement.style.fontSize = state.optimalFontSize;
+
     // Wrap letters in spans for highlighting
     const wrappedText = wrapLettersInSpans(currentWordItem.text);
     wordElement.innerHTML = wrappedText;
@@ -91,10 +129,8 @@ function renderWord() {
     // Apply optimal letter highlighting
     highlightOptimalLetter(wordElement, currentWordItem, visualSettings);
 
-    // Apply optimal word positioning after a brief delay to ensure rendering is complete
-    requestAnimationFrame(() => {
-      setOptimalWordPositioning(wordElement, currentWordItem);
-    });
+    // Apply optimal word positioning
+    setOptimalWordPositioning(wordElement, currentWordItem);
 
     // Apply word flicker effect if enabled
     if (state.playing) {
@@ -169,6 +205,9 @@ function setWords(words: string[]) {
   const timingSettings = getTimingSettings();
   state.wordItems = createChunks(preprocessedWords, timingSettings);
 
+  // Calculate optimal font size for the entire text
+  state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems);
+
   state.index = 0;
   renderWord();
 }
@@ -183,6 +222,9 @@ async function loadSelection() {
   state.chunkSize = prefs.chunkSize;
   state.wordFlicker = prefs.wordFlicker;
   state.wordFlickerPercent = prefs.wordFlickerPercent;
+  state.theme = prefs.theme;
+
+  applyTheme(state.theme);
 
   const slider = document.getElementById('sliderWpm') as HTMLInputElement | null;
   const wpmValue = document.getElementById('wpmValue');
@@ -191,6 +233,11 @@ async function loadSelection() {
   }
   if (wpmValue) {
     wpmValue.textContent = String(state.wordsPerMinute);
+  }
+
+  const themeToggle = document.getElementById('toggleTheme') as HTMLInputElement | null;
+  if (themeToggle) {
+    themeToggle.checked = state.theme === 'light';
   }
 
   const rawText = selection?.text ? decodeHtml(selection.text) : '';
@@ -235,16 +282,34 @@ function registerControls() {
     const timingSettings = getTimingSettings();
     state.wordItems = createChunks(preprocessedWords, timingSettings);
 
+    // Recalculate optimal font size for the new word items
+    state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems);
+
     renderWord();
-    void writeReaderPreferences({
-      wordsPerMinute: value,
-      pauseAfterComma: state.pauseAfterComma,
-      pauseAfterPeriod: state.pauseAfterPeriod,
-      pauseAfterParagraph: state.pauseAfterParagraph,
-      chunkSize: state.chunkSize,
-      wordFlicker: state.wordFlicker,
-      wordFlickerPercent: state.wordFlickerPercent,
-    });
+    persistReaderPreferences();
+  });
+
+  const themeToggle = document.getElementById('toggleTheme') as HTMLInputElement | null;
+  themeToggle?.addEventListener('change', () => {
+    state.theme = themeToggle.checked ? 'light' : 'dark';
+    applyTheme(state.theme);
+    persistReaderPreferences();
+  });
+
+  // Handle window resize to recalculate font sizes
+  let resizeTimeout: ReturnType<typeof setTimeout> | undefined;
+  window.addEventListener('resize', () => {
+    // Debounce resize events to avoid excessive recalculations
+    if (resizeTimeout) {
+      clearTimeout(resizeTimeout);
+    }
+    resizeTimeout = setTimeout(() => {
+      // Recalculate optimal font size for new window size
+      if (state.wordItems.length > 0) {
+        state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems);
+      }
+      renderWord();
+    }, 150);
   });
 }
 

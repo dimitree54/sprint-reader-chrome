@@ -7,8 +7,35 @@ body {
   margin: 0;
   padding: 16px;
   width: 320px;
-  background: var(--popup-bg, #101418);
-  color: var(--popup-fg, #f5f6f7);
+  background: var(--popup-bg);
+  color: var(--popup-fg);
+  transition: background 0.3s ease, color 0.3s ease;
+  --popup-bg: linear-gradient(135deg, #0b0e13, #161b26);
+  --popup-fg: #f5f6f7;
+  --popup-card-bg: rgba(255, 255, 255, 0.04);
+  --popup-card-shadow: 0 18px 36px rgba(0, 0, 0, 0.4);
+  --popup-secondary-bg: rgba(255, 255, 255, 0.08);
+  --popup-secondary-border: rgba(255, 255, 255, 0.14);
+  --popup-secondary-fg: #fff;
+  --popup-button-shadow: 0 6px 16px rgba(255, 77, 151, 0.35);
+  --popup-link-color: inherit;
+}
+
+body.popup--dark {
+  color-scheme: dark;
+}
+
+body.popup--light {
+  color-scheme: light;
+  --popup-bg: linear-gradient(135deg, #ffffff, #f6f2ff);
+  --popup-fg: #1d1a2f;
+  --popup-card-bg: rgba(255, 255, 255, 0.88);
+  --popup-card-shadow: 0 18px 28px rgba(74, 0, 224, 0.08);
+  --popup-secondary-bg: rgba(74, 0, 224, 0.08);
+  --popup-secondary-border: rgba(74, 0, 224, 0.2);
+  --popup-secondary-fg: #4a00e0;
+  --popup-button-shadow: 0 6px 14px rgba(255, 77, 151, 0.22);
+  --popup-link-color: #4a00e0;
 }
 
 .popup__header {
@@ -26,6 +53,14 @@ body {
   font-size: 1.3rem;
   font-weight: 600;
   margin: 0;
+}
+
+.popup__section {
+  background: var(--popup-card-bg);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--popup-card-shadow);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .popup__section + .popup__section {
@@ -123,7 +158,7 @@ body {
 }
 
 .popup__footer a {
-  color: inherit;
+  color: var(--popup-link-color);
   text-decoration: none;
 }
 

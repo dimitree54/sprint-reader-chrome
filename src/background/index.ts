@@ -201,27 +201,28 @@ async function handleMessage(rawMessage: RuntimeMessage, _sender: unknown, sendR
     case 'openReaderFromContextMenu':
       await openReaderWindowSetup(true, message.selectionText, message.selectionText.length > 0, false);
       return true;
-    case 'openReaderFromPopup':
-      {
-        const prefs = await ensurePreferences();
-        const updatedPrefs: ReaderPreferences = {
-          ...prefs,
-          wordsPerMinute: message.wordsPerMinute,
-        };
-        await persistPreferences(updatedPrefs);
+    case 'openReaderFromPopup': {
+      const prefs = await ensurePreferences();
+      const nextPrefs: ReaderPreferences = {
+        ...prefs,
+        wordsPerMinute: message.wordsPerMinute,
+        theme: message.theme ?? prefs.theme,
+      };
+      await persistPreferences(nextPrefs);
 
-        const providedText = message.selectionText?.trim() ?? '';
-        if (providedText.length === 0) {
-          return true;
-        }
-
-        // Do not persist manual popup input.
-        await openReaderWindowSetup(false, providedText, true, false);
+      const providedText = message.selectionText?.trim() ?? '';
+      if (providedText.length === 0) {
         return true;
       }
+
+      // Do not persist manual popup input.
+      await openReaderWindowSetup(false, providedText, true, false);
+      return true;
+    }
     case 'getMenuEntryText':
       sendResponse({ menuEntryText: CONTEXT_MENU_TITLE });
       return true;
+    }
     default:
       return undefined;
   }

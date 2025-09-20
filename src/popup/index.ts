@@ -1,5 +1,9 @@
 import { getBrowser } from '../platform/browser';
 import type { BackgroundMessage } from '../common/messages';
+import {
+  readReaderPreferences,
+  type ReaderTheme,
+} from '../common/storage';
 
 const browser = getBrowser();
 
@@ -9,6 +13,24 @@ type PopupElements = {
   menuEntryTextSpan: HTMLSpanElement;
 };
 
+let currentTheme: ReaderTheme = 'dark';
+
+function applyTheme(theme: ReaderTheme) {
+  const body = document.body;
+  if (!body) {
+    return;
+  }
+
+  body.classList.toggle('popup--light', theme === 'light');
+  body.classList.toggle('popup--dark', theme !== 'light');
+  body.dataset.theme = theme;
+}
+
+async function loadPreferences() {
+  const prefs = await readReaderPreferences();
+  currentTheme = prefs.theme;
+  applyTheme(currentTheme);
+}
 
 async function sendOpenReaderMessage(selectionText: string) {
   const message: BackgroundMessage = {
@@ -16,6 +38,7 @@ async function sendOpenReaderMessage(selectionText: string) {
     type: 'openReaderFromPopup',
     selectionText,
     wordsPerMinute: 400, // Default speed
+    theme: currentTheme,
   };
 
   await browser.runtime.sendMessage(message);
@@ -70,6 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     menuEntryTextSpan: document.getElementById('menuEntryText') as HTMLSpanElement,
   };
 
+  await loadPreferences();
   await loadMenuEntryText(elements);
   await registerEvents(elements);
 });

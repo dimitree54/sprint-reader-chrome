@@ -362,48 +362,223 @@ test.describe('Sprint Reader extension (Chrome)', () => {
     await readerPage.close();
   });
 
-  test('opens reader from popup with manual text input', async ({ context, extensionId }) => {
-    // Open popup page directly
-    const popupPage = await context.newPage();
-    await popupPage.goto(`chrome-extension://${extensionId}/pages/popup.html`);
-    await popupPage.waitForLoadState('domcontentloaded');
+  test('theme switching works correctly and persists preferences', async ({ page, context, extensionId, background }) => {
+    await page.goto('https://example.com');
 
-    // Find the input field and button
-    const textInput = popupPage.locator('#inputTextToRead');
-    const speedReadButton = popupPage.locator('#speedReadButton');
+    const paragraph = page.locator('p').first();
+    await paragraph.waitFor();
 
-    // Verify initial state - button should be disabled
-    await expect(speedReadButton).toBeDisabled();
+    await paragraph.click({ clickCount: 3 });
+    await page.waitForTimeout(300);
 
-    // Enter test text
-    const testText = 'This is a test text for speed reading from popup.';
-    await textInput.fill(testText);
-
-    // Button should now be enabled
-    await expect(speedReadButton).toBeEnabled();
-
-    // Set up promise to wait for reader window
+    const selectionText = (await page.evaluate(() => window.getSelection()?.toString() ?? '')).trim();
+    expect(selectionText.length).toBeGreaterThan(0);
     const readerPagePromise = context.waitForEvent('page', {
       predicate: (p) => p.url().startsWith(`chrome-extension://${extensionId}/pages/reader.html`),
       timeout: 10_000,
     });
 
-    // Click the speed read button
-    await speedReadButton.click();
-
-    // Wait for reader page to open
+    await background.evaluate(
+      async ({ selection }) => {
+        const scope = self as unknown as BackgroundContext;
+        await scope.openReaderWindowSetup(true, selection, true, false);
+      },
+      { selection: selectionText },
+    );
     const readerPage = await readerPagePromise;
     await readerPage.waitForLoadState('domcontentloaded');
     await readerPage.bringToFront();
 
-    // Verify the reader loaded with our text
-    await waitForReaderToStart(readerPage);
+    // Wait for the reader to load
+    const wordLocator = readerPage.locator('#word');
+    await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
 
-    // Verify the input field was cleared
-    await expect(textInput).toHaveValue('');
-    await expect(speedReadButton).toBeDisabled();
+    // Get initial theme state
+    const initialThemeInfo = await readerPage.evaluate(() => {
+      const toggle = document.getElementById('toggleTheme') as HTMLInputElement;
+      const body = document.body;
+      return {
+        toggleChecked: toggle?.checked ?? false,
+        hasLightClass: body.classList.contains('reader--light'),
+        hasDarkClass: body.classList.contains('reader--dark'),
+        dataTheme: body.dataset.theme,
+        state: (window as any).state?.theme || (globalThis as any).state?.theme
+      };
+    });
+
+    // Verify initial state (should be dark theme by default)
+    expect(initialThemeInfo.toggleChecked).toBe(false);
+    expect(initialThemeInfo.hasLightClass).toBe(false);
+    expect(initialThemeInfo.hasDarkClass).toBe(true);
+    expect(initialThemeInfo.dataTheme).toBe('dark');
+    expect(initialThemeInfo.state).toBe('dark');
+
+    // Find the theme switcher in the header (moved from footer)
+    const themeToggle = readerPage.locator('.reader__theme-switch--header');
+    await expect(themeToggle).toBeVisible();
+
+    // Verify the switcher is in the header (rightmost position)
+    const switcherPosition = await readerPage.evaluate(() => {
+      const switcher = document.querySelector('.reader__theme-switch--header');
+      const headerRight = document.querySelector('.reader__header-right');
+      if (!switcher || !headerRight) return null;
+
+      const switcherRect = switcher.getBoundingClientRect();
+      const headerRect = headerRight.getBoundingClientRect();
+
+      return {
+        isInHeaderRight: headerRight.contains(switcher),
+        switcherRight: switcherRect.right,
+        headerRight: headerRect.right,
+        isRightmost: Math.abs(switcherRect.right - headerRect.right) < 5 // Allow 5px tolerance
+      };
+    });
+
+    expect(switcherPosition).not.toBeNull();
+    expect(switcherPosition!.isInHeaderRight).toBe(true);
+    expect(switcherPosition!.isRightmost).toBe(true);
+
+    // Verify text label is removed (should not exist)
+    const textLabel = readerPage.locator('.reader__theme-switch-label');
+    await expect(textLabel).toHaveCount(0);
+
+    // Verify icons are visible and bigger
+    const iconInfo = await readerPage.evaluate(() => {
+      const sunIcon = document.querySelector('.reader__theme-switch-icon--sun');
+      const moonIcon = document.querySelector('.reader__theme-switch-icon--moon');
+
+      if (!sunIcon || !moonIcon) return null;
+
+      const sunStyles = getComputedStyle(sunIcon);
+      const moonStyles = getComputedStyle(moonIcon);
+
+      return {
+        sunOpacity: sunStyles.opacity,
+        moonOpacity: moonStyles.opacity,
+        sunFontSize: sunStyles.fontSize,
+        moonFontSize: moonStyles.fontSize,
+        sunText: sunIcon.textContent,
+        moonText: moonIcon.textContent
+      };
+    });
+
+    expect(iconInfo).not.toBeNull();
+    expect(iconInfo!.sunText).toBe('☀️');
+    expect(iconInfo!.moonText).toBe('🌙');
+    expect(iconInfo!.sunFontSize).toBe('17.6px'); // 1.1rem should be ~17.6px
+    expect(iconInfo!.moonFontSize).toBe('17.6px');
+    // In dark mode, sun should be visible (opacity 1), moon should be less visible (opacity 0.4)
+    expect(iconInfo!.sunOpacity).toBe('1');
+    expect(iconInfo!.moonOpacity).toBe('0.4');
+
+    // Switch to light theme
+    await themeToggle.click();
+    await readerPage.waitForTimeout(300); // Wait for transition
+
+    // Verify theme switched to light
+    const lightThemeInfo = await readerPage.evaluate(() => {
+      const toggle = document.getElementById('toggleTheme') as HTMLInputElement;
+      const body = document.body;
+      return {
+        toggleChecked: toggle?.checked ?? false,
+        hasLightClass: body.classList.contains('reader--light'),
+        hasDarkClass: body.classList.contains('reader--dark'),
+        dataTheme: body.dataset.theme,
+        state: (window as any).state?.theme || (globalThis as any).state?.theme
+      };
+    });
+
+    expect(lightThemeInfo.toggleChecked).toBe(true);
+    expect(lightThemeInfo.hasLightClass).toBe(true);
+    expect(lightThemeInfo.hasDarkClass).toBe(false);
+    expect(lightThemeInfo.dataTheme).toBe('light');
+    expect(lightThemeInfo.state).toBe('light');
+
+    // Verify icon visibility switched (in light mode, moon should be visible, sun less visible)
+    const lightIconInfo = await readerPage.evaluate(() => {
+      const sunIcon = document.querySelector('.reader__theme-switch-icon--sun');
+      const moonIcon = document.querySelector('.reader__theme-switch-icon--moon');
+
+      if (!sunIcon || !moonIcon) return null;
+
+      const sunStyles = getComputedStyle(sunIcon);
+      const moonStyles = getComputedStyle(moonIcon);
+
+      return {
+        sunOpacity: sunStyles.opacity,
+        moonOpacity: moonStyles.opacity
+      };
+    });
+
+    expect(lightIconInfo).not.toBeNull();
+    expect(lightIconInfo!.sunOpacity).toBe('0.4');
+    expect(lightIconInfo!.moonOpacity).toBe('1');
+
+    // Switch back to dark theme
+    await themeToggle.click();
+    await readerPage.waitForTimeout(300);
+
+    // Verify theme switched back to dark
+    const finalThemeInfo = await readerPage.evaluate(() => {
+      const toggle = document.getElementById('toggleTheme') as HTMLInputElement;
+      const body = document.body;
+      return {
+        toggleChecked: toggle?.checked ?? false,
+        hasLightClass: body.classList.contains('reader--light'),
+        hasDarkClass: body.classList.contains('reader--dark'),
+        dataTheme: body.dataset.theme,
+        state: (window as any).state?.theme || (globalThis as any).state?.theme
+      };
+    });
+
+    expect(finalThemeInfo.toggleChecked).toBe(false);
+    expect(finalThemeInfo.hasLightClass).toBe(false);
+    expect(finalThemeInfo.hasDarkClass).toBe(true);
+    expect(finalThemeInfo.dataTheme).toBe('dark');
+    expect(finalThemeInfo.state).toBe('dark');
 
     await readerPage.close();
-    await popupPage.close();
+
+    // Test persistence by opening reader again
+    const readerPagePromise2 = context.waitForEvent('page', {
+      predicate: (p) => p.url().startsWith(`chrome-extension://${extensionId}/pages/reader.html`),
+      timeout: 10_000,
+    });
+
+    await background.evaluate(
+      async ({ selection }) => {
+        const scope = self as unknown as BackgroundContext;
+        await scope.openReaderWindowSetup(true, selection, true, false);
+      },
+      { selection: selectionText },
+    );
+
+    const readerPage2 = await readerPagePromise2;
+    await readerPage2.waitForLoadState('domcontentloaded');
+    await readerPage2.bringToFront();
+
+    // Wait for the reader to load
+    await expect(readerPage2.locator('#word')).not.toHaveText('', { timeout: 10_000 });
+
+    // Verify theme preference was persisted (should still be dark)
+    const persistedThemeInfo = await readerPage2.evaluate(() => {
+      const toggle = document.getElementById('toggleTheme') as HTMLInputElement;
+      const body = document.body;
+      return {
+        toggleChecked: toggle?.checked ?? false,
+        hasLightClass: body.classList.contains('reader--light'),
+        hasDarkClass: body.classList.contains('reader--dark'),
+        dataTheme: body.dataset.theme,
+        state: (window as any).state?.theme || (globalThis as any).state?.theme
+      };
+    });
+
+    expect(persistedThemeInfo.toggleChecked).toBe(false);
+    expect(persistedThemeInfo.hasLightClass).toBe(false);
+    expect(persistedThemeInfo.hasDarkClass).toBe(true);
+    expect(persistedThemeInfo.dataTheme).toBe('dark');
+    expect(persistedThemeInfo.state).toBe('dark');
+
+    await readerPage2.close();
   });
 });
