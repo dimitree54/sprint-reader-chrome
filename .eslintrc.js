@@ -1,5 +1,11 @@
 module.exports = {
-  extends: ['standard'],
+  extends: [
+    'eslint:recommended',
+    'plugin:import/recommended',
+    'plugin:import/typescript',
+    'plugin:n/recommended',
+    'plugin:promise/recommended'
+  ],
   env: {
     browser: true,
     es6: true,
@@ -13,13 +19,26 @@ module.exports = {
     chrome: 'readonly',
     browser: 'readonly'
   },
+  settings: {
+    'import/extensions': ['.js', '.ts'],
+    'import/resolver': {
+      node: {
+        extensions: ['.js', '.ts']
+      }
+    }
+  },
   overrides: [
     {
       files: ['**/*.ts'],
       parser: '@typescript-eslint/parser',
       plugins: ['@typescript-eslint'],
       extends: [
-        'standard'
+        'eslint:recommended',
+        'plugin:import/recommended',
+        'plugin:import/typescript',
+        'plugin:n/recommended',
+        'plugin:promise/recommended',
+        'plugin:@typescript-eslint/recommended'
       ],
       parserOptions: {
         ecmaVersion: 2020,
@@ -32,7 +51,9 @@ module.exports = {
           vars: 'all',
           args: 'after-used',
           ignoreRestSiblings: false
-        }]
+        }],
+        '@typescript-eslint/no-explicit-any': 'off',
+        'n/no-missing-import': 'off'
       }
     }
   ],
