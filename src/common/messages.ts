@@ -1,3 +1,5 @@
+import type { ReaderTheme } from './storage';
+
 export type BackgroundMessage =
   | {
       target: 'background';
@@ -17,6 +19,7 @@ export type BackgroundMessage =
       selectionText?: string;
       persistSelection: boolean;
       wordsPerMinute: number;
+      theme?: ReaderTheme;
     }
   | {
       target: 'background';

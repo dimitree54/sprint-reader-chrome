@@ -1,5 +1,10 @@
 import { getBrowser } from '../platform/browser';
-import { readReaderPreferences, readSelection, writeReaderPreferences } from '../common/storage';
+import {
+  readReaderPreferences,
+  readSelection,
+  writeReaderPreferences,
+  type ReaderTheme,
+} from '../common/storage';
 import type { ReaderMessage } from '../common/messages';
 import { preprocessText } from './text-processor';
 import { createChunks, type WordItem, type TimingSettings } from './timing-engine';
@@ -37,6 +42,7 @@ type ReaderState = {
   wordFlicker: boolean;
   wordFlickerPercent: number;
   optimalFontSize: string;
+  theme: ReaderTheme;
 };
 
 const state: ReaderState = {
@@ -56,7 +62,33 @@ const state: ReaderState = {
   wordFlicker: false,
   wordFlickerPercent: 10,
   optimalFontSize: '128px',
+  theme: 'dark',
 };
+
+function applyTheme(theme: ReaderTheme) {
+  const body = document.body;
+  if (!body) {
+    return;
+  }
+
+  body.classList.toggle('reader--light', theme === 'light');
+  body.classList.toggle('reader--dark', theme !== 'light');
+  body.dataset.theme = theme;
+}
+
+function persistReaderPreferences() {
+  void writeReaderPreferences({
+    wordsPerMinute: state.wordsPerMinute,
+    persistSelection: state.persistSelection,
+    pauseAfterComma: state.pauseAfterComma,
+    pauseAfterPeriod: state.pauseAfterPeriod,
+    pauseAfterParagraph: state.pauseAfterParagraph,
+    chunkSize: state.chunkSize,
+    wordFlicker: state.wordFlicker,
+    wordFlickerPercent: state.wordFlickerPercent,
+    theme: state.theme,
+  });
+}
 
 function getTimingSettings(): TimingSettings {
   return {
@@ -193,6 +225,9 @@ async function loadSelection() {
   state.chunkSize = prefs.chunkSize;
   state.wordFlicker = prefs.wordFlicker;
   state.wordFlickerPercent = prefs.wordFlickerPercent;
+  state.theme = prefs.theme;
+
+  applyTheme(state.theme);
 
   const slider = document.getElementById('sliderWpm') as HTMLInputElement | null;
   const wpmValue = document.getElementById('wpmValue');
@@ -201,6 +236,11 @@ async function loadSelection() {
   }
   if (wpmValue) {
     wpmValue.textContent = String(state.wordsPerMinute);
+  }
+
+  const themeToggle = document.getElementById('toggleTheme') as HTMLInputElement | null;
+  if (themeToggle) {
+    themeToggle.checked = state.theme === 'light';
   }
 
   const rawText = selection?.text ? decodeHtml(selection.text) : '';
@@ -249,16 +289,14 @@ function registerControls() {
     state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems);
 
     renderWord();
-    void writeReaderPreferences({
-      wordsPerMinute: value,
-      persistSelection: state.persistSelection,
-      pauseAfterComma: state.pauseAfterComma,
-      pauseAfterPeriod: state.pauseAfterPeriod,
-      pauseAfterParagraph: state.pauseAfterParagraph,
-      chunkSize: state.chunkSize,
-      wordFlicker: state.wordFlicker,
-      wordFlickerPercent: state.wordFlickerPercent,
-    });
+    persistReaderPreferences();
+  });
+
+  const themeToggle = document.getElementById('toggleTheme') as HTMLInputElement | null;
+  themeToggle?.addEventListener('change', () => {
+    state.theme = themeToggle.checked ? 'light' : 'dark';
+    applyTheme(state.theme);
+    persistReaderPreferences();
   });
 
   // Handle window resize to recalculate font sizes
