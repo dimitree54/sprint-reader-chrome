@@ -80,12 +80,19 @@ export function detectPunctuation(text: string): { hasComma: boolean; hasPeriod:
 }
 
 export function assignOptimalLetterPosition(text: string): number {
-  // Algorithm from the original engine.js
-  const length = text.length;
-  if (length === 1) return 1;
-  if (length >= 1 && length <= 4) return 2;
-  if (length >= 5 && length <= 9) return 3;
-  return 4;
+  const indices: number[] = [];
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] !== ' ') {
+      indices.push(i + 1); // 1-based for .charN spans
+    }
+  }
+
+  const count = indices.length;
+  if (count === 0) return 1;
+  if (count === 1) return indices[0];
+  if (count <= 4) return indices[1] ?? indices[count - 1];
+  if (count <= 9) return indices[2] ?? indices[count - 1];
+  return indices[3] ?? indices[count - 1];
 }
 
 export function calculateWordTiming(wordItem: WordItem, settings: TimingSettings): number {
@@ -186,7 +193,7 @@ export function createChunks(words: string[], settings: TimingSettings): WordIte
     while (j < words.length &&
            chunkWords.length < settings.chunkSize &&
            words[j].length <= 3 &&
-           !/[.!?]/.test(words[i])) { // Don't chunk across sentences
+           !/[.!?]/.test(words[j])) { // Don't chunk across sentences
       chunkWords.push(words[j]);
       j++;
     }

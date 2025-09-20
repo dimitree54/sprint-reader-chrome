@@ -13,9 +13,16 @@ export type VisualSettings = {
 };
 
 export function wrapLettersInSpans(text: string): string {
-  return text
-    .split('')
-    .map((char, index) => `<span class="char${index + 1}">${char}</span>`)
+  const escape = (value: string) =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  return [...text]
+    .map((char, index) => `<span class="char${index + 1}">${escape(char)}</span>`)
     .join('');
 }
 
@@ -29,10 +36,7 @@ export function highlightOptimalLetter(wordElement: HTMLElement, wordItem: WordI
   }
 }
 
-export function calculateOptimalLetterCenterPosition(wordItem: WordItem): number {
-  const wordElement = document.getElementById('word');
-  if (!wordElement) return 0;
-
+export function calculateOptimalLetterCenterPosition(wordElement: HTMLElement, wordItem: WordItem): number {
   // Get the optimal letter position (1-based index)
   const optimalPosition = wordItem.optimalLetterPosition;
 
@@ -73,7 +77,7 @@ export function setOptimalWordPositioning(wordElement: HTMLElement, wordItem: Wo
   wordElement.style.transform = 'translateY(-50%)';
 
   // Get the current position of the optimal letter center
-  const currentLetterCenterX = calculateOptimalLetterCenterPosition(wordItem);
+  const currentLetterCenterX = calculateOptimalLetterCenterPosition(wordElement, wordItem);
 
   // Calculate how much to move to center the optimal letter
   const viewportCenterX = window.innerWidth / 2;

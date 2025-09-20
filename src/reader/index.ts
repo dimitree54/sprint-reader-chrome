@@ -99,15 +99,19 @@ function renderWord() {
     });
 
     // Apply word flicker effect if enabled
-    applyFlickerEffect(wordElement, currentWordItem, visualSettings);
+    if (state.playing) {
+      applyFlickerEffect(wordElement, currentWordItem, visualSettings);
+    }
   } else {
     wordElement.textContent = '';
   }
 
   statusElement.textContent = state.playing ? 'Playing' : 'Paused';
-  if (state.words.length > 0) {
-    const percent = Math.min(100, Math.round(((state.index + 1) / state.words.length) * 100));
-    progressElement.textContent = `${percent}% • ${state.index + 1} / ${state.words.length}`;
+  if (state.wordItems.length > 0) {
+    const shown = Math.min(state.index + 1, state.wordItems.length);
+    const total = state.wordItems.length;
+    const percent = Math.min(100, Math.round((shown / total) * 100));
+    progressElement.textContent = `${percent}% • ${shown} / ${total}`;
   } else {
     progressElement.textContent = '';
   }
@@ -121,7 +125,8 @@ function renderWord() {
 function calculateDelay(): number {
   const currentWordItem = state.wordItems[state.index];
   if (currentWordItem) {
-    return currentWordItem.duration + currentWordItem.postdelay;
+    const delay = (currentWordItem.duration ?? 0) + (currentWordItem.postdelay ?? 0);
+    return Math.max(delay, 20);
   }
   return Math.max(60_000 / Math.max(100, state.wordsPerMinute), 20);
 }
@@ -131,7 +136,7 @@ function scheduleNextWord() {
     return;
   }
 
-  if (state.index >= state.words.length - 1) {
+  if (state.index >= state.wordItems.length - 1) {
     state.playing = false;
     renderWord();
     return;

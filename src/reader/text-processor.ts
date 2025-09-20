@@ -4,9 +4,9 @@
  */
 
 export function handleHyphenatedWords(text: string): string {
-  // Convert hyphenated words to single units for better reading flow
-  // Use global replace to handle multiple hyphens like "state-of-the-art"
-  return text.replace(/-/g, '');
+  // Remove hyphens only when joining letters (and preserve numbers/signs)
+  // e.g., "state-of-the-art" → "stateoftheart", but keep "2025-09-20" and "-3.14"
+  return text.replace(/(?<=\p{L})-(?=\p{L})/gu, '');
 }
 
 export function consolidateAcronyms(words: string[]): string[] {
