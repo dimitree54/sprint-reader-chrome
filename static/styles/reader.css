@@ -38,10 +38,10 @@ body {
 
 .reader__main {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   padding: 32px;
+  position: relative;
+  height: 100%;
 }
 
 .reader__word {
@@ -49,7 +49,11 @@ body {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: none;
-  text-align: center;
+  white-space: nowrap;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
 }
 
 .reader__controls {
@@ -87,6 +91,13 @@ body {
   align-items: center;
   gap: 12px;
   font-size: 0.95rem;
+}
+
+.reader__wpm-value {
+  min-width: 3em;
+  text-align: center;
+  font-weight: 600;
+  color: #8e2de2;
 }
 
 .reader__progress {
