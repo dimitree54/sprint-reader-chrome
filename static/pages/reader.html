@@ -18,13 +18,32 @@
       <div id="word" class="reader__word" aria-live="assertive" aria-atomic="true"></div>
     </main>
     <footer class="reader__controls">
-      <button id="btnPlay" class="reader__button">Play</button>
-      <button id="btnRestart" class="reader__button reader__button--secondary">Restart</button>
-      <label class="reader__slider-label">
-        <span>Words per minute</span>
-        <input id="sliderWpm" type="range" min="100" max="2000" step="50" value="400" />
-        <span id="wpmValue" class="reader__wpm-value">400</span>
-      </label>
+      <div class="reader__controls-group">
+        <button id="btnPlay" class="reader__button">Play</button>
+        <button id="btnRestart" class="reader__button reader__button--secondary">Restart</button>
+      </div>
+      <div class="reader__controls-group reader__controls-group--settings">
+        <label class="reader__slider-label">
+          <span>Words per minute</span>
+          <input id="sliderWpm" type="range" min="100" max="2000" step="50" value="400" />
+          <span id="wpmValue" class="reader__wpm-value">400</span>
+        </label>
+        <label class="reader__theme-switch" for="toggleTheme">
+          <input
+            id="toggleTheme"
+            class="reader__theme-switch-input"
+            type="checkbox"
+            role="switch"
+            aria-label="Toggle light theme"
+          />
+          <span class="reader__theme-switch-track" aria-hidden="true">
+            <span class="reader__theme-switch-icon reader__theme-switch-icon--sun">☀️</span>
+            <span class="reader__theme-switch-icon reader__theme-switch-icon--moon">🌙</span>
+            <span class="reader__theme-switch-thumb"></span>
+          </span>
+          <span class="reader__theme-switch-label">Light theme</span>
+        </label>
+      </div>
     </footer>
     <script type="module" src="../scripts/reader.js"></script>
   </body>
