@@ -3,13 +3,18 @@
   "version": "1.0.0",
   "description": "Automation tooling and tests for the Sprint Reader browser extension.",
   "scripts": {
-    "test": "playwright test",
-    "test:debug": "PWDEBUG=1 playwright test",
-    "test:ui": "playwright test --ui"
+    "build": "node ./scripts/build-extension.mjs chrome",
+    "build:chrome": "node ./scripts/build-extension.mjs chrome",
+    "build:firefox": "node ./scripts/build-extension.mjs firefox",
+    "build:safari": "node ./scripts/build-extension.mjs safari",
+    "test": "npm run build:chrome && xvfb-run -a playwright test",
+    "test:debug": "PWDEBUG=1 xvfb-run -a playwright test",
+    "test:ui": "xvfb-run -a playwright test --ui"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
     "@types/node": "^24.5.2",
+    "esbuild": "^0.23.0",
     "typescript": "^5.9.2",
     "yazl": "^3.3.1"
   }

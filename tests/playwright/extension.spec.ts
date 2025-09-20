@@ -34,7 +34,7 @@ test.describe('Sprint Reader extension (Chrome)', () => {
     expect(selectionText.length).toBeGreaterThan(0);
 
     const readerPagePromise = context.waitForEvent('page', {
-      predicate: (p) => p.url().startsWith(`chrome-extension://${extensionId}/src/reader.html`),
+      predicate: (p) => p.url().startsWith(`chrome-extension://${extensionId}/pages/reader.html`),
       timeout: 10_000,
     });
 
@@ -102,7 +102,7 @@ test.describe('Sprint Reader extension (Chrome)', () => {
     expect(selectionText.length).toBeGreaterThan(0);
 
     const readerPagePromise = context.waitForEvent('page', {
-      predicate: (p) => p.url().startsWith(`chrome-extension://${extensionId}/src/reader.html`),
+      predicate: (p) => p.url().startsWith(`chrome-extension://${extensionId}/pages/reader.html`),
       timeout: 10_000,
     });
 

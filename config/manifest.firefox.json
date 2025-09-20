@@ -1,0 +1,8 @@
+{
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "sprint-reader@sprint-reader.app",
+      "strict_min_version": "109.0"
+    }
+  }
+}
