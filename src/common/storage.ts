@@ -11,7 +11,6 @@ export type ReaderTheme = 'dark' | 'light';
 
 export type ReaderPreferences = {
   wordsPerMinute: number;
-  persistSelection: boolean;
   pauseAfterComma: boolean;
   pauseAfterPeriod: boolean;
   pauseAfterParagraph: boolean;
@@ -62,7 +61,6 @@ export async function setInStorage(items: Record<string, unknown>): Promise<void
 
 export const STORAGE_KEYS = {
   selection: 'sprintReader.selection',
-  selectionHistory: 'sprintReader.selectionHistory',
   readerPrefs: 'sprintReader.readerPrefs',
 } as const;
 
@@ -72,24 +70,15 @@ export async function readSelection(): Promise<StoredSelection | undefined> {
 }
 
 export async function writeSelection(selection: StoredSelection): Promise<void> {
-  const history = await readSelectionHistory();
-  const nextHistory = [selection, ...history.filter((item) => item.text !== selection.text)].slice(0, 5);
   await setInStorage({
     [STORAGE_KEYS.selection]: selection,
-    [STORAGE_KEYS.selectionHistory]: nextHistory,
   });
-}
-
-export async function readSelectionHistory(): Promise<StoredSelection[]> {
-  const result = await getFromStorage<StoredSelection[]>([STORAGE_KEYS.selectionHistory]);
-  return result[STORAGE_KEYS.selectionHistory] ?? [];
 }
 
 export async function readReaderPreferences(): Promise<ReaderPreferences> {
   const result = await getFromStorage<ReaderPreferences>([STORAGE_KEYS.readerPrefs]);
   return {
     wordsPerMinute: result[STORAGE_KEYS.readerPrefs]?.wordsPerMinute ?? 400,
-    persistSelection: result[STORAGE_KEYS.readerPrefs]?.persistSelection ?? true,
     pauseAfterComma: result[STORAGE_KEYS.readerPrefs]?.pauseAfterComma ?? true,
     pauseAfterPeriod: result[STORAGE_KEYS.readerPrefs]?.pauseAfterPeriod ?? true,
     pauseAfterParagraph: result[STORAGE_KEYS.readerPrefs]?.pauseAfterParagraph ?? true,

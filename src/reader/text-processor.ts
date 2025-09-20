@@ -1,13 +1,8 @@
 /**
  * Advanced text preprocessing for optimal RSVP reading
- * Handles hyphens, acronyms, numbers, and long word splitting
+ * Handles acronyms, numbers, and long word splitting
  */
 
-export function handleHyphenatedWords(text: string): string {
-  // Remove hyphens only when joining letters (and preserve numbers/signs)
-  // e.g., "state-of-the-art" → "stateoftheart", but keep "2025-09-20" and "-3.14"
-  return text.replace(/(?<=\p{L})-(?=\p{L})/gu, '');
-}
 
 export function consolidateAcronyms(words: string[]): string[] {
   const result: string[] = [];
@@ -103,24 +98,21 @@ export function splitLongWords(text: string): string[] {
 }
 
 export function preprocessText(text: string): string[] {
-  // Step 1: Handle hyphenated words
-  const dehyphenated = handleHyphenatedWords(text);
-
-  // Step 2: Preserve paragraph breaks, then normalize other whitespace
+  // Step 1: Preserve paragraph breaks, then normalize other whitespace
   const PARA = '¶¶';
-  const preserved = dehyphenated.replace(/\r?\n\r?\n/g, ` ${PARA} `);
+  const preserved = text.replace(/\r?\n\r?\n/g, ` ${PARA} `);
   const normalized = preserved.replace(/\s+/g, ' ').trim();
   let words = normalized.length > 0 ? normalized.split(' ') : [];
   // Restore paragraph markers as actual double newlines so downstream can detect
   words = words.map(w => (w === PARA ? '\n\n' : w));
 
-  // Step 3: Consolidate acronyms
+  // Step 2: Consolidate acronyms
   words = consolidateAcronyms(words);
 
-  // Step 4: Preserve numbers with decimals/commas
+  // Step 3: Preserve numbers with decimals/commas
   words = preserveNumbersDecimals(words);
 
-  // Step 5: Split very long words
+  // Step 4: Split very long words
   const finalWords: string[] = [];
   words.forEach(word => {
     const splitWords = splitLongWords(word);

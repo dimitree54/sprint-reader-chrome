@@ -2,31 +2,18 @@ import { getBrowser } from '../platform/browser';
 import type { BackgroundMessage } from '../common/messages';
 import {
   readReaderPreferences,
-  writeReaderPreferences,
-  type ReaderPreferences,
   type ReaderTheme,
 } from '../common/storage';
 
 const browser = getBrowser();
 
 type PopupElements = {
-  btnReadSelection: HTMLButtonElement;
-  btnReadLast: HTMLButtonElement;
-  inputWpm: HTMLInputElement;
-  checkboxPersist: HTMLInputElement;
+  inputText: HTMLInputElement;
+  speedReadButton: HTMLButtonElement;
+  menuEntryTextSpan: HTMLSpanElement;
 };
 
-let prefsState: ReaderPreferences = {
-  wordsPerMinute: 400,
-  persistSelection: true,
-  pauseAfterComma: true,
-  pauseAfterPeriod: true,
-  pauseAfterParagraph: true,
-  chunkSize: 1,
-  wordFlicker: false,
-  wordFlickerPercent: 10,
-  theme: 'dark',
-};
+let currentTheme: ReaderTheme = 'dark';
 
 function applyTheme(theme: ReaderTheme) {
   const body = document.body;
@@ -39,76 +26,76 @@ function applyTheme(theme: ReaderTheme) {
   body.dataset.theme = theme;
 }
 
-function updatePreferences(partial: Partial<ReaderPreferences>) {
-  prefsState = { ...prefsState, ...partial };
-  void writeReaderPreferences(prefsState);
-}
-
-async function loadPreferences(elements: PopupElements) {
+async function loadPreferences() {
   const prefs = await readReaderPreferences();
-  prefsState = { ...prefsState, ...prefs };
-  elements.inputWpm.value = String(prefsState.wordsPerMinute);
-  elements.checkboxPersist.checked = prefsState.persistSelection;
-  applyTheme(prefsState.theme);
+  currentTheme = prefs.theme;
+  applyTheme(currentTheme);
 }
 
-async function sendOpenReaderMessage(selectionText: string | undefined, elements: PopupElements) {
-  const wordsPerMinute = Number.parseInt(elements.inputWpm.value, 10) || 400;
-  const persistSelection = elements.checkboxPersist.checked;
-
-  prefsState = {
-    ...prefsState,
-    wordsPerMinute,
-    persistSelection,
-  };
-  void writeReaderPreferences(prefsState);
-
+async function sendOpenReaderMessage(selectionText: string) {
+  const prefs = await readReaderPreferences();
   const message: BackgroundMessage = {
     target: 'background',
     type: 'openReaderFromPopup',
     selectionText,
-    wordsPerMinute,
-    persistSelection,
-    theme: prefsState.theme,
+    wordsPerMinute: prefs.wordsPerMinute,
+    theme: currentTheme,
   };
 
   await browser.runtime.sendMessage(message);
 }
 
+async function loadMenuEntryText(elements: PopupElements) {
+  try {
+    const response = await browser.runtime.sendMessage({
+      target: 'background',
+      type: 'getMenuEntryText'
+    });
+    if (response?.menuEntryText) {
+      elements.menuEntryTextSpan.textContent = response.menuEntryText;
+    }
+  } catch (error) {
+    console.warn('Failed to load menu entry text:', error);
+  }
+}
+
 async function registerEvents(elements: PopupElements) {
-  elements.btnReadSelection.addEventListener('click', () => {
-    void sendOpenReaderMessage('', elements);
+  function updateButtonState() {
+    const text = elements.inputText.value.trim();
+    elements.speedReadButton.disabled = text.length === 0;
+  }
+
+  async function triggerReadFromInput() {
+    const text = elements.inputText.value.trim();
+    if (text.length === 0) {
+      return;
+    }
+
+    elements.inputText.value = '';
+    elements.inputText.blur();
+    updateButtonState();
+    await sendOpenReaderMessage(text);
+  }
+
+  elements.inputText.addEventListener('input', updateButtonState);
+
+  elements.speedReadButton.addEventListener('click', () => {
+    void triggerReadFromInput();
   });
 
-  elements.btnReadLast.addEventListener('click', () => {
-    void sendOpenReaderMessage(undefined, elements);
-  });
-
-  elements.inputWpm.addEventListener('change', () => {
-    const value = Number.parseInt(elements.inputWpm.value, 10) || 400;
-    updatePreferences({
-      wordsPerMinute: value,
-      persistSelection: elements.checkboxPersist.checked,
-    });
-  });
-
-  elements.checkboxPersist.addEventListener('change', () => {
-    const value = Number.parseInt(elements.inputWpm.value, 10) || 400;
-    updatePreferences({
-      wordsPerMinute: value,
-      persistSelection: elements.checkboxPersist.checked,
-    });
-  });
+  // Initialize button state
+  updateButtonState();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
   const elements: PopupElements = {
-    btnReadSelection: document.getElementById('btnReadSelection') as HTMLButtonElement,
-    btnReadLast: document.getElementById('btnReadLast') as HTMLButtonElement,
-    inputWpm: document.getElementById('inputWpm') as HTMLInputElement,
-    checkboxPersist: document.getElementById('inputPersistSelection') as HTMLInputElement,
+    inputText: document.getElementById('inputTextToRead') as HTMLInputElement,
+    speedReadButton: document.getElementById('speedReadButton') as HTMLButtonElement,
+    menuEntryTextSpan: document.getElementById('menuEntryText') as HTMLSpanElement,
   };
 
-  await loadPreferences(elements);
+  await loadPreferences();
+  await loadMenuEntryText(elements);
   await registerEvents(elements);
 });
+

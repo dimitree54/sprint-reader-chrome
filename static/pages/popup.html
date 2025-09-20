@@ -13,26 +13,22 @@
     </header>
     <main class="popup__main" role="main">
       <section class="popup__section">
-        <p class="popup__description">Start reading the selected text or open the last saved passage.</p>
-        <div class="popup__actions">
-          <button id="btnReadSelection" class="popup__button">Read Selection</button>
-          <button id="btnReadLast" class="popup__button popup__button--secondary">Read Last Saved</button>
-        </div>
-      </section>
-      <section class="popup__section">
-        <h2 class="popup__subtitle">Quick Settings</h2>
-        <label class="popup__field">
-          <span class="popup__field-label">Words per minute</span>
-          <input id="inputWpm" type="number" min="100" max="2000" step="50" value="400" class="popup__input" />
-        </label>
-        <label class="popup__field">
-          <span class="popup__field-label">Remember text automatically</span>
-          <input id="inputPersistSelection" type="checkbox" checked />
+        <p class="popup__description">Select any text on the page, right-click and choose '<span id="menuEntryText">Speed read selected text</span>' from the menu.</p>
+        <p class="popup__or">OR</p>
+        <label class="popup__field popup__field--stacked" for="inputTextToRead">
+          <input
+            id="inputTextToRead"
+            type="text"
+            class="popup__text-input"
+            placeholder="Paste any text here"
+            autocomplete="off"
+          />
         </label>
       </section>
+        <button id="speedReadButton" class="popup__speed-read-button" disabled>Speed read it</button>
     </main>
     <footer class="popup__footer">
-      <a href="https://sprint-reader.com" target="_blank" rel="noreferrer">Help &amp; Support</a>
+      <a href="https://speed-reader.com" target="_blank" rel="noreferrer">Help &amp; Support</a>
     </footer>
     <script type="module" src="../scripts/popup.js"></script>
   </body>

@@ -17,7 +17,6 @@ export type BackgroundMessage =
       target: 'background';
       type: 'openReaderFromPopup';
       selectionText?: string;
-      persistSelection: boolean;
       wordsPerMinute: number;
       theme?: ReaderTheme;
     }
@@ -27,12 +26,21 @@ export type BackgroundMessage =
       selectionText: string;
       haveSelection: boolean;
       dirRTL: boolean;
+    }
+  | {
+      target: 'background';
+      type: 'getMenuEntryText';
     };
 
 export type ReaderMessage =
   | {
       target: 'reader';
       type: 'refreshReader';
+    };
+
+export type BackgroundResponse =
+  | {
+      menuEntryText: string;
     };
 
 export type ContentRequest =

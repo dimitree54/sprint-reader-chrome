@@ -351,8 +351,8 @@ test.describe('Sprint Reader extension (Chrome)', () => {
     const decimalNumber = items.find(item => item.text === '3.14');
     expect(decimalNumber).toBeTruthy();
 
-    // Check for hyphen removal (state-of-the-art becomes stateoftheart)
-    const hyphenatedWord = items.find(item => item.text === 'stateoftheart');
+    // Check that hyphens are preserved (state-of-the-art stays as state-of-the-art)
+    const hyphenatedWord = items.find(item => item.text === 'state-of-the-art');
     expect(hyphenatedWord).toBeTruthy();
 
     // Check that very long words were split or handled
@@ -373,7 +373,6 @@ test.describe('Sprint Reader extension (Chrome)', () => {
 
     const selectionText = (await page.evaluate(() => window.getSelection()?.toString() ?? '')).trim();
     expect(selectionText.length).toBeGreaterThan(0);
-
     const readerPagePromise = context.waitForEvent('page', {
       predicate: (p) => p.url().startsWith(`chrome-extension://${extensionId}/pages/reader.html`),
       timeout: 10_000,
@@ -386,7 +385,6 @@ test.describe('Sprint Reader extension (Chrome)', () => {
       },
       { selection: selectionText },
     );
-
     const readerPage = await readerPagePromise;
     await readerPage.waitForLoadState('domcontentloaded');
     await readerPage.bringToFront();

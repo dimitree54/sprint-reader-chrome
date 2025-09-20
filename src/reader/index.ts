@@ -32,7 +32,6 @@ type ReaderState = {
   playing: boolean;
   timerId: ReturnType<typeof setTimeout> | undefined;
   wordsPerMinute: number;
-  persistSelection: boolean;
   highlightOptimalLetter: boolean;
   highlightOptimalLetterColor: string;
   pauseAfterComma: boolean;
@@ -52,7 +51,6 @@ const state: ReaderState = {
   playing: false,
   timerId: undefined,
   wordsPerMinute: 400,
-  persistSelection: true,
   highlightOptimalLetter: true,
   highlightOptimalLetterColor: '#FF8C00',
   pauseAfterComma: true,
@@ -79,7 +77,6 @@ function applyTheme(theme: ReaderTheme) {
 function persistReaderPreferences() {
   void writeReaderPreferences({
     wordsPerMinute: state.wordsPerMinute,
-    persistSelection: state.persistSelection,
     pauseAfterComma: state.pauseAfterComma,
     pauseAfterPeriod: state.pauseAfterPeriod,
     pauseAfterParagraph: state.pauseAfterParagraph,
@@ -218,7 +215,6 @@ async function loadSelection() {
   const selection = await readSelection();
   const prefs = await readReaderPreferences();
   state.wordsPerMinute = prefs.wordsPerMinute;
-  state.persistSelection = prefs.persistSelection;
   state.pauseAfterComma = prefs.pauseAfterComma;
   state.pauseAfterPeriod = prefs.pauseAfterPeriod;
   state.pauseAfterParagraph = prefs.pauseAfterParagraph;

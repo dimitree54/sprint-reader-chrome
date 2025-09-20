@@ -3,11 +3,9 @@ import type { BackgroundMessage, RuntimeMessage } from '../common/messages';
 import {
   readReaderPreferences,
   readSelection,
-  readSelectionHistory,
   setInStorage,
   writeReaderPreferences,
   writeSelection,
-  STORAGE_KEYS,
   type ReaderPreferences,
   type StoredSelection,
 } from '../common/storage';
@@ -29,6 +27,8 @@ let latestSelection: SelectionState = {
 };
 let readerWindowId: number | undefined;
 let cachedPrefs: ReaderPreferences | undefined;
+
+const CONTEXT_MENU_TITLE = 'Speed read selected text';
 
 function htmlEncode(value: string): string {
   return value.replace(/[&<>'"]/g, (char) => {
@@ -115,13 +115,9 @@ async function persistPreferences(prefs: ReaderPreferences) {
   await writeReaderPreferences(prefs);
 }
 
-async function persistSelection(selection: SelectionState, shouldPersist: boolean) {
+async function persistSelection(selection: SelectionState) {
   const storedSelection = toStoredSelection(selection);
-  if (shouldPersist) {
-    await writeSelection(storedSelection);
-  } else {
-    await setInStorage({ [STORAGE_KEYS.selection]: storedSelection });
-  }
+  await writeSelection(storedSelection);
 }
 
 async function openReaderWindow(): Promise<void> {
@@ -133,7 +129,7 @@ async function openReaderWindow(): Promise<void> {
       await browser.runtime.sendMessage({ target: 'reader', type: 'refreshReader' });
       return;
     } catch (error) {
-      console.warn('[Sprint Reader] Failed to focus reader window, opening a new one.', error);
+      console.warn('[Speed Reader] Failed to focus reader window, opening a new one.', error);
       readerWindowId = undefined;
     }
   }
@@ -155,9 +151,6 @@ async function openReaderWindowSetup(
   haveSelection: boolean,
   directionRTL: boolean,
 ): Promise<void> {
-  const prefs = await ensurePreferences();
-  const shouldPersist = saveToLocal ? prefs.persistSelection : false;
-
   latestSelection = {
     text,
     hasSelection: haveSelection,
@@ -165,16 +158,26 @@ async function openReaderWindowSetup(
     timestamp: Date.now(),
   };
 
-  await persistSelection(latestSelection, shouldPersist);
+  if (saveToLocal) {
+    await persistSelection(latestSelection);
+  }
 
   await openReaderWindow();
 }
 
 function updateSelectionFromMessage(message: BackgroundMessage) {
+  const text = 'selectionText' in message && typeof message.selectionText === 'string'
+    ? message.selectionText
+    : 'selectedText' in message
+      ? message.selectedText
+      : '';
+  const hasSelection = 'haveSelection' in message ? message.haveSelection : text.length > 0;
+  const isRTL = 'dirRTL' in message ? message.dirRTL : false;
+
   latestSelection = {
-    text: message.selectedText,
-    hasSelection: message.haveSelection,
-    isRTL: message.dirRTL,
+    text,
+    hasSelection,
+    isRTL,
     timestamp: Date.now(),
   };
 }
@@ -203,18 +206,22 @@ async function handleMessage(rawMessage: RuntimeMessage, _sender: unknown, sendR
       const nextPrefs: ReaderPreferences = {
         ...prefs,
         wordsPerMinute: message.wordsPerMinute,
-        persistSelection: message.persistSelection,
         theme: message.theme ?? prefs.theme,
       };
       await persistPreferences(nextPrefs);
 
-      if (message.selectionText && message.selectionText.length > 0) {
-        await openReaderWindowSetup(true, message.selectionText, true, false);
-      } else {
-        await openReaderWindowSetup(true, latestSelection.text, latestSelection.hasSelection, latestSelection.isRTL);
+      const providedText = message.selectionText?.trim() ?? '';
+      if (providedText.length === 0) {
+        return true;
       }
+
+      // Do not persist manual popup input.
+      await openReaderWindowSetup(false, providedText, true, false);
       return true;
     }
+    case 'getMenuEntryText':
+      sendResponse({ menuEntryText: CONTEXT_MENU_TITLE });
+      return true;
     default:
       return undefined;
   }
@@ -235,30 +242,19 @@ async function handleInstall(details: typeof browser.runtime.OnInstalledDetailsT
 
 async function createContextMenus() {
   try {
-    browser.contextMenus.removeAll();
+    await browser.contextMenus.removeAll();
   } catch (error) {
     // Ignore remove errors when menus don't exist yet.
   }
 
-  const menuEntries: Array<{ id: string; title: string; contexts: chrome.contextMenus.ContextType[] }> = [
-    {
+  try {
+    browser.contextMenus.create({
       id: 'read-selection',
-      title: 'Sprint read selected text',
+      title: CONTEXT_MENU_TITLE,
       contexts: ['selection'],
-    },
-    {
-      id: 'read-last',
-      title: 'Sprint read last saved selection',
-      contexts: ['page'],
-    },
-  ];
-
-  for (const entry of menuEntries) {
-    try {
-      browser.contextMenus.create(entry);
-    } catch (error) {
-      console.warn('[Sprint Reader] Failed to create context menu entry', entry.id, error);
-    }
+    });
+  } catch (error) {
+    console.warn('[Speed Reader] Failed to create context menu entry', 'read-selection', error);
   }
 }
 
@@ -266,13 +262,6 @@ browser.contextMenus.onClicked.addListener(async (info) => {
   if (info.menuItemId === 'read-selection' && info.selectionText) {
     await openReaderWindowSetup(true, info.selectionText, true, false);
     return;
-  }
-
-  if (info.menuItemId === 'read-last') {
-    const history = await readSelectionHistory();
-    const lastStored = history[0];
-    const snapshot = lastStored ? fromStoredSelection(lastStored) : latestSelection;
-    await openReaderWindowSetup(false, snapshot.text, snapshot.hasSelection, snapshot.isRTL);
   }
 });
 
@@ -283,7 +272,7 @@ browser.windows.onRemoved.addListener((windowId) => {
 });
 
 browser.commands.onCommand.addListener(async (command) => {
-  if (command !== 'sprint_read_shortcut') {
+  if (command !== 'speed_read_shortcut') {
     return;
   }
 
