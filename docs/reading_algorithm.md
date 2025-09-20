@@ -164,3 +164,173 @@ The algorithm scales beautifully across all reading speeds:
 | Period pause | +300ms | +150ms | +75ms | +50ms |
 
 This ensures that regardless of your reading speed, the **relative timing relationships** between different word types remain optimal for comprehension.
+
+## 🧩 Advanced Text Preprocessing
+
+Sprint Reader includes sophisticated text preprocessing that optimizes text before the timing algorithm runs:
+
+### Hyphenated Word Consolidation
+
+**Problem**: Hyphenated words get split by spaces, disrupting reading flow
+**Solution**: Merge hyphenated components into single units
+
+| Original Text | After Processing | Benefit |
+|---------------|------------------|---------|
+| "state-of-the-art technology" | "stateoftheart technology" | Reads as single concept |
+| "twenty-one years old" | "twentyone years old" | Natural number reading |
+| "well-known author" | "wellknown author" | Unified adjective |
+
+### Acronym Consolidation
+
+**Problem**: Spaced acronyms read as individual letters
+**Solution**: Detect and merge acronym patterns
+
+| Original Text | After Processing | Benefit |
+|---------------|------------------|---------|
+| "U S A is great" | "USA is great" | Country name as unit |
+| "F B I investigation" | "FBI investigation" | Agency name clarity |
+| "C P U performance" | "CPU performance" | Technical term unity |
+
+**Detection Logic**: Looks for 2-4 consecutive uppercase letters and merges them.
+
+### Number Preservation
+
+**Problem**: Decimals and large numbers get fragmented
+**Solution**: Preserve number formatting for comprehension
+
+| Original Text | After Processing | Benefit |
+|---------------|------------------|---------|
+| "Pi equals 3 . 14159" | "Pi equals 3.14159" | Mathematical precision |
+| "Price: $ 1 , 000 . 50" | "Price: $ 1,000.50" | Financial clarity |
+| "Version 2 . 1 . 3" | "Version 2.1.3" | Software version unity |
+
+### Long Word Splitting
+
+**Problem**: Very long words (>17 characters) are hard to process quickly
+**Solution**: Split at natural break points
+
+| Original Word | Split Result | Break Logic |
+|---------------|--------------|-------------|
+| "antidisestablishmentarianism" | "antidisestab" + "lishmentarianism" | Syllable boundary |
+| "supercalifragilisticexpialidocious" | "supercalifragi" + "listicexpiali" + "docious" | Vowel positions |
+| "pneumonoultramicroscopicsilicovolcanoconosis" | Multiple chunks | Readable segments |
+
+**Algorithm**: Finds vowel positions between characters 10-15 for natural break points.
+
+## 🎯 Word Chunking System
+
+For improved reading flow, Sprint Reader can group short words together:
+
+### Chunking Rules
+
+- **Target**: Words ≤ 3 characters
+- **Group Size**: Configurable (default: disabled, can be 2-4 words)
+- **Boundary Respect**: Never chunks across sentence endings (`.!?`)
+
+### Chunking Examples
+
+**Input text**: "I am on a big red car in the USA"
+
+**Without Chunking** (1 word per display):
+```
+"I" → "am" → "on" → "a" → "big" → "red" → "car" → "in" → "the" → "USA"
+10 displays total
+```
+
+**With Chunking (size=3)**:
+```
+"I am on" → "a" → "big red" → "car in" → "the" → "USA"
+6 displays total (40% fewer displays)
+```
+
+### Chunking Benefits
+
+- **Reduced Eye Strain**: Fewer transitions between words
+- **Natural Phrases**: Groups function words with content words
+- **Speed Improvement**: 10% faster timing for grouped chunks
+- **Cognitive Flow**: Maintains phrase-level meaning
+
+### Timing Adjustments for Chunks
+
+Chunked words receive a small speed bonus:
+- **Individual word**: Standard timing
+- **Chunked words**: 90% of calculated time (10% speed bonus)
+
+## ✨ Word Flicker Effects
+
+Optional concentration enhancement through subtle visual effects:
+
+### Flicker Mechanism
+
+**Timing**: Activates 30% through each word's display time
+**Effect**: Brief opacity reduction (100% → 30% → 100%)
+**Duration**: Configurable percentage of word display time (default: 10%)
+
+### Flicker Examples
+
+At 400 WPM with 10% flicker:
+
+| Word | Display Time | Flicker Start | Flicker Duration |
+|------|--------------|---------------|------------------|
+| "the" | 105ms | 32ms | 11ms |
+| "reading" | 150ms | 45ms | 15ms |
+| "algorithm" | 180ms | 54ms | 18ms |
+
+### Purpose and Benefits
+
+- **Attention Reset**: Brief visual change refocuses attention
+- **Concentration Aid**: Prevents mental wandering during long sessions
+- **Customizable**: Can be disabled or adjusted (5-20% of word time)
+- **Subtle**: Doesn't disrupt reading flow when properly calibrated
+
+### When to Use Flicker
+
+**Recommended for**:
+- Long reading sessions (>10 minutes)
+- Technical or dense material
+- When attention tends to wander
+
+**Avoid when**:
+- Reading in low light
+- Eye strain or fatigue
+- High-speed reading (>800 WPM)
+
+## 🔧 Configuration and Customization
+
+All advanced features can be configured through the reader preferences:
+
+### Available Settings
+
+| Feature | Default | Range | Description |
+|---------|---------|--------|-------------|
+| **Words Per Minute** | 400 | 100-1000+ | Base reading speed |
+| **Chunk Size** | 1 (disabled) | 1-4 | Words to group together |
+| **Word Flicker** | Disabled | On/Off | Concentration flicker effect |
+| **Flicker Percent** | 10% | 5-20% | Portion of word time for flicker |
+| **Pause After Comma** | Enabled | On/Off | +50% pause after commas |
+| **Pause After Period** | Enabled | On/Off | +100% pause after periods |
+| **Pause After Paragraph** | Enabled | On/Off | +250% pause after paragraphs |
+| **Highlight Optimal Letter** | Enabled | On/Off | Orange letter highlighting |
+| **Highlight Color** | #FF8C00 | Color | Optimal letter color |
+
+### Recommended Configurations
+
+**Beginner (200-400 WPM)**:
+- Enable all punctuation pauses
+- Chunk size: 2
+- No flicker effect
+- Full highlighting
+
+**Intermediate (400-600 WPM)**:
+- Enable period/paragraph pauses only
+- Chunk size: 3
+- Light flicker (5-10%)
+- Full highlighting
+
+**Advanced (600+ WPM)**:
+- Minimal punctuation pauses
+- Chunk size: 4
+- Optional flicker (10-15%)
+- Highlighting optional
+
+This comprehensive algorithm creates a personalized, adaptive reading experience that scales with your skill level while maintaining optimal comprehension.
