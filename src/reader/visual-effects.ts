@@ -77,7 +77,6 @@ export function applyFlickerEffect(wordElement: HTMLElement, wordItem: WordItem,
  * Based on the longest word that will be displayed
  */
 export function calculateOptimalFontSizeForText(wordItems: WordItem[]): string {
-export function calculateOptimalFontSizeForText(wordItems: WordItem[]): string {
   // Prefer the content container width to avoid overestimating space
   const container = document.querySelector('.reader__main') as HTMLElement | null;
   const containerWidth = container?.clientWidth ?? window.innerWidth;
