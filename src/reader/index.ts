@@ -77,7 +77,6 @@ function applyTheme(theme: ReaderTheme) {
 function persistReaderPreferences() {
   void writeReaderPreferences({
     wordsPerMinute: state.wordsPerMinute,
-    persistSelection: true, // Fixed value since we don't use it in UI
     pauseAfterComma: state.pauseAfterComma,
     pauseAfterPeriod: state.pauseAfterPeriod,
     pauseAfterParagraph: state.pauseAfterParagraph,

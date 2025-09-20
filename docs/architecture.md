@@ -65,7 +65,7 @@ scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 
 * Responsibilities
   * Tracks the latest selection synchronised from content scripts.
-  * Persists reader preferences and the most recent selection via `storage.ts` helpers.
+  * Persists reader preferences and the most recent page selection via `storage.ts` helpers. Manual popup input is not persisted and is only used for the active reader session.
   * Owns the reader window lifecycle (`openReaderWindowSetup`) and exposes the function on `globalThis` for Playwright automation and integration tests.
   * Generates context-menu commands and keyboard shortcuts that route back into the shared open-reader workflow.
   * Normalises install/update flows by opening the welcome/updated pages from `static/pages`.

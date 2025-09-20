@@ -33,11 +33,12 @@ async function loadPreferences() {
 }
 
 async function sendOpenReaderMessage(selectionText: string) {
+  const prefs = await readReaderPreferences();
   const message: BackgroundMessage = {
     target: 'background',
     type: 'openReaderFromPopup',
     selectionText,
-    wordsPerMinute: 400, // Default speed
+    wordsPerMinute: prefs.wordsPerMinute,
     theme: currentTheme,
   };
 

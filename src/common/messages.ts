@@ -38,6 +38,11 @@ export type ReaderMessage =
       type: 'refreshReader';
     };
 
+export type BackgroundResponse =
+  | {
+      menuEntryText: string;
+    };
+
 export type ContentRequest =
   | {
       target: 'content';
