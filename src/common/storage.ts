@@ -10,6 +10,9 @@ export type StoredSelection = {
 export type ReaderPreferences = {
   wordsPerMinute: number;
   persistSelection: boolean;
+  pauseAfterComma: boolean;
+  pauseAfterPeriod: boolean;
+  pauseAfterParagraph: boolean;
 };
 
 const browser = getBrowser();
@@ -81,6 +84,9 @@ export async function readReaderPreferences(): Promise<ReaderPreferences> {
   return {
     wordsPerMinute: result[STORAGE_KEYS.readerPrefs]?.wordsPerMinute ?? 400,
     persistSelection: result[STORAGE_KEYS.readerPrefs]?.persistSelection ?? true,
+    pauseAfterComma: result[STORAGE_KEYS.readerPrefs]?.pauseAfterComma ?? true,
+    pauseAfterPeriod: result[STORAGE_KEYS.readerPrefs]?.pauseAfterPeriod ?? true,
+    pauseAfterParagraph: result[STORAGE_KEYS.readerPrefs]?.pauseAfterParagraph ?? true,
   };
 }
 
