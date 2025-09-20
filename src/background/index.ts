@@ -198,11 +198,15 @@ async function handleMessage(rawMessage: RuntimeMessage, _sender: unknown, sendR
     case 'openReaderFromContextMenu':
       await openReaderWindowSetup(true, message.selectionText, message.selectionText.length > 0, false);
       return true;
-    case 'openReaderFromPopup':
-      await persistPreferences({
+    case 'openReaderFromPopup': {
+      const prefs = await ensurePreferences();
+      const nextPrefs: ReaderPreferences = {
+        ...prefs,
         wordsPerMinute: message.wordsPerMinute,
         persistSelection: message.persistSelection,
-      });
+        theme: message.theme ?? prefs.theme,
+      };
+      await persistPreferences(nextPrefs);
 
       if (message.selectionText && message.selectionText.length > 0) {
         await openReaderWindowSetup(true, message.selectionText, true, false);
@@ -210,6 +214,7 @@ async function handleMessage(rawMessage: RuntimeMessage, _sender: unknown, sendR
         await openReaderWindowSetup(true, latestSelection.text, latestSelection.hasSelection, latestSelection.isRTL);
       }
       return true;
+    }
     default:
       return undefined;
   }
