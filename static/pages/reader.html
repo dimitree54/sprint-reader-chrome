@@ -9,9 +9,25 @@
   <body>
     <header class="reader__header">
       <h1 class="reader__title">10x your reading speed</h1>
-      <div class="reader__meta">
-        <span id="labelStatus" class="reader__status">Loading...</span>
-        <span id="labelProgress" class="reader__progress" aria-live="polite"></span>
+      <div class="reader__header-right">
+        <div class="reader__meta">
+          <span id="labelStatus" class="reader__status">Loading...</span>
+          <span id="labelProgress" class="reader__progress" aria-live="polite"></span>
+        </div>
+        <label class="reader__theme-switch reader__theme-switch--header" for="toggleTheme">
+          <input
+            id="toggleTheme"
+            class="reader__theme-switch-input"
+            type="checkbox"
+            role="switch"
+            aria-label="Toggle light theme"
+          />
+          <span class="reader__theme-switch-track" aria-hidden="true">
+            <span class="reader__theme-switch-icon reader__theme-switch-icon--sun">☀️</span>
+            <span class="reader__theme-switch-icon reader__theme-switch-icon--moon">🌙</span>
+            <span class="reader__theme-switch-thumb"></span>
+          </span>
+        </label>
       </div>
     </header>
     <main class="reader__main" role="main">
@@ -27,21 +43,6 @@
           <span>Words per minute</span>
           <input id="sliderWpm" type="range" min="100" max="2000" step="50" value="400" />
           <span id="wpmValue" class="reader__wpm-value">400</span>
-        </label>
-        <label class="reader__theme-switch" for="toggleTheme">
-          <input
-            id="toggleTheme"
-            class="reader__theme-switch-input"
-            type="checkbox"
-            role="switch"
-            aria-label="Toggle light theme"
-          />
-          <span class="reader__theme-switch-track" aria-hidden="true">
-            <span class="reader__theme-switch-icon reader__theme-switch-icon--sun">☀️</span>
-            <span class="reader__theme-switch-icon reader__theme-switch-icon--moon">🌙</span>
-            <span class="reader__theme-switch-thumb"></span>
-          </span>
-          <span class="reader__theme-switch-label">Light theme</span>
         </label>
       </div>
     </footer>
