@@ -183,6 +183,84 @@ Each command prepares a fully self-contained directory that can be zipped for st
 * The modular reader architecture (`timing-engine.ts`, `text-processor.ts`, `visual-effects.ts`) enables isolated unit testing of individual algorithms.
 * Future unit-test coverage can directly import modules under `src/common`, `src/platform`, and `src/reader` for Jest/Vitest testing.
 
+## 7.5. Text Preprocessing Architecture
+
+The text preprocessing system provides an extensible, provider-based architecture for text enhancement and translation.
+
+### 7.5.1 Provider Architecture
+
+```typescript
+interface PreprocessingProvider {
+  name: string
+  process(text: string): Promise<PreprocessingResult>
+  isAvailable(): Promise<boolean>
+}
+
+interface PreprocessingResult {
+  text: string
+  metadata?: {
+    originalLength: number
+    processedLength: number
+    wasModified: boolean
+    provider: string
+    processingTime?: number
+  }
+}
+```
+
+### 7.5.2 Current Providers
+
+* **OpenAI Provider**: Translates text to Russian using OpenAI's GPT-3.5-turbo model
+  - Requires API key stored in extension storage or environment variable
+  - Includes 10-second timeout and error handling
+  - Automatically falls back if unavailable
+
+* **Passthrough Provider**: Returns text unchanged
+  - Always available as fallback
+  - Zero processing time
+  - Used when no other providers are available
+
+### 7.5.3 Provider Selection Logic
+
+The system automatically selects the best available provider:
+
+1. **Check OpenAI availability**: If API key is present and valid
+2. **Fallback to Passthrough**: If OpenAI fails or unavailable
+3. **Error handling**: Each provider can fail gracefully to the next
+
+### 7.5.4 Configuration and Security
+
+* **API Key Storage**: Securely stored in Chrome extension storage
+* **User Configuration**: API key entered via popup interface
+* **Automatic Fallback**: No configuration needed - system handles provider selection
+* **No Key Leakage**: API keys never logged or exposed in client code
+
+### 7.5.5 Implementation Details
+
+The preprocessing system is implemented in `src/reader/text-preprocessor.ts` with:
+
+* **Provider Classes**: OpenAIProvider and PassthroughProvider implementing the PreprocessingProvider interface
+* **Manager**: PreprocessingManager that handles provider selection and fallback logic
+* **Integration**: Seamlessly integrated into the reader text processing pipeline
+* **Storage Integration**: Uses Chrome extension storage for API key persistence
+
+### 7.5.6 Future Extensibility
+
+The architecture supports easy addition of new providers:
+
+```typescript
+class CustomProvider implements PreprocessingProvider {
+  name = 'custom'
+  async isAvailable() { /* check availability */ }
+  async process(text) { /* process text */ }
+}
+```
+
+Future providers could include:
+* **Proxy Provider**: Authenticated requests through custom server
+* **Local AI Provider**: Chrome's built-in AI APIs for on-device processing
+* **Translation Services**: Google Translate, DeepL, etc.
+
 ## 8. Future Evolution
 
 * Expand the manifest overrides to capture Firefox-specific permission tweaks (e.g., action button behaviour) and Safari-specific entitlements.

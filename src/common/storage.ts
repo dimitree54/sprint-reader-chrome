@@ -55,7 +55,8 @@ export async function setInStorage (items: Record<string, unknown>): Promise<voi
 }
 
 export const STORAGE_KEYS = {
-  readerPrefs: 'sprintReader.readerPrefs'
+  readerPrefs: 'sprintReader.readerPrefs',
+  openaiApiKey: 'sprintReader.openaiApiKey'
 } as const
 
 
@@ -77,5 +78,16 @@ export async function readReaderPreferences (): Promise<ReaderPreferences> {
 export async function writeReaderPreferences (prefs: ReaderPreferences): Promise<void> {
   await setInStorage({
     [STORAGE_KEYS.readerPrefs]: prefs
+  })
+}
+
+export async function readOpenAIApiKey (): Promise<string | null> {
+  const result = await getFromStorage<string>([STORAGE_KEYS.openaiApiKey])
+  return result[STORAGE_KEYS.openaiApiKey] || null
+}
+
+export async function writeOpenAIApiKey (apiKey: string): Promise<void> {
+  await setInStorage({
+    [STORAGE_KEYS.openaiApiKey]: apiKey
   })
 }

@@ -1,20 +1,22 @@
 export { decodeHtml } from '../common/html'
 import { preprocessText } from './text-processor'
+import { preprocessTextForReader } from './text-preprocessor'
 import { createChunks } from './timing-engine'
 import { calculateOptimalFontSizeForText } from './visual-effects'
 import { getTimingSettings, state } from './state'
 
-export function rebuildWordItems (): void {
+export async function rebuildWordItems (): Promise<void> {
   const rawText = state.words.join(' ')
-  const preprocessedWords = preprocessText(rawText)
+  const preprocessingResult = await preprocessTextForReader(rawText)
+  const preprocessedWords = preprocessText(preprocessingResult.text)
   const timingSettings = getTimingSettings()
   state.wordItems = createChunks(preprocessedWords, timingSettings)
   state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems)
 }
 
-export function setWords (words: string[]): void {
+export async function setWords (words: string[]): Promise<void> {
   state.words = words
-  rebuildWordItems()
+  await rebuildWordItems()
   state.index = 0
 }
 

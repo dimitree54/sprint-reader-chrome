@@ -50,6 +50,6 @@ export async function loadSelectionContent (): Promise<void> {
   const normalised = normaliseText(rawText)
   const words = normalised.length > 0 ? normalised.split(' ') : []
 
-  setWords(words)
+  await setWords(words)
   renderCurrentWord()
 }

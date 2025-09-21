@@ -146,6 +146,9 @@ async function runBuild(browser) {
     minify: false,
     outdir: path.join(distDir, 'scripts'),
     logLevel: 'info',
+    define: {
+      'process.env.OPENAI_API_KEY': JSON.stringify(process.env.OPENAI_API_KEY || ''),
+    },
   });
 
   await writeManifest(browser);
