@@ -35,7 +35,11 @@ export function createChunks (words: string[], settings: TimingSettings): WordIt
     const chunkWords = [words[i]]
     let j = i + 1
 
+    // Only attempt grouping if the first word is also ≤3 characters
+    const canGroup = words[i].length <= 3
+
     while (
+      canGroup &&
       j < words.length &&
       chunkWords.length < settings.chunkSize &&
       words[j].length <= 3 &&

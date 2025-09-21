@@ -30,6 +30,10 @@ export type BackgroundMessage =
   | {
       target: 'background';
       type: 'getMenuEntryText';
+    }
+  | {
+      target: 'background';
+      type: 'getCurrentSelection';
     };
 
 export type ReaderMessage =
@@ -41,6 +45,14 @@ export type ReaderMessage =
 export type BackgroundResponse =
   | {
       menuEntryText: string;
+    }
+  | {
+      selection: {
+        text: string;
+        hasSelection: boolean;
+        isRTL: boolean;
+        timestamp: number;
+      };
     };
 
 export type ContentRequest =

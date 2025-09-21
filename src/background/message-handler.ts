@@ -6,6 +6,7 @@ import {
   ensureSelectionLoaded,
   selectionFromMessage
 } from './selection'
+import { getSelectionState } from './state'
 import {
   ensurePreferencesLoaded,
   persistPreferences
@@ -60,6 +61,9 @@ export async function handleBackgroundMessage (
     }
     case 'getMenuEntryText':
       sendResponse({ menuEntryText: CONTEXT_MENU_TITLE })
+      return true
+    case 'getCurrentSelection':
+      sendResponse({ selection: getSelectionState() })
       return true
     default:
       return undefined
