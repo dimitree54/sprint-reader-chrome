@@ -29,7 +29,12 @@ test.describe('Sprint Reader - UI Positioning', () => {
 
     await background.evaluate(
       async ({ selection }) => {
-        const scope = self as unknown as BackgroundContext;
+        const scope = self as unknown as BackgroundContext & {
+          openReaderWindowSetup?: BackgroundContext['openReaderWindowSetup']
+        };
+        if (typeof scope.openReaderWindowSetup !== 'function') {
+          throw new Error('openReaderWindowSetup is not available on the background worker');
+        }
         await scope.openReaderWindowSetup(true, selection, true, false);
       },
       { selection: selectionText },
