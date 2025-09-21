@@ -10,6 +10,7 @@ import {
   isSummarizationLevel,
   type SummarizationLevel
 } from './summarization'
+import { readStorageValue } from './storage-helpers'
 
 
 export type ReaderTheme = 'dark' | 'light';
@@ -105,12 +106,9 @@ export async function writeOpenAIApiKey (apiKey: string): Promise<void> {
 }
 
 export async function readTranslationLanguage (): Promise<TranslationLanguage> {
-  const result = await getFromStorage<string>([STORAGE_KEYS.translationLanguage])
-  const value = result[STORAGE_KEYS.translationLanguage]
-  if (typeof value === 'string' && isTranslationLanguage(value)) {
-    return value
-  }
-  return DEFAULT_TRANSLATION_LANGUAGE
+  const validator = (value: unknown): value is TranslationLanguage =>
+    typeof value === 'string' && isTranslationLanguage(value)
+  return readStorageValue(STORAGE_KEYS.translationLanguage, validator, DEFAULT_TRANSLATION_LANGUAGE)
 }
 
 export async function writeTranslationLanguage (language: TranslationLanguage): Promise<void> {
@@ -120,12 +118,9 @@ export async function writeTranslationLanguage (language: TranslationLanguage): 
 }
 
 export async function readSummarizationLevel (): Promise<SummarizationLevel> {
-  const result = await getFromStorage<string>([STORAGE_KEYS.summarizationLevel])
-  const value = result[STORAGE_KEYS.summarizationLevel]
-  if (typeof value === 'string' && isSummarizationLevel(value)) {
-    return value
-  }
-  return DEFAULT_SUMMARIZATION_LEVEL
+  const validator = (value: unknown): value is SummarizationLevel =>
+    typeof value === 'string' && isSummarizationLevel(value)
+  return readStorageValue(STORAGE_KEYS.summarizationLevel, validator, DEFAULT_SUMMARIZATION_LEVEL)
 }
 
 export async function writeSummarizationLevel (level: SummarizationLevel): Promise<void> {

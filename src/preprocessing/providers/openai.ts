@@ -1,68 +1,33 @@
-/**
- * Extensible text preprocessing system with swappable providers
- */
+import { buildTranslationPromptPayload } from '../../reader/openai-prompt'
+import type { PreprocessingProvider, PreprocessingResult } from './types'
+import type { PreprocessingConfig } from '../config'
 
-import { readOpenAIApiKey, readTranslationLanguage, readSummarizationLevel } from '../common/storage'
-import { buildTranslationPromptPayload } from './openai-prompt'
-
-export interface PreprocessingResult {
+// OpenAI Responses API interfaces
+interface OpenAIResponseContent {
+  type: string
   text: string
-  metadata?: {
-    originalLength: number
-    processedLength: number
-    wasModified: boolean
-    provider: string
-    processingTime?: number
-  }
-  error?: {
-    type: 'missing_api_key' | 'api_error' | 'network_error' | 'timeout_error' | 'unknown_error'
-    message: string
-    details?: Record<string, unknown>
-  }
 }
 
-export interface PreprocessingProvider {
-  name: string
-  process(text: string): Promise<PreprocessingResult>
-  isAvailable(): Promise<boolean>
+interface OpenAIResponseOutput {
+  type: 'message' | 'reasoning'
+  content: OpenAIResponseContent[]
 }
 
+interface OpenAIResponsesApiResponse {
+  output: OpenAIResponseOutput[]
+}
 
-/**
- * OpenAI provider for Russian translation
- */
-class OpenAIProvider implements PreprocessingProvider {
+export class OpenAIProvider implements PreprocessingProvider {
   name = 'openai'
 
-  async isAvailable(): Promise<boolean> {
-    const storedApiKey = await readOpenAIApiKey()
-    const apiKey = storedApiKey || process.env.OPENAI_API_KEY
-    return !!apiKey
+  isAvailable(config: PreprocessingConfig): boolean {
+    return !!config.apiKey
   }
 
-  async process(text: string): Promise<PreprocessingResult> {
+  async process(text: string, config: PreprocessingConfig): Promise<PreprocessingResult> {
     const startTime = Date.now()
-    const targetLanguage = await readTranslationLanguage()
-    const summarizationLevel = await readSummarizationLevel()
 
-    // If no translation and no summarization, return original text
-    if (targetLanguage === 'none' && summarizationLevel === 'none') {
-      return {
-        text,
-        metadata: {
-          originalLength: text.length,
-          processedLength: text.length,
-          wasModified: false,
-          provider: 'none',
-          processingTime: Date.now() - startTime
-        }
-      }
-    }
-
-    const storedApiKey = await readOpenAIApiKey()
-    const apiKey = storedApiKey || process.env.OPENAI_API_KEY
-
-    if (!apiKey) {
+    if (!config.apiKey) {
       return {
         text,
         error: {
@@ -79,14 +44,14 @@ class OpenAIProvider implements PreprocessingProvider {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000)
 
-      const payload = buildTranslationPromptPayload(text, targetLanguage, summarizationLevel)
+      const payload = buildTranslationPromptPayload(text, config.targetLanguage, config.summarizationLevel)
 
       // eslint-disable-next-line n/no-unsupported-features/node-builtins
       const response = await fetch('https://api.openai.com/v1/responses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Authorization': `Bearer ${config.apiKey}`
         },
         body: JSON.stringify(payload),
         signal: controller.signal
@@ -98,9 +63,9 @@ class OpenAIProvider implements PreprocessingProvider {
         return this.handleApiError(response, text)
       }
 
-      const data = await response.json()
+      const data = await response.json() as OpenAIResponsesApiResponse
       // Find the message output (not reasoning) - it should have type 'message'
-      const messageOutput = data.output?.find((item: { type: string }) => item.type === 'message')
+      const messageOutput = data.output?.find((item) => item.type === 'message')
       const translatedText = messageOutput?.content?.[0]?.text || text
 
       return {
@@ -175,24 +140,4 @@ class OpenAIProvider implements PreprocessingProvider {
       }
     }
   }
-}
-
-/**
- * Preprocessing manager that handles OpenAI processing
- */
-class PreprocessingManager {
-  private provider: PreprocessingProvider = new OpenAIProvider()
-
-  async process(text: string): Promise<PreprocessingResult> {
-    return await this.provider.process(text)
-  }
-}
-
-const preprocessingManager = new PreprocessingManager()
-
-/**
- * Main preprocessing function that automatically selects the best available provider
- */
-export async function preprocessTextForReader(text: string): Promise<PreprocessingResult> {
-  return preprocessingManager.process(text)
 }

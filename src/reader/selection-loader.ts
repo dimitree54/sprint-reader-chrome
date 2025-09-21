@@ -50,5 +50,8 @@ export async function loadSelectionContent (): Promise<void> {
   const words = normalised.length > 0 ? normalised.split(' ') : []
 
   await setWords(words)
-  // Note: renderCurrentWord() is called at the end of rebuildWordItems()
+
+  // Update UI after text processing
+  const { renderCurrentWord } = await import('./render')
+  renderCurrentWord()
 }
