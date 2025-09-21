@@ -25,6 +25,9 @@ jobs:
     - name: Run ESLint
       run: npx eslint src/
 
+    - name: Run TypeScript check
+      run: npm run typecheck
+
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
 
