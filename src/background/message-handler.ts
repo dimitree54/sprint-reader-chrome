@@ -57,7 +57,7 @@ export async function handleBackgroundMessage (
         return true
       }
 
-      await openReaderWindowSetup(providedText, true, false)
+      await openReaderWindowSetup(providedText, true, Boolean(message.dirRTL))
       // Informational: reader opened from popup
       return true
     }

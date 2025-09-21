@@ -15,6 +15,7 @@ const THEME_OPTIONS = {
 type PopupElements = {
   inputText: HTMLInputElement;
   speedReadButton: HTMLButtonElement;
+  speedReadPageButton: HTMLButtonElement;
   menuEntryTextSpan: HTMLSpanElement;
 };
 
@@ -26,17 +27,42 @@ async function loadPreferences () {
   applyThemeToElement(document.body, currentTheme, THEME_OPTIONS)
 }
 
-async function sendOpenReaderMessage (selectionText: string) {
+async function sendOpenReaderMessage (selectionText: string, dirRTL: boolean = false) {
   const prefs = await readReaderPreferences()
   const message: BackgroundMessage = {
     target: 'background',
     type: 'openReaderFromPopup',
     selectionText,
     wordsPerMinute: prefs.wordsPerMinute,
-    theme: currentTheme
+    theme: currentTheme,
+    dirRTL
   }
 
   await (browser.runtime.sendMessage as any)(message)
+}
+
+async function extractReadableContentFromActiveTab (): Promise<{ text: string; isRTL: boolean; wordCount: number }> {
+  const tabs = await browser.tabs.query({ active: true, currentWindow: true })
+  const activeTab = tabs[0]
+
+  if (!activeTab?.id) {
+    throw new Error('Unable to determine the active tab')
+  }
+
+  const response = await (browser.tabs.sendMessage as any)(activeTab.id, {
+    target: 'content',
+    type: 'collectReadableContent'
+  })
+
+  const result = (response as { text?: string; isRTL?: boolean; wordCount?: number } | undefined) ?? {}
+  const text = (result.text ?? '').trim()
+  const wordCount = typeof result.wordCount === 'number' ? result.wordCount : text.split(/\s+/).filter(Boolean).length
+
+  return {
+    text,
+    isRTL: Boolean(result.isRTL),
+    wordCount
+  }
 }
 
 async function loadMenuEntryText (elements: PopupElements) {
@@ -77,6 +103,51 @@ async function registerEvents (elements: PopupElements) {
     triggerReadFromInput().catch(console.error)
   })
 
+  const pageButtonDefaultLabel = elements.speedReadPageButton.textContent ?? 'Speed read this page'
+
+  async function triggerReadFullPage () {
+    if (elements.speedReadPageButton.dataset.loading === 'true') {
+      return
+    }
+
+    elements.speedReadPageButton.dataset.loading = 'true'
+    elements.speedReadPageButton.disabled = true
+    elements.speedReadPageButton.textContent = 'Scanning page…'
+
+    try {
+      const result = await extractReadableContentFromActiveTab()
+      if (result.text.length === 0 || result.wordCount < 80) {
+        elements.speedReadPageButton.textContent = 'No readable text found'
+        setTimeout(() => {
+          elements.speedReadPageButton.textContent = pageButtonDefaultLabel
+          elements.speedReadPageButton.disabled = false
+          delete elements.speedReadPageButton.dataset.loading
+        }, 2200)
+        return
+      }
+
+      elements.speedReadPageButton.textContent = 'Opening reader…'
+      await sendOpenReaderMessage(result.text, result.isRTL)
+      setTimeout(() => {
+        elements.speedReadPageButton.textContent = pageButtonDefaultLabel
+        elements.speedReadPageButton.disabled = false
+        delete elements.speedReadPageButton.dataset.loading
+      }, 800)
+    } catch (error) {
+      console.error('Failed to extract readable content from page', error)
+      elements.speedReadPageButton.textContent = 'Failed to scan page'
+      setTimeout(() => {
+        elements.speedReadPageButton.textContent = pageButtonDefaultLabel
+        elements.speedReadPageButton.disabled = false
+        delete elements.speedReadPageButton.dataset.loading
+      }, 2400)
+    }
+  }
+
+  elements.speedReadPageButton.addEventListener('click', () => {
+    triggerReadFullPage().catch(console.error)
+  })
+
   // Initialize button state
   updateButtonState()
 }
@@ -85,6 +156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const elements: PopupElements = {
     inputText: document.getElementById('inputTextToRead') as HTMLInputElement,
     speedReadButton: document.getElementById('speedReadButton') as HTMLButtonElement,
+    speedReadPageButton: document.getElementById('speedReadPageButton') as HTMLButtonElement,
     menuEntryTextSpan: document.getElementById('menuEntryText') as HTMLSpanElement
   }
 

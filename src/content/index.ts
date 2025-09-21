@@ -1,6 +1,7 @@
 import { getBrowser } from '../platform/browser'
 import type { BackgroundMessage, ContentRequest } from '../common/messages'
 import { DEFAULTS } from '../config/defaults'
+import { collectReadableContent } from './readable-content'
 
 const browser = getBrowser()
 
@@ -137,6 +138,11 @@ browser.runtime.onMessage.addListener((rawMessage: ContentRequest, _sender: chro
     case 'hideSelectionHint':
       removeSelectionHint()
       return true
+    case 'collectReadableContent': {
+      const result = collectReadableContent()
+      sendResponse(result ?? { text: '', isRTL: false, wordCount: 0 })
+      return true
+    }
     default:
       return undefined
   }

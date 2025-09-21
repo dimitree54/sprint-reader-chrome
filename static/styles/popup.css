@@ -67,6 +67,13 @@ body.popup--light {
   margin-top: 16px;
 }
 
+.popup__actions {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .popup__description {
   margin: 0 0 16px 0;
   line-height: 1.5;
@@ -149,6 +156,15 @@ body.popup--light {
   background: rgba(255, 255, 255, 0.1);
   color: rgba(245, 246, 247, 0.4);
   cursor: not-allowed;
+}
+
+.popup__speed-read-button--secondary:enabled {
+  background: linear-gradient(135deg, #f97316, #fb923c);
+  box-shadow: var(--popup-button-shadow);
+}
+
+.popup__speed-read-button--secondary:enabled:hover {
+  background: linear-gradient(135deg, #ea580c, #f97316);
 }
 
 .popup__footer {

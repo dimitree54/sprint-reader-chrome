@@ -19,6 +19,7 @@ export type BackgroundMessage =
       selectionText?: string;
       wordsPerMinute: number;
       theme?: ReaderTheme;
+      dirRTL?: boolean;
     }
   | {
       target: 'background';
@@ -69,6 +70,10 @@ export type ContentRequest =
   | {
       target: 'content';
       type: 'hideSelectionHint';
+    }
+  | {
+      target: 'content';
+      type: 'collectReadableContent';
     };
 
 export type RuntimeMessage = BackgroundMessage | ReaderMessage | ContentRequest;
