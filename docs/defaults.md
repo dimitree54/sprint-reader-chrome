@@ -46,12 +46,9 @@ These values control visual positioning and timing for UI elements.
 
 | Setting | Default Value | Purpose |
 |---------|---------------|---------|
-| `mouseCoordinates` | `{ x: 0, y: 0 }` | Fallback coordinates when mouse position unavailable |
-| `selectionHintTimeoutMs` | `3000` | How long selection hints remain visible |
 | `resizeDebounceMs` | `150` | Debounce delay for window resize events |
 | `windowDimensions.width` | `960` | Default reader window width |
 | `windowDimensions.height` | `640` | Default reader window height |
-| `selectionHintOffset` | `16` | Pixel offset for selection hint positioning |
 | `highlightOptimalLetterColor` | `'#FF8C00'` | Orange color for highlighting the optimal reading letter |
 | `optimalFontSize` | `'128px'` | Default font size for word display (dynamically adjusted) |
 

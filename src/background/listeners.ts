@@ -9,7 +9,6 @@ import {
   setReaderWindowId,
   getSelectionState
 } from './state'
-import { DEFAULTS } from '../config/defaults'
 
 async function handleInstall (details: chrome.runtime.InstalledDetails): Promise<void> {
   const version = browser.runtime.getManifest().version
@@ -66,19 +65,6 @@ function registerCommandListener (): void {
     const latestSelection = getSelectionState()
     if (latestSelection.text.length > 0) {
       await openReaderWindowSetup(latestSelection.text, latestSelection.hasSelection, latestSelection.isRTL)
-      return
-    }
-
-    const tabs = await browser.tabs.query({ active: true, currentWindow: true })
-    const tabId = tabs[0]?.id
-    if (!tabId) return
-
-    try {
-      const response = await (browser.tabs.sendMessage as any)(tabId, { target: 'content', type: 'getMouseCoordinates' })
-      const coords = (response as { x: number, y: number } | undefined) ?? DEFAULTS.UI.mouseCoordinates
-      await (browser.tabs.sendMessage as any)(tabId, { target: 'content', type: 'showSelectionHint', x: coords.x, y: coords.y })
-    } catch (error) {
-      console.error('Failed to show selection hint', error)
     }
   })
 }

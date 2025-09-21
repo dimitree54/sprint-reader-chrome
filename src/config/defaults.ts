@@ -38,14 +38,11 @@ export const DEFAULTS = {
 
   // UI and positioning defaults
   UI: {
-    mouseCoordinates: { x: 0, y: 0 },
-    selectionHintTimeoutMs: 3000,
     resizeDebounceMs: 150,
     windowDimensions: {
       width: 960,
       height: 640
     },
-    selectionHintOffset: 16,
     highlightOptimalLetterColor: '#FF8C00',
     optimalFontSize: '128px'
   },
