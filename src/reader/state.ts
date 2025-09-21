@@ -1,4 +1,5 @@
 import type { ReaderTheme } from '../common/storage'
+import { DEFAULTS } from '../config/defaults'
 import type { TimingSettings, WordItem } from './timing-engine'
 import type { VisualSettings } from './visual-effects'
 
@@ -35,7 +36,7 @@ export const state: ReaderState = {
   pauseAfterComma: true,
   pauseAfterPeriod: true,
   pauseAfterParagraph: true,
-  chunkSize: 1,
+  chunkSize: DEFAULTS.READER_PREFERENCES.chunkSize,
   wordFlicker: false,
   wordFlickerPercent: 10,
   optimalFontSize: '128px',
