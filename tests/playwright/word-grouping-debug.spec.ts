@@ -20,11 +20,11 @@ test.describe('Sprint Reader - Word Grouping Debug', () => {
       timeout: 10_000,
     });
 
-    // Use saveToLocal: false to simulate popup behavior
+    // Open reader window for this selection
     await background.evaluate(
       async ({ selection }) => {
         const scope = self as unknown as BackgroundContext;
-        await scope.openReaderWindowSetup( selection, true, false);
+        await scope.openReaderWindowSetup(selection, true, false);
       },
       { selection: testText },
     );
@@ -120,7 +120,7 @@ test.describe('Sprint Reader - Word Grouping Debug', () => {
       await background.evaluate(
         async ({ selection }) => {
           const scope = self as unknown as BackgroundContext;
-          await scope.openReaderWindowSetup( selection, true, false);
+          await scope.openReaderWindowSetup(selection, true, false);
         },
         { selection: testCase.text },
       );

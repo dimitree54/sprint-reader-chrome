@@ -70,7 +70,7 @@ test.describe('Sprint Reader - Basic Functionality', () => {
           () => undefined,
         );
 
-        await scope.openReaderWindowSetup( selection, true, false);
+        await scope.openReaderWindowSetup(selection, true, false);
       },
       { selection: selectionText },
     );
@@ -108,7 +108,7 @@ test.describe('Sprint Reader - Basic Functionality', () => {
           throw new Error('openReaderWindowSetup is not available on the background worker');
         }
 
-        await scope.openReaderWindowSetup( selection, true, false);
+        await scope.openReaderWindowSetup(selection, true, false);
       },
       { selection: selectionText },
     );

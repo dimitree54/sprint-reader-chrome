@@ -33,7 +33,7 @@ test.describe('Sprint Reader - Theme Switching', () => {
     await background.evaluate(
       async ({ selection }) => {
         const scope = self as unknown as BackgroundContext;
-        await scope.openReaderWindowSetup( selection, true, false);
+        await scope.openReaderWindowSetup(selection, true, false);
       },
       { selection: selectionText },
     );
@@ -156,7 +156,7 @@ test.describe('Sprint Reader - Theme Switching', () => {
     await background.evaluate(
       async ({ selection }) => {
         const scope = self as unknown as BackgroundContext;
-        await scope.openReaderWindowSetup( selection, true, false);
+        await scope.openReaderWindowSetup(selection, true, false);
       },
       { selection: selectionText },
     );

@@ -29,7 +29,7 @@ test.describe('Sprint Reader - Popup Caching Bug', () => {
     await background.evaluate(
       async ({ selection }) => {
         const scope = self as unknown as BackgroundContext;
-        await scope.openReaderWindowSetup( selection, true, false);
+        await scope.openReaderWindowSetup(selection, true, false);
       },
       { selection: cachedText },
     );
@@ -69,7 +69,7 @@ test.describe('Sprint Reader - Popup Caching Bug', () => {
       async ({ text }) => {
         const scope = self as unknown as BackgroundContext;
         // Simulate the popup's openReaderFromPopup message with saveToLocal: false
-        await scope.openReaderWindowSetup( text, true, false);
+        await scope.openReaderWindowSetup(text, true, false);
       },
       { text: popupText },
     );
@@ -117,7 +117,7 @@ test.describe('Sprint Reader - Popup Caching Bug', () => {
         async ({ text }) => {
           const scope = self as unknown as BackgroundContext;
           // Use saveToLocal: false like the real popup does
-          await scope.openReaderWindowSetup( text, true, false);
+          await scope.openReaderWindowSetup(text, true, false);
         },
         { text: currentText },
       );

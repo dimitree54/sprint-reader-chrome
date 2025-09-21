@@ -133,6 +133,7 @@ module.exports = [
         args: 'after-used',
         ignoreRestSiblings: false
       }],
+      'space-in-parens': ['error', 'never'],
       'no-unreachable': 'error',
       'no-unused-expressions': 'error',
       'n/no-missing-import': ['error', {

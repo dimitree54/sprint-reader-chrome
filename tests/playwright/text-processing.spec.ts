@@ -22,7 +22,7 @@ test.describe('Sprint Reader - Text Processing', () => {
     await background.evaluate(
       async ({ selection }) => {
         const scope = self as unknown as BackgroundContext;
-        await scope.openReaderWindowSetup( selection, true, false);
+        await scope.openReaderWindowSetup(selection, true, false);
       },
       { selection: testText },
     );

@@ -116,6 +116,12 @@ See `docs/architecture.md` for detailed technical documentation covering:
 - Message passing and state management
 - Testing strategy
 
+### Coding Standards
+
+- `npm run lint` must pass; the ESLint config now enforces `space-in-parens` so padding spaces like `( selection` are reported (use `npm run lint:fix` for automatic cleanup).
+- `npm run typecheck` and `npm test` guard TypeScript types and Playwright scenarios respectively before submitting changes.
+- A Husky `pre-push` hook runs `npm run lint` and `npm run typecheck` automatically; if hooks are missing (e.g., after cloning), run `npm run prepare` to re-install them.
+
 ## <a name="license"></a>License
 
 Copyright (c) 2013-2025, Anthony Nosek

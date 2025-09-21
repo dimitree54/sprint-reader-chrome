@@ -33,7 +33,7 @@ test.describe('Sprint Reader - Text Selection and Popup', () => {
     await background.evaluate(
       async ({ selection }) => {
         const scope = self as unknown as BackgroundContext;
-        await scope.openReaderWindowSetup( selection, true, false);
+        await scope.openReaderWindowSetup(selection, true, false);
       },
       { selection: firstText },
     );
@@ -77,7 +77,7 @@ test.describe('Sprint Reader - Text Selection and Popup', () => {
     await background.evaluate(
       async ({ selection }) => {
         const scope = self as unknown as BackgroundContext;
-        await scope.openReaderWindowSetup( selection, true, false);
+        await scope.openReaderWindowSetup(selection, true, false);
       },
       { selection: secondText },
     );
@@ -115,7 +115,7 @@ test.describe('Sprint Reader - Text Selection and Popup', () => {
       async ({ text }) => {
         const scope = self as unknown as BackgroundContext;
         // Simulate the popup's openReaderFromPopup message by directly calling the setup
-        await scope.openReaderWindowSetup( text, true, false);
+        await scope.openReaderWindowSetup(text, true, false);
       },
       { text: thirdText },
     );
