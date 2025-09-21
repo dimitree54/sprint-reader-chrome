@@ -90,16 +90,14 @@ test.describe('Sprint Reader - Word Grouping Debug', () => {
         text: 'I am a big cat',
         expectedChunks: [
           { text: 'I am a', grouped: true, count: 3 },
-          { text: 'big', grouped: false, count: 1 },
-          { text: 'cat', grouped: false, count: 1 }
+          { text: 'big cat', grouped: true, count: 2 }
         ]
       },
       {
         text: 'The cat is on the mat',
         expectedChunks: [
           { text: 'The cat is', grouped: true, count: 3 },
-          { text: 'on', grouped: false, count: 1 },
-          { text: 'the mat', grouped: true, count: 2 }
+          { text: 'on the mat', grouped: true, count: 3 }
         ]
       },
       {

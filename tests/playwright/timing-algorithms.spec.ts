@@ -56,13 +56,13 @@ test.describe('Sprint Reader - Timing Algorithms', () => {
     expect(timingInfo!.length).toBeGreaterThan(0);
 
     const words = timingInfo!;
-    const shortWords = words.filter(w => w.wordLength <= 3);
-    const longWords = words.filter(w => w.wordLength >= 10);
-    const wordsWithPunctuation = words.filter(w => /[.!?]/.test(w.text));
+    const shortWords = words.filter((w: any) => w.wordLength <= 3);
+    const longWords = words.filter((w: any) => w.wordLength >= 10);
+    const wordsWithPunctuation = words.filter((w: any) => /[.!?]/.test(w.text));
 
     if (shortWords.length > 0 && longWords.length > 0) {
-      const avgShortDuration = shortWords.reduce((sum, w) => sum + w.duration, 0) / shortWords.length;
-      const avgLongDuration = longWords.reduce((sum, w) => sum + w.duration, 0) / longWords.length;
+      const avgShortDuration = shortWords.reduce((sum: any, w: any) => sum + w.duration, 0) / shortWords.length;
+      const avgLongDuration = longWords.reduce((sum: any, w: any) => sum + w.duration, 0) / longWords.length;
 
       expect(avgLongDuration).toBeGreaterThan(avgShortDuration * 0.9);
     }
@@ -121,11 +121,11 @@ test.describe('Sprint Reader - Timing Algorithms', () => {
     const chunks = chunkingInfo!;
 
     // Find grouped chunks (should contain multiple short words)
-    const groupedChunks = chunks.filter(chunk => chunk.isGrouped);
+    const groupedChunks = chunks.filter((chunk: any) => chunk.isGrouped);
     expect(groupedChunks.length).toBeGreaterThan(0);
 
     // Verify grouped chunks contain multiple words
-    groupedChunks.forEach(chunk => {
+    groupedChunks.forEach((chunk: any) => {
       expect(chunk.wordsInChunk).toBeGreaterThan(1);
       expect(chunk.wordsInChunk).toBeLessThanOrEqual(3); // Default chunk size
 
@@ -134,7 +134,7 @@ test.describe('Sprint Reader - Timing Algorithms', () => {
 
       // Verify individual words in the group follow chunking rules
       const wordsInGroup = chunk.originalText.split(' ');
-      wordsInGroup.forEach((word, index) => {
+      wordsInGroup.forEach((word: any, index: number) => {
         if (index > 0) {
           // Additional words in chunk must be ≤3 characters
           expect(word.length).toBeLessThanOrEqual(3);
@@ -147,15 +147,15 @@ test.describe('Sprint Reader - Timing Algorithms', () => {
     });
 
     // Verify that longer words are not grouped
-    const longWordChunks = chunks.filter(chunk => chunk.wordLength > 3 && !chunk.isGrouped);
-    longWordChunks.forEach(chunk => {
+    const longWordChunks = chunks.filter((chunk: any) => chunk.wordLength > 3 && !chunk.isGrouped);
+    longWordChunks.forEach((chunk: any) => {
       expect(chunk.wordsInChunk).toBe(1);
       expect(chunk.isGrouped).toBe(false);
     });
 
     // Verify that words with punctuation break grouping
-    const punctuatedChunks = chunks.filter(chunk => /[.!?]/.test(chunk.text));
-    punctuatedChunks.forEach(chunk => {
+    const punctuatedChunks = chunks.filter((chunk: any) => /[.!?]/.test(chunk.text));
+    punctuatedChunks.forEach((chunk: any) => {
       if (chunk.wordLength <= 3) {
         // Short words with punctuation should not be grouped with following words
         expect(chunk.wordsInChunk).toBe(1);

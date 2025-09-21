@@ -57,7 +57,7 @@ test.describe('Sprint Reader - Chunking Bug', () => {
     console.log('Original words:', chunkingDetails!.originalWords);
     console.log('Chunk size:', chunkingDetails!.chunkSize);
     console.log('Word items:');
-    chunkingDetails!.wordItems.forEach((item, index) => {
+    chunkingDetails!.wordItems.forEach((item: any, index: number) => {
       console.log(`  [${index}] "${item.text}" - grouped: ${item.isGrouped}, count: ${item.wordsInChunk}, length: ${item.wordLength}`);
     });
 
@@ -72,7 +72,7 @@ test.describe('Sprint Reader - Chunking Bug', () => {
     // - "The" (start) + "cat" (≤3) + "is" (≤3) = "The cat is"
     // - "on" (start) + "the" (≤3) + "mat" (≤3) = "on the mat"
 
-    const actualChunks = chunkingDetails!.wordItems.map(item => item.text);
+    const actualChunks = chunkingDetails!.wordItems.map((item: any) => item.text);
     console.log('Actual chunks:', actualChunks);
 
     // This should help us understand what's really happening
@@ -121,7 +121,7 @@ test.describe('Sprint Reader - Chunking Bug', () => {
 
     console.log('--- DEBUGGING FIRST WORD LENGTH ISSUE ---');
     console.log('Original words:', chunkingDetails!.originalWords);
-    chunkingDetails!.wordItems.forEach((item, index) => {
+    chunkingDetails!.wordItems.forEach((item: any, index: number) => {
       console.log(`  [${index}] "${item.text}" - grouped: ${item.isGrouped}, count: ${item.wordsInChunk}`);
     });
 

@@ -1,12 +1,12 @@
 import { browser } from '../platform/browser'
 import {
   createSelection,
-  persistSelection,
-  type SelectionState
+  persistSelection
 } from './selection'
 import {
   getReaderWindowId,
-  setReaderWindowId
+  setReaderWindowId,
+  type SelectionState
 } from './state'
 
 async function focusExistingWindow (): Promise<boolean> {
@@ -17,7 +17,7 @@ async function focusExistingWindow (): Promise<boolean> {
 
   try {
     await browser.windows.update(windowId, { focused: true })
-    await browser.runtime.sendMessage({ target: 'reader', type: 'refreshReader' })
+    await (browser.runtime.sendMessage as any)({ target: 'reader', type: 'refreshReader' })
     return true
   } catch (error) {
     console.warn('[Speed Reader] Failed to focus reader window, opening a new one.', error)

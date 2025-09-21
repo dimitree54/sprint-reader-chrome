@@ -28,7 +28,7 @@ function syncControls (): void {
 
 async function getCurrentSelectionFromBackground() {
   try {
-    const response = await browser.runtime.sendMessage({
+    const response = await (browser.runtime.sendMessage as any)({
       target: 'background',
       type: 'getCurrentSelection'
     })

@@ -97,7 +97,7 @@ test.describe('Sprint Reader - Popup Caching Bug', () => {
     await readerPage.close();
   });
 
-  test('popup text should override cached selection every time', async ({ page, context, extensionId, background }) => {
+  test('popup text should override cached selection every time', async ({ context, extensionId, background }) => {
     // Test multiple popup inputs to ensure no caching happens
     const testTexts = [
       'First popup text input',

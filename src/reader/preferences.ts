@@ -1,7 +1,6 @@
 import {
   readReaderPreferences,
-  writeReaderPreferences,
-  type ReaderTheme
+  writeReaderPreferences
 } from '../common/storage'
 import { state } from './state'
 import { applyThemeToElement } from '../common/theme'

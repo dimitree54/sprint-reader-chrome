@@ -47,7 +47,7 @@ test.describe('Sprint Reader - UI Positioning', () => {
 
       const hasSpans = await readerPage.evaluate(() => {
         const wordElement = document.getElementById('word');
-        return wordElement?.querySelectorAll('span[class^="char"]').length > 0;
+        return (wordElement?.querySelectorAll('span[class^="char"]').length ?? 0) > 0;
       });
       expect(hasSpans).toBe(true);
 

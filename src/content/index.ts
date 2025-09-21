@@ -89,7 +89,7 @@ function captureSelection () {
     dirRTL
   }
 
-  browser.runtime.sendMessage(message).catch(() => {
+  ;(browser.runtime.sendMessage(message) as Promise<unknown>).catch(() => {
     // Ignore failures when the background context is not available.
   })
 

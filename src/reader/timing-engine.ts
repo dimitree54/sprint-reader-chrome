@@ -7,7 +7,9 @@ export {
 } from './timing/word-analysis'
 export {
   calculateWordTiming,
-  calculatePunctuationTiming,
+  calculatePunctuationTiming
+} from './timing/durations'
+export {
   createWordItem,
   createChunks
 } from './timing/chunking'

@@ -45,17 +45,17 @@ test.describe('Sprint Reader - Theme Switching', () => {
     const wordLocator = readerPage.locator('#word');
     await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
 
-    const initialThemeInfo = await readerPage.evaluate(() => {
+    const initialThemeInfo = await readerPage.evaluate((themeClasses) => {
       const toggle = document.getElementById('toggleTheme') as HTMLInputElement;
       const body = document.body;
       return {
         toggleChecked: toggle?.checked ?? false,
-        hasLightClass: body.classList.contains(THEME_CLASSES.LIGHT),
-        hasDarkClass: body.classList.contains(THEME_CLASSES.DARK),
+        hasLightClass: body.classList.contains(themeClasses.LIGHT),
+        hasDarkClass: body.classList.contains(themeClasses.DARK),
         dataTheme: body.dataset.theme,
         state: (window as any).state?.theme || (globalThis as any).state?.theme
       };
-    });
+    }, THEME_CLASSES);
 
     expect(initialThemeInfo.toggleChecked).toBe(false);
     expect(initialThemeInfo.hasLightClass).toBe(false);
@@ -119,17 +119,17 @@ test.describe('Sprint Reader - Theme Switching', () => {
     await themeToggle.click();
     await readerPage.waitForTimeout(300);
 
-    const lightThemeInfo = await readerPage.evaluate(() => {
+    const lightThemeInfo = await readerPage.evaluate((themeClasses) => {
       const toggle = document.getElementById('toggleTheme') as HTMLInputElement;
       const body = document.body;
       return {
         toggleChecked: toggle?.checked ?? false,
-        hasLightClass: body.classList.contains(THEME_CLASSES.LIGHT),
-        hasDarkClass: body.classList.contains(THEME_CLASSES.DARK),
+        hasLightClass: body.classList.contains(themeClasses.LIGHT),
+        hasDarkClass: body.classList.contains(themeClasses.DARK),
         dataTheme: body.dataset.theme,
         state: (window as any).state?.theme || (globalThis as any).state?.theme
       };
-    });
+    }, THEME_CLASSES);
 
     expect(lightThemeInfo.toggleChecked).toBe(true);
     expect(lightThemeInfo.hasLightClass).toBe(true);
@@ -167,17 +167,17 @@ test.describe('Sprint Reader - Theme Switching', () => {
 
     await expect(readerPage.locator('#word')).not.toHaveText('', { timeout: 10_000 });
 
-    const persistedThemeInfo = await readerPage.evaluate(() => {
+    const persistedThemeInfo = await readerPage.evaluate((themeClasses) => {
       const toggle = document.getElementById('toggleTheme') as HTMLInputElement;
       const body = document.body;
       return {
         toggleChecked: toggle?.checked ?? false,
-        hasLightClass: body.classList.contains(THEME_CLASSES.LIGHT),
-        hasDarkClass: body.classList.contains(THEME_CLASSES.DARK),
+        hasLightClass: body.classList.contains(themeClasses.LIGHT),
+        hasDarkClass: body.classList.contains(themeClasses.DARK),
         dataTheme: body.dataset.theme,
         state: (window as any).state?.theme || (globalThis as any).state?.theme
       };
-    });
+    }, THEME_CLASSES);
 
     expect(persistedThemeInfo.toggleChecked).toBe(false);
     expect(persistedThemeInfo.hasLightClass).toBe(false);

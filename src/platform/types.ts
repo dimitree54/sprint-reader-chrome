@@ -8,8 +8,10 @@ export interface MinimalBrowserAPI {
     getManifest: ChromeAPI['runtime']['getManifest'];
     onMessage: ChromeAPI['runtime']['onMessage'];
     onInstalled: ChromeAPI['runtime']['onInstalled'];
-    sendMessage (message: unknown, options?: chrome.runtime.MessageOptions): MaybePromise<unknown>;
-    sendMessage (extensionId: string, message: unknown, options?: chrome.runtime.MessageOptions): MaybePromise<unknown>;
+    sendMessage: {
+      (message: unknown, options?: chrome.runtime.MessageOptions): MaybePromise<unknown>;
+      (extensionId: string, message: unknown, options?: chrome.runtime.MessageOptions): MaybePromise<unknown>;
+    };
   };
   storage: ChromeAPI['storage'];
   windows: {
@@ -20,12 +22,14 @@ export interface MinimalBrowserAPI {
   tabs: {
     create: (createProperties: Parameters<ChromeAPI['tabs']['create']>[0]) => MaybePromise<chrome.tabs.Tab | undefined>;
     query: (queryInfo: Parameters<ChromeAPI['tabs']['query']>[0]) => MaybePromise<chrome.tabs.Tab[]>;
-    sendMessage (tabId: number, message: unknown, options?: chrome.tabs.MessageSendOptions): MaybePromise<unknown>;
-    sendMessage (
-      tabId: number,
-      message: unknown,
-      responseCallback: (response: unknown) => void
-    ): MaybePromise<unknown>;
+    sendMessage: {
+      (tabId: number, message: unknown, options?: chrome.tabs.MessageSendOptions): MaybePromise<unknown>;
+      (
+        tabId: number,
+        message: unknown,
+        responseCallback: (response: unknown) => void
+      ): MaybePromise<unknown>;
+    };
   };
   contextMenus: {
     removeAll: () => MaybePromise<void>;

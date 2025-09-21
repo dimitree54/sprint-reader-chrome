@@ -2,9 +2,6 @@ import type { ChromeAPI, MinimalBrowserAPI } from './types'
 
 type Callback<T> = (value: T) => void
 
-type RuntimeSend = ChromeAPI['runtime']['sendMessage']
-
-type TabsSend = ChromeAPI['tabs']['sendMessage']
 
 type WindowsCreateArgs = Parameters<ChromeAPI['windows']['create']>[0]
 
@@ -66,8 +63,8 @@ function normalizeSendMessageArgs (args: SendMessageArgs): {
   return { callArgs, callback: undefined }
 }
 
-function wrapSendMessage<Fn extends (...inner: unknown[]) => void>(
-  send: Fn,
+function wrapSendMessage(
+  send: (...args: unknown[]) => void,
   chromeApi: ChromeAPI
 ) {
   return (...args: unknown[]) => {
@@ -134,16 +131,16 @@ export function wrapChromeToBrowserLike (chromeApi: ChromeAPI): MinimalBrowserAP
     TabsQueryArgs
   ], chrome.tabs.Tab[]>(chromeApi.tabs.query.bind(chromeApi.tabs), chromeApi)
 
-  const wrapRuntimeSendMessage = wrapSendMessage<RuntimeSend>(
-    chromeApi.runtime.sendMessage.bind(chromeApi.runtime),
+  const wrapRuntimeSendMessage = wrapSendMessage(
+    chromeApi.runtime.sendMessage.bind(chromeApi.runtime) as (...args: unknown[]) => void,
     chromeApi
   ) as {
     (message: unknown, options?: RuntimeMessageOptions): Promise<unknown>;
     (extensionId: string, message: unknown, options?: RuntimeMessageOptions): Promise<unknown>;
   }
 
-  const wrapTabsSendMessage = wrapSendMessage<TabsSend>(
-    chromeApi.tabs.sendMessage.bind(chromeApi.tabs),
+  const wrapTabsSendMessage = wrapSendMessage(
+    chromeApi.tabs.sendMessage.bind(chromeApi.tabs) as (...args: unknown[]) => void,
     chromeApi
   ) as {
     (tabId: number, message: unknown, options?: TabsMessageOptions): Promise<unknown>;

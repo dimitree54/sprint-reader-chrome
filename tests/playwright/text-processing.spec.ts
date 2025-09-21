@@ -53,13 +53,13 @@ test.describe('Sprint Reader - Text Processing', () => {
 
     const items = preprocessingInfo!;
 
-    const decimalNumber = items.find(item => item.text === '3.14');
+    const decimalNumber = items.find((item: any) => item.text === '3.14');
     expect(decimalNumber).toBeTruthy();
 
-    const hyphenatedWord = items.find(item => item.text === 'state-of-the-art');
+    const hyphenatedWord = items.find((item: any) => item.text === 'state-of-the-art');
     expect(hyphenatedWord).toBeTruthy();
 
-    const originalLongWords = items.filter(item => item.text.includes('supercali') || item.text.length > 15);
+    const originalLongWords = items.filter((item: any) => item.text.includes('supercali') || item.text.length > 15);
     expect(originalLongWords.length).toBeGreaterThan(0);
 
     await readerPage.close();

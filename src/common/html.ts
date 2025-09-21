@@ -35,7 +35,7 @@ export function decodeHtml (value: string): string {
     }
     try {
       return String.fromCodePoint(parsed)
-    } catch (_error) {
+    } catch {
       return code
     }
   })
