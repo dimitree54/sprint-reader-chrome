@@ -12,15 +12,19 @@ function updateWpmDisplay (value: number): void {
   }
 }
 
+function togglePlayback (): void {
+  if (state.playing) {
+    stopPlayback()
+  } else {
+    startPlayback()
+  }
+  renderCurrentWord()
+}
+
 function attachPlaybackControls (): void {
   const playButton = document.getElementById('btnPlay')
   playButton?.addEventListener('click', () => {
-    if (state.playing) {
-      stopPlayback()
-    } else {
-      startPlayback()
-    }
-    renderCurrentWord()
+    togglePlayback()
   })
 
   const restartButton = document.getElementById('btnRestart')
@@ -28,6 +32,24 @@ function attachPlaybackControls (): void {
     stopPlayback()
     state.index = 0
     renderCurrentWord()
+  })
+}
+
+function attachKeyboardControls (): void {
+  document.addEventListener('keydown', (event) => {
+    const isSpaceKey = event.code === 'Space' || event.key === ' ' || event.key === 'Spacebar'
+    if (!isSpaceKey) {
+      return
+    }
+
+    const target = event.target
+    if (target instanceof Element &&
+        target.closest('input, button, textarea, select, [contenteditable]')) {
+      return
+    }
+
+    event.preventDefault()
+    togglePlayback()
   })
 }
 
@@ -70,4 +92,5 @@ export function registerControls (): void {
   attachSpeedControl()
   attachThemeToggle()
   attachResizeHandler()
+  attachKeyboardControls()
 }
