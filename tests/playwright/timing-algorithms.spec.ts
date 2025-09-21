@@ -3,7 +3,6 @@ import { DEFAULTS } from '../../src/config/defaults';
 
 type BackgroundContext = {
   openReaderWindowSetup: (
-    saveToLocal: boolean,
     text: string,
     haveSelection: boolean,
     directionRTL: boolean,
@@ -24,7 +23,7 @@ test.describe('Sprint Reader - Timing Algorithms', () => {
     await background.evaluate(
       async ({ selection }) => {
         const scope = self as unknown as BackgroundContext;
-        await scope.openReaderWindowSetup(true, selection, true, false);
+        await scope.openReaderWindowSetup( selection, true, false);
       },
       { selection: testText },
     );
@@ -89,7 +88,7 @@ test.describe('Sprint Reader - Timing Algorithms', () => {
     await background.evaluate(
       async ({ selection }) => {
         const scope = self as unknown as BackgroundContext;
-        await scope.openReaderWindowSetup(true, selection, true, false);
+        await scope.openReaderWindowSetup( selection, true, false);
       },
       { selection: testText },
     );

@@ -1,7 +1,6 @@
 import { browser } from '../platform/browser'
 import {
-  createSelection,
-  persistSelection
+  createSelection
 } from './selection'
 import {
   getReaderWindowId,
@@ -48,17 +47,11 @@ export async function openReaderWindow (): Promise<void> {
 }
 
 export async function openReaderWindowSetup (
-  saveToLocal: boolean,
   text: string,
   hasSelection: boolean,
   isRTL: boolean
 ): Promise<SelectionState> {
   const selection = createSelection(text, hasSelection, isRTL)
-
-  if (saveToLocal) {
-    await persistSelection(selection)
-  }
-
   await openReaderWindow()
   return selection
 }

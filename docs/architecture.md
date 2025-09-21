@@ -55,7 +55,7 @@ src/
   reader/          → RSVP player UI assembled from focused modules:
     index.ts            → Entrypoint that wires selection loading, controls, messaging.
     state.ts            → Central playback state container + shared helpers.
-    selection-loader.ts → Loads stored selection/preferences and syncs UI controls.
+    selection-loader.ts → Loads current selection/preferences and syncs UI controls.
     controls.ts         → DOM event bindings (playback, WPM slider, theme toggle, resize).
     playback.ts         → Timer management and playback progression.
     render.ts           → Word rendering, progress display, play/pause visuals.
@@ -80,11 +80,11 @@ scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 
 * Responsibilities
   * Tracks the latest selection synchronised from content scripts.
-  * Persists reader preferences and the most recent page selection via `storage.ts` helpers. Manual popup input is not persisted and is only used for the active reader session.
+  * Persists reader preferences via `storage.ts` helpers. Text selections are not persisted and each reader session uses fresh input data.
   * Owns the reader window lifecycle (`openReaderWindowSetup`) and exposes the function on `globalThis` for Playwright automation and integration tests.
   * Generates context-menu commands and keyboard shortcuts that route back into the shared open-reader workflow.
   * Normalises install/update flows by opening the welcome/updated pages from `static/pages`.
-  * Delegates responsibilities to focused modules: `state.ts` (cached selection + prefs), `selection.ts` (storage sync), `reader-window.ts` (window lifecycle), `message-handler.ts` (runtime messages), and `listeners.ts` (events + commands).
+  * Delegates responsibilities to focused modules: `state.ts` (in-memory selection + prefs), `selection.ts` (state management), `reader-window.ts` (window lifecycle), `message-handler.ts` (runtime messages), and `listeners.ts` (events + commands).
 
 * Key collaborators
   * `BrowserAPI` shim to use `chrome.*` or `browser.*` without scattering feature detection.
@@ -109,7 +109,7 @@ The reader implementation follows a modular architecture with clear separation o
 
 #### 3.4.1 Bootstrap & Messaging (`src/reader/index.ts`, `selection-loader.ts`, `messages.ts`)
 * `index.ts` attaches a DOM-ready hook, then triggers selection loading, control registration, and runtime listener wiring.
-* `selection-loader.ts` fetches stored preferences/selection, normalises HTML, rebuilds timing chunks, and synchronises slider/theme UI.
+* `selection-loader.ts` fetches current preferences/selection, normalises HTML, rebuilds timing chunks, and synchronises slider/theme UI.
 * `messages.ts` listens for `refreshReader` runtime events and reuses the loader to refresh the view on demand.
 
 #### 3.4.2 State & Playback (`src/reader/state.ts`, `playback.ts`, `controls.ts`, `render.ts`, `text.ts`)
@@ -141,9 +141,9 @@ The reader implementation follows a modular architecture with clear separation o
 ## 4. Cross-Cutting Modules
 
 * `platform/browser.ts`: resolves the runtime API once, exposes a shared `browser` singleton, and uses wrapper helpers from `platform/types.ts` + `platform/wrap-chrome.ts` to collapse Chrome/Firefox/Safari differences.
-* `common/storage.ts`: wraps the callback-driven storage API with promise helpers, defines canonical keys, and centralises preference/selection persistence.
+* `common/storage.ts`: wraps the callback-driven storage API with promise helpers, defines canonical keys, and centralises preference persistence.
 * `common/messages.ts`: enumerates every structured message exchanged between contexts, enabling exhaustive checks during refactors.
-* `common/html.ts`: ensures consistent HTML encoding/decoding for stored selections and rendered reader output.
+* `common/html.ts`: ensures consistent HTML encoding/decoding for text selections and rendered reader output.
 * `common/theme.ts`: applies theme classes/dataset toggles so the popup and reader stay visually aligned.
 
 ## 5. Build & Packaging Pipeline

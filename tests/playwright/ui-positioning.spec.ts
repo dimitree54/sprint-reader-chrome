@@ -2,7 +2,6 @@ import { expect, test } from './fixtures';
 
 type BackgroundContext = {
   openReaderWindowSetup: (
-    saveToLocal: boolean,
     text: string,
     haveSelection: boolean,
     directionRTL: boolean,
@@ -35,7 +34,7 @@ test.describe('Sprint Reader - UI Positioning', () => {
         if (typeof scope.openReaderWindowSetup !== 'function') {
           throw new Error('openReaderWindowSetup is not available on the background worker');
         }
-        await scope.openReaderWindowSetup(true, selection, true, false);
+        await scope.openReaderWindowSetup( selection, true, false);
       },
       { selection: selectionText },
     );

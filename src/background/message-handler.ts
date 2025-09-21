@@ -3,7 +3,6 @@ import type { ReaderPreferences } from '../common/storage'
 import { CONTEXT_MENU_TITLE } from './constants'
 import { openReaderWindowSetup } from './reader-window'
 import {
-  ensureSelectionLoaded,
   selectionFromMessage
 } from './selection'
 import { getSelectionState } from './state'
@@ -13,10 +12,7 @@ import {
 } from './preferences'
 
 export async function primeBackgroundState (): Promise<void> {
-  await Promise.all([
-    ensureSelectionLoaded(),
-    ensurePreferencesLoaded()
-  ])
+  await ensurePreferencesLoaded()
 }
 
 export async function handleBackgroundMessage (
@@ -39,11 +35,11 @@ export async function handleBackgroundMessage (
       return true
     case 'openReaderFromContent':
       selectionFromMessage(message)
-      await openReaderWindowSetup(true, message.selectionText, message.haveSelection, message.dirRTL)
+      await openReaderWindowSetup(message.selectionText, message.haveSelection, message.dirRTL)
       // Informational: reader opened from content script
       return true
     case 'openReaderFromContextMenu':
-      await openReaderWindowSetup(true, message.selectionText, message.selectionText.length > 0, false)
+      await openReaderWindowSetup(message.selectionText, message.selectionText.length > 0, false)
       // Informational: reader opened from context menu
       return true
     case 'openReaderFromPopup': {
@@ -61,7 +57,7 @@ export async function handleBackgroundMessage (
         return true
       }
 
-      await openReaderWindowSetup(false, providedText, true, false)
+      await openReaderWindowSetup(providedText, true, false)
       // Informational: reader opened from popup
       return true
     }

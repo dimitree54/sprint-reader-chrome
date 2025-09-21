@@ -2,7 +2,6 @@ import { expect, test } from './fixtures';
 
 type BackgroundContext = {
   openReaderWindowSetup: (
-    saveToLocal: boolean,
     text: string,
     haveSelection: boolean,
     directionRTL: boolean,
@@ -30,7 +29,7 @@ test.describe('Sprint Reader - Popup Caching Bug', () => {
     await background.evaluate(
       async ({ selection }) => {
         const scope = self as unknown as BackgroundContext;
-        await scope.openReaderWindowSetup(true, selection, true, false);
+        await scope.openReaderWindowSetup( selection, true, false);
       },
       { selection: cachedText },
     );
@@ -70,7 +69,7 @@ test.describe('Sprint Reader - Popup Caching Bug', () => {
       async ({ text }) => {
         const scope = self as unknown as BackgroundContext;
         // Simulate the popup's openReaderFromPopup message with saveToLocal: false
-        await scope.openReaderWindowSetup(false, text, true, false);
+        await scope.openReaderWindowSetup( text, true, false);
       },
       { text: popupText },
     );
@@ -118,7 +117,7 @@ test.describe('Sprint Reader - Popup Caching Bug', () => {
         async ({ text }) => {
           const scope = self as unknown as BackgroundContext;
           // Use saveToLocal: false like the real popup does
-          await scope.openReaderWindowSetup(false, text, true, false);
+          await scope.openReaderWindowSetup( text, true, false);
         },
         { text: currentText },
       );

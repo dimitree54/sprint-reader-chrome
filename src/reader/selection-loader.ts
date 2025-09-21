@@ -1,4 +1,3 @@
-import { readSelection } from '../common/storage'
 import { loadPreferences } from './preferences'
 import { renderCurrentWord } from './render'
 import { state } from './state'
@@ -44,19 +43,8 @@ export async function loadSelectionContent (): Promise<void> {
   await loadPreferences()
   syncControls()
 
-  // Try to get current selection from background first (for popup text)
-  let selection = await getCurrentSelectionFromBackground()
-
-  // If no current selection or it's older than stored selection, use stored
-  if (!selection) {
-    selection = await readSelection()
-  } else {
-    // Compare with stored selection to use the more recent one
-    const storedSelection = await readSelection()
-    if (storedSelection && storedSelection.timestamp > selection.timestamp) {
-      selection = storedSelection
-    }
-  }
+  // Always get current selection from background (no persistence)
+  const selection = await getCurrentSelectionFromBackground()
 
   const rawText = selection?.text ? decodeHtml(selection.text) : ''
   const normalised = normaliseText(rawText)

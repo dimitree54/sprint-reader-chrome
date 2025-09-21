@@ -1,10 +1,4 @@
 import type { BackgroundMessage } from '../common/messages'
-import { decodeHtml, encodeHtml } from '../common/html'
-import {
-  readSelection,
-  writeSelection,
-  type StoredSelection
-} from '../common/storage'
 import {
   getSelectionState,
   setSelectionState,
@@ -12,38 +6,6 @@ import {
   type SelectionState
 } from './state'
 
-function toStoredSelection (selection: SelectionState): StoredSelection {
-  return {
-    text: encodeHtml(selection.text),
-    hasSelection: selection.hasSelection,
-    isRTL: selection.isRTL,
-    timestamp: selection.timestamp
-  }
-}
-
-function fromStoredSelection (selection: StoredSelection): SelectionState {
-  return {
-    text: decodeHtml(selection.text),
-    hasSelection: selection.hasSelection,
-    isRTL: selection.isRTL,
-    timestamp: selection.timestamp
-  }
-}
-
-export async function ensureSelectionLoaded (): Promise<SelectionState> {
-  const stored = await readSelection()
-  if (stored) {
-    const selection = fromStoredSelection(stored)
-    setSelectionState(selection)
-    return selection
-  }
-  return getSelectionState()
-}
-
-export async function persistSelection (selection: SelectionState): Promise<void> {
-  const storedSelection = toStoredSelection(selection)
-  await writeSelection(storedSelection)
-}
 
 export function selectionFromMessage (message: BackgroundMessage): SelectionState {
   const text = 'selectionText' in message && typeof message.selectionText === 'string'

@@ -9,11 +9,9 @@ import {
   setReaderWindowId,
   getSelectionState
 } from './state'
-import { ensureSelectionLoaded } from './selection'
 import { DEFAULTS } from '../config/defaults'
 
 async function handleInstall (details: chrome.runtime.InstalledDetails): Promise<void> {
-  await ensureSelectionLoaded()
   const version = browser.runtime.getManifest().version
   await setInStorage({ version })
 
@@ -45,7 +43,7 @@ async function createContextMenus (): Promise<void> {
 function registerContextMenuListener (): void {
   browser.contextMenus.onClicked.addListener(async (info: chrome.contextMenus.OnClickData) => {
     if (info.menuItemId === CONTEXT_MENU_ID && info.selectionText) {
-      await openReaderWindowSetup(true, info.selectionText, true, false)
+      await openReaderWindowSetup(info.selectionText, true, false)
     }
   })
 }
@@ -67,7 +65,7 @@ function registerCommandListener (): void {
 
     const latestSelection = getSelectionState()
     if (latestSelection.text.length > 0) {
-      await openReaderWindowSetup(true, latestSelection.text, latestSelection.hasSelection, latestSelection.isRTL)
+      await openReaderWindowSetup(latestSelection.text, latestSelection.hasSelection, latestSelection.isRTL)
       return
     }
 
