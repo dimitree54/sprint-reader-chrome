@@ -6,6 +6,8 @@
 
 Simply select text on a webpage, right-click and select `10x your reading speed - read selected text` from the menu. This launches the reader window where selected text is displayed word-by-word in a fixed focal position. The duration of each slide is calculated based on your word-per-minute (WPM) setting.
 
+Want to stay on the page? Use the new `Speed read on page` context menu entry to turn the highlighted text into an inline RSVP strip. All words remain in place with a subtle transparency, while the active chunk appears at full opacity with the optimal letter pre-highlighted.
+
 Prefer to paste something manually? Click the extension icon, drop your text into the popup, and then press **Speed read it** to open the reader with that content.
 
 ## What makes this special
@@ -29,6 +31,7 @@ Our AI preprocessing optimizes text before presentation, allowing you to absorb 
 > Optional grammar delays
 > **Multi-browser support** (Chrome, Firefox, Safari)
 > **AI-powered text preprocessing** for enhanced comprehension
+> Inline on-page playback that preserves document layout while highlighting active words
 > Keyboard shortcut helper that nudges you to select text when none is highlighted
 
 ## Table of Contents

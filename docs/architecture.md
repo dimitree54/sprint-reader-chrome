@@ -96,6 +96,7 @@ scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 * Detects right-to-left languages with a Unicode range heuristic and forwards the normalised state to the background worker.
 * Responds to background requests for mouse coordinates when the keyboard shortcut executes without a cached selection.
 * Displays a transient tooltip near the cursor when the shortcut fires without a selection, guiding users to highlight text before retrying.
+* Hosts the inline RSVP renderer (`content/inline-reader.ts`) which reuses the reader timing engine to highlight words directly on the page.
 
 ### 3.3 Popup (`src/popup/index.ts`)
 

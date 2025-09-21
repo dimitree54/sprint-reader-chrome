@@ -1,6 +1,11 @@
 import type { RuntimeMessage } from '../common/messages'
 import { setInStorage } from '../common/storage'
-import { CONTEXT_MENU_ID, CONTEXT_MENU_TITLE } from './constants'
+import {
+  CONTEXT_MENU_ID,
+  CONTEXT_MENU_TITLE,
+  INLINE_CONTEXT_MENU_ID,
+  INLINE_CONTEXT_MENU_TITLE
+} from './constants'
 import { handleBackgroundMessage } from './message-handler'
 import { openReaderWindowSetup } from './reader-window'
 import { browser } from '../platform/browser'
@@ -10,6 +15,7 @@ import {
   getSelectionState
 } from './state'
 import { DEFAULTS } from '../config/defaults'
+import { ensurePreferencesLoaded } from './preferences'
 
 async function handleInstall (details: chrome.runtime.InstalledDetails): Promise<void> {
   const version = browser.runtime.getManifest().version
@@ -38,12 +44,52 @@ async function createContextMenus (): Promise<void> {
   } catch (error) {
     console.warn('[Speed Reader] Failed to create context menu entry', CONTEXT_MENU_ID, error)
   }
+
+  try {
+    browser.contextMenus.create({
+      id: INLINE_CONTEXT_MENU_ID,
+      title: INLINE_CONTEXT_MENU_TITLE,
+      contexts: ['selection']
+    })
+  } catch (error) {
+    console.warn('[Speed Reader] Failed to create context menu entry', INLINE_CONTEXT_MENU_ID, error)
+  }
 }
 
 function registerContextMenuListener (): void {
-  browser.contextMenus.onClicked.addListener(async (info: chrome.contextMenus.OnClickData) => {
+  browser.contextMenus.onClicked.addListener(async (info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab) => {
     if (info.menuItemId === CONTEXT_MENU_ID && info.selectionText) {
       await openReaderWindowSetup(info.selectionText, true, false)
+      return
+    }
+
+    if (info.menuItemId === INLINE_CONTEXT_MENU_ID) {
+      const infoWithTab = info as chrome.contextMenus.OnClickData & { tabId?: number }
+      const tabId = typeof infoWithTab.tabId === 'number' ? infoWithTab.tabId : tab?.id
+      if (!tabId) {
+        return
+      }
+
+      const latestSelection = getSelectionState()
+      const selectionText = latestSelection.text.length > 0
+        ? latestSelection.text
+        : (info.selectionText ?? '')
+      if (selectionText.length === 0) {
+        return
+      }
+
+      try {
+        const preferences = await ensurePreferencesLoaded()
+        await (browser.tabs.sendMessage as any)(tabId, {
+          target: 'content',
+          type: 'startInlineReader',
+          text: selectionText,
+          preferences,
+          isRTL: latestSelection.isRTL
+        })
+      } catch (error) {
+        console.error('[Speed Reader] Failed to start inline reader', error)
+      }
     }
   })
 }

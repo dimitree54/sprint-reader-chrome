@@ -10,3 +10,55 @@
   z-index: 2147483647;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
+
+.speed-reader-inline__container {
+  display: inline;
+  position: relative;
+  font: inherit;
+  line-height: inherit;
+  color: inherit;
+  white-space: pre-wrap;
+}
+
+.speed-reader-inline__track {
+  display: inline;
+  font: inherit;
+  line-height: inherit;
+  color: inherit;
+  white-space: inherit;
+}
+
+.speed-reader-inline__chunk {
+  display: inline;
+  opacity: 1;
+  transition: opacity 120ms ease;
+  color: inherit;
+}
+
+.speed-reader-inline__chunk--inactive {
+  opacity: 0.18;
+}
+
+.speed-reader-inline__chunk--active {
+  opacity: 1;
+}
+
+.speed-reader-inline__word {
+  color: inherit;
+}
+
+.speed-reader-inline__chunk span {
+  color: inherit;
+}
+
+.speed-reader-inline__space {
+  white-space: pre;
+}
+
+.speed-reader-inline__chunk--break {
+  display: inline;
+}
+
+.speed-reader-inline__chunk--break .speed-reader-inline__break {
+  display: inline;
+}

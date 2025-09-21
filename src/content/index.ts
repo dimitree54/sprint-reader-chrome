@@ -1,6 +1,7 @@
 import { getBrowser } from '../platform/browser'
 import type { BackgroundMessage, ContentRequest } from '../common/messages'
 import { DEFAULTS } from '../config/defaults'
+import { startInlineReader, stopInlineReader } from './inline-reader'
 
 const browser = getBrowser()
 
@@ -136,6 +137,12 @@ browser.runtime.onMessage.addListener((rawMessage: ContentRequest, _sender: chro
       return true
     case 'hideSelectionHint':
       removeSelectionHint()
+      return true
+    case 'startInlineReader':
+      startInlineReader(message.text, message.preferences, message.isRTL)
+      return true
+    case 'stopInlineReader':
+      stopInlineReader()
       return true
     default:
       return undefined

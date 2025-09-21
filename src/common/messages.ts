@@ -1,4 +1,4 @@
-import type { ReaderTheme } from './storage'
+import type { ReaderPreferences, ReaderTheme } from './storage'
 
 export type BackgroundMessage =
   | {
@@ -69,6 +69,17 @@ export type ContentRequest =
   | {
       target: 'content';
       type: 'hideSelectionHint';
+    }
+  | {
+      target: 'content';
+      type: 'startInlineReader';
+      text: string;
+      preferences: ReaderPreferences;
+      isRTL: boolean;
+    }
+  | {
+      target: 'content';
+      type: 'stopInlineReader';
     };
 
 export type RuntimeMessage = BackgroundMessage | ReaderMessage | ContentRequest;
