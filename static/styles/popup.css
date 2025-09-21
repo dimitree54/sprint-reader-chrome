@@ -156,6 +156,10 @@ body.popup--light .popup__icon-button:hover {
   color: rgba(245, 246, 247, 0.8);
 }
 
+body.popup--light .popup__or {
+  color: rgba(29, 26, 47, 0.8);
+}
+
 .popup__speed-read-button {
   width: 100%;
   padding: 12px 16px;
