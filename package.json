@@ -7,6 +7,7 @@
     "build:chrome": "node ./scripts/build-extension.mjs chrome",
     "build:firefox": "node ./scripts/build-extension.mjs firefox",
     "build:safari": "node ./scripts/build-extension.mjs safari",
+    "prepare": "husky",
     "lint": "eslint src/ tests/ --ext .ts,.js",
     "lint:fix": "eslint src/ tests/ --ext .ts,.js --fix",
     "typecheck": "tsc --noEmit",
@@ -28,6 +29,7 @@
     "eslint-plugin-n": "^17.23.1",
     "eslint-plugin-promise": "^7.2.1",
     "eslint-plugin-sonarjs": "^3.0.5",
+    "husky": "^9.1.7",
     "typescript": "^5.9.2",
     "yazl": "^3.3.1"
   }

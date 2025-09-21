@@ -1,12 +1,6 @@
 import { getBrowser } from '../platform/browser'
 import { getDefaultReaderPreferences } from '../config/defaults'
 
-export type StoredSelection = {
-  text: string;
-  hasSelection: boolean;
-  isRTL: boolean;
-  timestamp: number;
-};
 
 export type ReaderTheme = 'dark' | 'light';
 
@@ -61,20 +55,9 @@ export async function setInStorage (items: Record<string, unknown>): Promise<voi
 }
 
 export const STORAGE_KEYS = {
-  selection: 'sprintReader.selection',
   readerPrefs: 'sprintReader.readerPrefs'
 } as const
 
-export async function readSelection (): Promise<StoredSelection | undefined> {
-  const result = await getFromStorage<StoredSelection>([STORAGE_KEYS.selection])
-  return result[STORAGE_KEYS.selection]
-}
-
-export async function writeSelection (selection: StoredSelection): Promise<void> {
-  await setInStorage({
-    [STORAGE_KEYS.selection]: selection
-  })
-}
 
 export async function readReaderPreferences (): Promise<ReaderPreferences> {
   const result = await getFromStorage<ReaderPreferences>([STORAGE_KEYS.readerPrefs])

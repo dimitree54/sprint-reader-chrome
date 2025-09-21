@@ -2,7 +2,6 @@ import { expect, test } from './fixtures';
 
 type BackgroundContext = {
   openReaderWindowSetup: (
-    saveToLocal: boolean,
     text: string,
     haveSelection: boolean,
     directionRTL: boolean,
@@ -23,7 +22,7 @@ test.describe('Sprint Reader - Text Processing', () => {
     await background.evaluate(
       async ({ selection }) => {
         const scope = self as unknown as BackgroundContext;
-        await scope.openReaderWindowSetup(true, selection, true, false);
+        await scope.openReaderWindowSetup(selection, true, false);
       },
       { selection: testText },
     );
