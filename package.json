@@ -7,14 +7,27 @@
     "build:chrome": "node ./scripts/build-extension.mjs chrome",
     "build:firefox": "node ./scripts/build-extension.mjs firefox",
     "build:safari": "node ./scripts/build-extension.mjs safari",
+    "lint": "eslint src/ tests/ --ext .ts,.js",
+    "lint:fix": "eslint src/ tests/ --ext .ts,.js --fix",
+    "typecheck": "tsc --noEmit",
     "test": "npm run build:chrome && playwright test",
     "test:debug": "PWDEBUG=1 playwright test",
     "test:ui": "playwright test --ui"
   },
   "devDependencies": {
+    "@eslint/js": "^9.36.0",
     "@playwright/test": "^1.55.0",
+    "@types/chrome": "^0.1.12",
     "@types/node": "^24.5.2",
+    "@typescript-eslint/eslint-plugin": "^8.44.0",
+    "@typescript-eslint/parser": "^8.44.0",
     "esbuild": "^0.23.0",
+    "eslint": "^9.36.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-n": "^17.23.1",
+    "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-sonarjs": "^3.0.5",
     "typescript": "^5.9.2",
     "yazl": "^3.3.1"
   }

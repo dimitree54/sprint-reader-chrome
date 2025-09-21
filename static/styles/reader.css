@@ -1,6 +1,7 @@
 :root {
   color-scheme: dark light;
   font-family: 'Segoe UI', system-ui, sans-serif;
+  --reader-default-font-size: 128px;
 }
 
 body {
@@ -103,7 +104,7 @@ body.reader--light {
 }
 
 .reader__word {
-  font-size: 128px; /* Default size, will be overridden by dynamic calculation */
+  font-size: var(--reader-default-font-size); /* Default size, will be overridden by dynamic calculation */
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: none;

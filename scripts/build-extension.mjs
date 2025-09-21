@@ -151,11 +151,13 @@ async function runBuild(browser) {
   await writeManifest(browser);
 }
 
-try {
-  const browser = parseBrowserArgument();
-  await runBuild(browser);
-  console.log(`Built Sprint Reader for ${browser} into dist/${browser}`);
-} catch (error) {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-}
+(async () => {
+  try {
+    const browser = parseBrowserArgument();
+    await runBuild(browser);
+    console.log(`Built Sprint Reader for ${browser} into dist/${browser}`);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  }
+})()

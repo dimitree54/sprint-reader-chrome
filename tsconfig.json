@@ -8,9 +8,10 @@
     "allowJs": true,
     "strict": true,
     "noEmit": true,
-    "types": ["node", "@playwright/test"],
+    "downlevelIteration": true,
+    "types": ["node", "@playwright/test", "chrome"],
     "skipLibCheck": true
   },
-  "include": ["playwright.config.ts", "tests/**/*.ts"],
+  "include": ["playwright.config.ts", "tests/**/*.ts", "src/**/*.ts"],
   "exclude": ["node_modules"]
 }

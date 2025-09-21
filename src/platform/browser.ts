@@ -1,22 +1,28 @@
-export type BrowserContext = typeof chrome extends undefined ? typeof browser : typeof chrome;
+import { wrapChromeToBrowserLike } from './wrap-chrome'
+import type { BrowserContext, BrowserLike, ChromeAPI } from './types'
 
-function resolveBrowser(): BrowserContext {
+function resolveBrowser (): BrowserLike {
   if (typeof globalThis !== 'undefined') {
-    if (typeof (globalThis as typeof globalThis & { browser?: BrowserContext }).browser !== 'undefined') {
-      return (globalThis as typeof globalThis & { browser: BrowserContext }).browser;
+    const scope = globalThis as typeof globalThis & { browser?: BrowserLike, chrome?: ChromeAPI }
+    if (typeof scope.browser !== 'undefined') {
+      return scope.browser as BrowserLike
     }
-    if (typeof (globalThis as typeof globalThis & { chrome?: BrowserContext }).chrome !== 'undefined') {
-      return (globalThis as typeof globalThis & { chrome: BrowserContext }).chrome;
+    if (typeof scope.chrome !== 'undefined') {
+      return wrapChromeToBrowserLike(scope.chrome)
     }
   }
-  throw new Error('WebExtension runtime is not available in this context.');
+  throw new Error('WebExtension runtime is not available in this context.')
 }
 
-let cachedBrowser: BrowserContext | undefined;
+let cachedBrowser: BrowserLike | undefined
 
-export function getBrowser(): BrowserContext {
+export function getBrowser (): BrowserLike {
   if (!cachedBrowser) {
-    cachedBrowser = resolveBrowser();
+    cachedBrowser = resolveBrowser()
   }
-  return cachedBrowser;
+  return cachedBrowser
 }
+
+export const browser: BrowserContext = getBrowser()
+
+export type { BrowserContext }
