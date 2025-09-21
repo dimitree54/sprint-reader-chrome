@@ -55,20 +55,6 @@ export type BackgroundResponse =
       };
     };
 
-export type ContentRequest =
-  | {
-      target: 'content';
-      type: 'getMouseCoordinates';
-    }
-  | {
-      target: 'content';
-      type: 'showSelectionHint';
-      x: number;
-      y: number;
-    }
-  | {
-      target: 'content';
-      type: 'hideSelectionHint';
-    };
+export type ContentRequest = never;
 
 export type RuntimeMessage = BackgroundMessage | ReaderMessage | ContentRequest;
