@@ -56,13 +56,13 @@ test.describe('Sprint Reader - Timing Algorithms', () => {
     expect(timingInfo!.length).toBeGreaterThan(0);
 
     const words = timingInfo!;
-    const shortWords = words.filter(w => w.wordLength <= 3);
-    const longWords = words.filter(w => w.wordLength >= 10);
-    const wordsWithPunctuation = words.filter(w => /[.!?]/.test(w.text));
+    const shortWords = words.filter((w: any) => w.wordLength <= 3);
+    const longWords = words.filter((w: any) => w.wordLength >= 10);
+    const wordsWithPunctuation = words.filter((w: any) => /[.!?]/.test(w.text));
 
     if (shortWords.length > 0 && longWords.length > 0) {
-      const avgShortDuration = shortWords.reduce((sum, w) => sum + w.duration, 0) / shortWords.length;
-      const avgLongDuration = longWords.reduce((sum, w) => sum + w.duration, 0) / longWords.length;
+      const avgShortDuration = shortWords.reduce((sum: any, w: any) => sum + w.duration, 0) / shortWords.length;
+      const avgLongDuration = longWords.reduce((sum: any, w: any) => sum + w.duration, 0) / longWords.length;
 
       expect(avgLongDuration).toBeGreaterThan(avgShortDuration * 0.9);
     }

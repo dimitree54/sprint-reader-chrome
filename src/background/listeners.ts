@@ -76,9 +76,9 @@ function registerCommandListener (): void {
     if (!tabId) return
 
     try {
-      const response = await browser.tabs.sendMessage(tabId, { target: 'content', type: 'getMouseCoordinates' })
+      const response = await (browser.tabs.sendMessage as any)(tabId, { target: 'content', type: 'getMouseCoordinates' })
       const coords = (response as { x: number, y: number } | undefined) ?? DEFAULTS.UI.mouseCoordinates
-      await browser.tabs.sendMessage(tabId, { target: 'content', type: 'showSelectionHint', x: coords.x, y: coords.y })
+      await (browser.tabs.sendMessage as any)(tabId, { target: 'content', type: 'showSelectionHint', x: coords.x, y: coords.y })
     } catch (error) {
       console.error('Failed to show selection hint', error)
     }
