@@ -10,10 +10,15 @@ export function renderCurrentWord (): void {
   }
 
   const currentWordItem = state.wordItems[state.index]
+  console.log('🔍 DEBUG: currentWordItem being rendered:', currentWordItem)
+  console.log('🔍 DEBUG: state.index:', state.index)
+  console.log('🔍 DEBUG: state.wordItems length:', state.wordItems.length)
+
   if (currentWordItem) {
     wordElement.style.fontSize = state.optimalFontSize
 
     const wrappedText = wrapLettersInSpans(currentWordItem.text)
+    console.log('🔍 DEBUG: wrappedText:', wrappedText)
     wordElement.innerHTML = wrappedText
 
     const visualSettings = getVisualSettings()

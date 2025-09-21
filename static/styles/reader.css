@@ -175,6 +175,36 @@ input[type='range'] {
   margin-left: auto;
 }
 
+.reader__settings-button {
+  border: 1px solid var(--reader-secondary-border);
+  background: var(--reader-secondary-bg);
+  color: var(--reader-secondary-fg);
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.reader__settings-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+}
+
+body.reader--light .reader__settings-button {
+  background: rgba(74, 0, 224, 0.08);
+  border-color: rgba(74, 0, 224, 0.2);
+  color: #4a00e0;
+}
+
+body.reader--light .reader__settings-button:hover {
+  background: rgba(74, 0, 224, 0.16);
+  box-shadow: 0 12px 24px rgba(74, 0, 224, 0.26);
+}
+
 .reader__theme-switch {
   position: relative;
   display: inline-flex;

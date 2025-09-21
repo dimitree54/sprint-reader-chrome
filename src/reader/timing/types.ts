@@ -10,6 +10,7 @@ export type WordItem = {
   frequency?: number;
   wordsInChunk: number;
   isGrouped: boolean;
+  isBold: boolean;
 }
 
 export type TimingSettings = {

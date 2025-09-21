@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Extension Settings • 10x your reading speed</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../styles/settings.css" />
+  </head>
+  <body>
+    <header class="settings__header">
+      <div class="settings__header-brand">
+        <img src="../assets/icons/icon48.png" alt="10x your reading speed" width="40" height="40" />
+        <div>
+          <h1 class="settings__title">Extension Settings</h1>
+          <p class="settings__subtitle">Manage advanced preferences for the RSVP reader.</p>
+        </div>
+      </div>
+    </header>
+    <main class="settings__main" role="main">
+      <section class="settings__card">
+        <header class="settings__card-header">
+          <h2 class="settings__card-title">AI Translation</h2>
+          <p class="settings__card-subtitle">Configure the optional OpenAI powered translation provider.</p>
+        </header>
+        <form id="settingsForm" class="settings__form" novalidate>
+          <label class="settings__field" for="openaiApiKey">
+            <span class="settings__field-label">OpenAI API Key</span>
+            <input
+              id="openaiApiKey"
+              name="openaiApiKey"
+              type="password"
+              autocomplete="off"
+              placeholder="sk-..."
+              class="settings__text-input"
+              spellcheck="false"
+            />
+          </label>
+          <p class="settings__hint">Keys are stored locally inside your browser. Leave blank to disable the OpenAI provider.</p>
+          <label class="settings__field" for="targetLanguage">
+            <span class="settings__field-label">Target language</span>
+            <select
+              id="targetLanguage"
+              name="targetLanguage"
+              class="settings__select"
+            >
+              <option value="ru">Russian</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+              <option value="de">German</option>
+              <option value="ja">Japanese</option>
+            </select>
+          </label>
+          <p class="settings__hint">When enabled, translation output will use the selected language.</p>
+          <label class="settings__field settings__field--slider" for="summarizationLevel">
+            <span class="settings__field-label">Summarization level</span>
+            <input
+              id="summarizationLevel"
+              name="summarizationLevel"
+              type="range"
+              min="0"
+              max="2"
+              step="1"
+              class="settings__slider"
+            />
+            <div class="settings__slider-ticks" aria-hidden="true">
+              <span>No summarization</span>
+              <span>Moderate</span>
+              <span>Hard</span>
+            </div>
+            <span id="summarizationLabel" class="settings__slider-value" aria-live="polite"></span>
+          </label>
+          <p class="settings__hint">Adjust how much the AI condenses text while translating. No summarization keeps content verbatim, moderate halves each paragraph, hard extracts only key takeaways.</p>
+          <div class="settings__actions">
+            <button type="submit" id="saveSettings" class="settings__button settings__button--primary">Save changes</button>
+            <button type="button" id="clearSettings" class="settings__button settings__button--ghost">Clear key</button>
+          </div>
+          <p id="settingsStatus" class="settings__status" role="status" aria-live="polite" hidden></p>
+        </form>
+      </section>
+    </main>
+    <footer class="settings__footer">
+      <a href="https://speed-reader.com" target="_blank" rel="noreferrer">Visit support site</a>
+    </footer>
+    <script type="module" src="../scripts/settings.js"></script>
+  </body>
+</html>

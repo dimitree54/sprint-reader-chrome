@@ -90,6 +90,32 @@ These values provide consistent error handling behavior.
 | `consoleErrorHandler` | `console.error` | Default error logging function |
 | `consoleWarnHandler` | `console.warn` | Default warning logging function |
 
+## OpenAI API Defaults
+
+These values configure the OpenAI API requests for translation and summarization.
+
+| Setting | Default Value | Purpose |
+|---------|---------------|---------|
+| `model` | `'gpt-5-mini'` | Model to use for processing requests |
+| `service_tier` | `'flex'` | Processing tier - flex is cheaper/slower, priority is faster |
+| `reasoning.effort` | `'minimal'` | Reasoning effort level - minimal, low, medium, or high |
+
+## Translation Defaults
+
+These values control the default translation behavior for text preprocessing.
+
+| Setting | Default Value | Purpose |
+|---------|---------------|---------|
+| `defaultLanguage` | `'none'` | Default translation language (none = no translation) |
+
+## Summarization Defaults
+
+These values control the default summarization behavior for text preprocessing.
+
+| Setting | Default Value | Purpose |
+|---------|---------------|---------|
+| `defaultLevel` | `'none'` | Default summarization level (none = no summarization) |
+
 ## Usage Guidelines
 
 ### Adding New Defaults
@@ -159,6 +185,22 @@ export const DEFAULTS = {
   THEMES: {
     light: 'light' as ReaderTheme,
     dark: 'dark' as ReaderTheme
+  },
+
+  OPENAI: {
+    model: 'gpt-5-mini',
+    service_tier: 'flex',
+    reasoning: {
+      effort: 'minimal'
+    }
+  },
+
+  TRANSLATION: {
+    defaultLanguage: 'none'
+  },
+
+  SUMMARIZATION: {
+    defaultLevel: 'none'
   }
 } as const
 ```
@@ -209,3 +251,25 @@ A comprehensive audit was performed to eliminate hardcoded values throughout the
 - Improved maintainability and reduced risk of configuration drift
 - Enhanced type safety with centralized constants
 - Enabled easier customization of visual effects and behavior
+
+### September 2024 - Translation and Summarization Defaults
+
+Added comprehensive language support and default behavior configuration for text preprocessing:
+
+**Translation Defaults:**
+- Added `TRANSLATION.defaultLanguage` set to 'none' (no translation by default)
+- Expanded language support to 47+ languages including all requested languages
+- Added "Do not translate" option as the first option in language selection
+
+**Summarization Defaults:**
+- Added `SUMMARIZATION.defaultLevel` set to 'none' (no summarization by default)
+- Ensured original text is returned when both translation and summarization are disabled
+
+**Language Support Added:**
+- Afrikaans, Albanian, Arabic, Bengali, Bulgarian, Catalan, Chinese (Simplified), Chinese (Traditional), Croatian, Czech, Danish, Dutch, English, Estonian, Filipino/Tagalog, Finnish, French, German, Greek, Hebrew, Hindi, Hungarian, Indonesian, Italian, Japanese, Korean, Latvian, Lithuanian, Malay, Norwegian Bokmål, Persian (Farsi), Polish, Portuguese (Brazil), Portuguese (Portugal), Romanian, Russian, Serbian, Slovak, Slovenian, Spanish, Swahili, Swedish, Thai, Turkish, Ukrainian, Urdu, Vietnamese, Yoruba
+
+**Impact:**
+- Default behavior now preserves original text without processing
+- Users must explicitly opt-in to translation and summarization
+- Comprehensive language support for global users
+- Improved performance by skipping unnecessary API calls when no processing is needed

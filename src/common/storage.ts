@@ -1,5 +1,15 @@
 import { getBrowser } from '../platform/browser'
 import { getDefaultReaderPreferences } from '../config/defaults'
+import {
+  DEFAULT_TRANSLATION_LANGUAGE,
+  isTranslationLanguage,
+  type TranslationLanguage
+} from './translation'
+import {
+  DEFAULT_SUMMARIZATION_LEVEL,
+  isSummarizationLevel,
+  type SummarizationLevel
+} from './summarization'
 
 
 export type ReaderTheme = 'dark' | 'light';
@@ -56,7 +66,9 @@ export async function setInStorage (items: Record<string, unknown>): Promise<voi
 
 export const STORAGE_KEYS = {
   readerPrefs: 'sprintReader.readerPrefs',
-  openaiApiKey: 'sprintReader.openaiApiKey'
+  openaiApiKey: 'sprintReader.openaiApiKey',
+  translationLanguage: 'sprintReader.translationLanguage',
+  summarizationLevel: 'sprintReader.summarizationLevel'
 } as const
 
 
@@ -89,5 +101,35 @@ export async function readOpenAIApiKey (): Promise<string | null> {
 export async function writeOpenAIApiKey (apiKey: string): Promise<void> {
   await setInStorage({
     [STORAGE_KEYS.openaiApiKey]: apiKey
+  })
+}
+
+export async function readTranslationLanguage (): Promise<TranslationLanguage> {
+  const result = await getFromStorage<string>([STORAGE_KEYS.translationLanguage])
+  const value = result[STORAGE_KEYS.translationLanguage]
+  if (typeof value === 'string' && isTranslationLanguage(value)) {
+    return value
+  }
+  return DEFAULT_TRANSLATION_LANGUAGE
+}
+
+export async function writeTranslationLanguage (language: TranslationLanguage): Promise<void> {
+  await setInStorage({
+    [STORAGE_KEYS.translationLanguage]: language
+  })
+}
+
+export async function readSummarizationLevel (): Promise<SummarizationLevel> {
+  const result = await getFromStorage<string>([STORAGE_KEYS.summarizationLevel])
+  const value = result[STORAGE_KEYS.summarizationLevel]
+  if (typeof value === 'string' && isSummarizationLevel(value)) {
+    return value
+  }
+  return DEFAULT_SUMMARIZATION_LEVEL
+}
+
+export async function writeSummarizationLevel (level: SummarizationLevel): Promise<void> {
+  await setInStorage({
+    [STORAGE_KEYS.summarizationLevel]: level
   })
 }

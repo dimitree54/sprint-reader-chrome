@@ -66,6 +66,24 @@ export const DEFAULTS = {
   ERROR_HANDLING: {
     consoleErrorHandler: console.error,
     consoleWarnHandler: console.warn
+  },
+
+  // OpenAI API defaults
+  OPENAI: {
+    model: 'gpt-5-mini',
+    service_tier: 'flex',
+    reasoning: {
+      effort: 'minimal'
+    }
+  },
+
+  // Translation and summarization defaults
+  TRANSLATION: {
+    defaultLanguage: 'none'
+  },
+
+  SUMMARIZATION: {
+    defaultLevel: 'none'
   }
 } as const
 

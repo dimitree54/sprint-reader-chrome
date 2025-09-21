@@ -8,8 +8,13 @@
   </head>
   <body>
     <header class="popup__header">
-      <img src="../assets/icons/icon48.png" alt="10x your reading speed" class="popup__logo" width="32" height="32" />
-      <h1 class="popup__title">10x your reading speed</h1>
+      <div class="popup__brand">
+        <img src="../assets/icons/icon48.png" alt="10x your reading speed" class="popup__logo" width="32" height="32" />
+        <h1 class="popup__title">10x your reading speed</h1>
+      </div>
+      <button id="openSettings" class="popup__icon-button" type="button" aria-label="Open settings">
+        <span aria-hidden="true">&#9881;</span>
+      </button>
     </header>
     <main class="popup__main" role="main">
       <section class="popup__section">
@@ -21,18 +26,6 @@
             type="text"
             class="popup__text-input"
             placeholder="Paste any text here"
-            autocomplete="off"
-          />
-        </label>
-      </section>
-      <section class="popup__section">
-        <label class="popup__field popup__field--stacked" for="openaiApiKey">
-          <span class="popup__label">OpenAI API Key (for Russian translation):</span>
-          <input
-            id="openaiApiKey"
-            type="password"
-            class="popup__text-input"
-            placeholder="sk-..."
             autocomplete="off"
           />
         </label>

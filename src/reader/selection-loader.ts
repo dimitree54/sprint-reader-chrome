@@ -1,5 +1,4 @@
 import { loadPreferences } from './preferences'
-import { renderCurrentWord } from './render'
 import { state } from './state'
 import { decodeHtml, setWords } from './text'
 import { browser } from '../platform/browser'
@@ -51,5 +50,5 @@ export async function loadSelectionContent (): Promise<void> {
   const words = normalised.length > 0 ? normalised.split(' ') : []
 
   await setWords(words)
-  renderCurrentWord()
+  // Note: renderCurrentWord() is called at the end of rebuildWordItems()
 }

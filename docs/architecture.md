@@ -48,10 +48,11 @@ src/
     message-handler.ts → Runtime message router that coordinates selection + preferences.
     listeners.ts       → Commands, context menus, install, and message wiring.
     testing-hooks.ts   → Exposes global Playwright helpers.
-  common/          → Cross-context utilities (storage, message contracts, HTML + theme helpers).
+  common/          → Cross-context utilities (storage, message contracts, HTML + theme helpers, translation & summarisation metadata).
   content/         → Text selection capture and UX hints for web pages.
   platform/        → Runtime resolver split into `browser.ts`, `types.ts`, `wrap-chrome.ts`.
   popup/           → Action popup with quick-start controls.
+  settings/        → Dedicated settings surface for advanced preferences (API providers).
   reader/          → RSVP player UI assembled from focused modules:
     index.ts            → Entrypoint that wires selection loading, controls, messaging.
     state.ts            → Central playback state container + shared helpers.
@@ -64,9 +65,10 @@ src/
     timing-engine.ts    → Barrel file exporting the timing helpers above.
     text-processor.ts   → Advanced text preprocessing (acronyms, numbers, hyphenation).
     visual-effects.ts   → Letter highlighting, positioning, flicker effects.
+    openai-prompt.ts    → Builds chat completion payloads for OpenAI translation and summarisation requests.
 static/
   assets/          → Icons and imagery shared across contexts.
-  pages/           → HTML documents for popup, reader, welcome, updated pages.
+  pages/           → HTML documents for popup, reader, settings, welcome, updated pages.
   styles/          → Scoped stylesheets injected per context.
 config/
   manifest.base.json       → Canonical extension manifest definition.
@@ -137,6 +139,13 @@ The reader implementation follows a modular architecture with clear separation o
 * Handles word flicker effects for improved concentration.
 * Manages CSS transforms for precise letter centering in the viewport.
 * Wraps individual letters in spans for granular styling control.
+
+### 3.5 Settings Page (`src/settings/index.ts`)
+
+* Exposed via the gear icon in the popup and reader footer as well as the extension options entry.
+* Applies the persisted reader theme so the experience matches the active light or dark mode.
+* Loads the OpenAI API key, preferred translation language, and summarisation level from storage, lets users update or clear them, and surfaces inline success or error feedback.
+* Target language options and summarisation levels live alongside storage helpers so the OpenAI provider can build prompts dynamically.
 
 ## 4. Cross-Cutting Modules
 

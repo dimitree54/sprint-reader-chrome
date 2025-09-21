@@ -2,7 +2,8 @@
  * Extensible text preprocessing system with swappable providers
  */
 
-import { readOpenAIApiKey } from '../common/storage'
+import { readOpenAIApiKey, readTranslationLanguage, readSummarizationLevel } from '../common/storage'
+import { buildTranslationPromptPayload } from './openai-prompt'
 
 export interface PreprocessingResult {
   text: string
@@ -13,6 +14,11 @@ export interface PreprocessingResult {
     provider: string
     processingTime?: number
   }
+  error?: {
+    type: 'missing_api_key' | 'api_error' | 'network_error' | 'timeout_error' | 'unknown_error'
+    message: string
+    details?: Record<string, unknown>
+  }
 }
 
 export interface PreprocessingProvider {
@@ -21,29 +27,6 @@ export interface PreprocessingProvider {
   isAvailable(): Promise<boolean>
 }
 
-/**
- * Pass-through provider that returns text unchanged
- */
-class PassthroughProvider implements PreprocessingProvider {
-  name = 'passthrough'
-
-  async isAvailable(): Promise<boolean> {
-    return true
-  }
-
-  async process(text: string): Promise<PreprocessingResult> {
-    return {
-      text,
-      metadata: {
-        originalLength: text.length,
-        processedLength: text.length,
-        wasModified: false,
-        provider: this.name,
-        processingTime: 0
-      }
-    }
-  }
-}
 
 /**
  * OpenAI provider for Russian translation
@@ -59,50 +42,66 @@ class OpenAIProvider implements PreprocessingProvider {
 
   async process(text: string): Promise<PreprocessingResult> {
     const startTime = Date.now()
+    const targetLanguage = await readTranslationLanguage()
+    const summarizationLevel = await readSummarizationLevel()
+
+    // If no translation and no summarization, return original text
+    if (targetLanguage === 'none' && summarizationLevel === 'none') {
+      return {
+        text,
+        metadata: {
+          originalLength: text.length,
+          processedLength: text.length,
+          wasModified: false,
+          provider: 'none',
+          processingTime: Date.now() - startTime
+        }
+      }
+    }
+
     const storedApiKey = await readOpenAIApiKey()
     const apiKey = storedApiKey || process.env.OPENAI_API_KEY
 
     if (!apiKey) {
-      throw new Error('OpenAI API key not available')
+      return {
+        text,
+        error: {
+          type: 'missing_api_key',
+          message: 'OpenAI API key not configured',
+          details: {
+            suggestion: 'Please configure your OpenAI API key in the extension settings'
+          }
+        }
+      }
     }
 
     try {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000)
 
+      const payload = buildTranslationPromptPayload(text, targetLanguage, summarizationLevel)
+
       // eslint-disable-next-line n/no-unsupported-features/node-builtins
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('https://api.openai.com/v1/responses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
         },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [
-            {
-              role: 'system',
-              content: 'Translate the following text to Russian. Preserve the meaning and structure. Return only the translated text without any additional explanations.'
-            },
-            {
-              role: 'user',
-              content: text
-            }
-          ],
-          max_tokens: Math.min(1000, text.length * 2),
-          temperature: 0.3
-        }),
+        body: JSON.stringify(payload),
         signal: controller.signal
       })
 
       clearTimeout(timeoutId)
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`)
+        return this.handleApiError(response, text)
       }
 
       const data = await response.json()
-      const translatedText = data.choices?.[0]?.message?.content || text
+      // Find the message output (not reasoning) - it should have type 'message'
+      const messageOutput = data.output?.find((item: { type: string }) => item.type === 'message')
+      const translatedText = messageOutput?.content?.[0]?.text || text
 
       return {
         text: translatedText.trim(),
@@ -115,34 +114,77 @@ class OpenAIProvider implements PreprocessingProvider {
         }
       }
     } catch (error) {
-      throw new Error(`OpenAI preprocessing failed: ${error instanceof Error ? error.message : 'unknown'}`)
+      return this.handleProcessingError(error, text)
+    }
+  }
+
+  private handleApiError(response: { status: number; statusText: string; url: string }, originalText: string): PreprocessingResult {
+    const errorDetails = {
+      status: response.status,
+      statusText: response.statusText,
+      url: response.url
+    }
+
+    let errorType: 'api_error' | 'network_error' = 'api_error'
+    let errorMessage = `OpenAI API error: ${response.status} ${response.statusText}`
+
+    if (response.status === 0) {
+      errorType = 'network_error'
+      errorMessage = 'Network error: Unable to connect to OpenAI API'
+    } else if (response.status === 401) {
+      errorMessage = 'Authentication error: Invalid API key'
+    } else if (response.status === 429) {
+      errorMessage = 'Rate limit exceeded: Too many requests to OpenAI API'
+    } else if (response.status >= 500) {
+      errorMessage = 'OpenAI server error: Please try again later'
+    }
+
+    return {
+      text: originalText,
+      error: {
+        type: errorType,
+        message: errorMessage,
+        details: errorDetails
+      }
+    }
+  }
+
+  private handleProcessingError(error: unknown, originalText: string): PreprocessingResult {
+    let errorType: 'timeout_error' | 'network_error' | 'unknown_error' = 'unknown_error'
+    let errorMessage = 'Unknown error occurred during preprocessing'
+    const errorDetails: Record<string, unknown> = { originalError: error instanceof Error ? error.message : String(error) }
+
+    if (error instanceof Error) {
+      if (error.name === 'AbortError' || error.message.includes('timeout')) {
+        errorType = 'timeout_error'
+        errorMessage = 'Request timeout: OpenAI API took too long to respond'
+      } else if (error.message.includes('fetch') || error.message.includes('network')) {
+        errorType = 'network_error'
+        errorMessage = 'Network error: Unable to reach OpenAI API'
+      } else {
+        errorMessage = `Processing error: ${error.message}`
+      }
+    }
+
+    return {
+      text: originalText,
+      error: {
+        type: errorType,
+        message: errorMessage,
+        details: errorDetails
+      }
     }
   }
 }
 
 /**
- * Preprocessing manager that selects the best available provider
+ * Preprocessing manager that handles OpenAI processing
  */
 class PreprocessingManager {
-  private providers: PreprocessingProvider[] = [
-    new OpenAIProvider(),
-    new PassthroughProvider() // Always available as fallback
-  ]
+  private provider: PreprocessingProvider = new OpenAIProvider()
 
   async process(text: string): Promise<PreprocessingResult> {
-    for (const provider of this.providers) {
-      if (await provider.isAvailable()) {
-        try {
-          return await provider.process(text)
-        } catch (error) {
-          console.warn(`Provider ${provider.name} failed, trying next:`, error)
-          continue
-        }
-      }
-    }
-
-    // This should never happen since PassthroughProvider is always available
-    throw new Error('No preprocessing providers available')
+    return await this.provider.process(text)
   }
 }
 

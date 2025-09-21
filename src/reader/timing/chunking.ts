@@ -1,30 +1,36 @@
 import { assignOptimalLetterPosition, getWordFrequency } from './word-analysis'
 import { calculatePunctuationTiming, calculateWordTiming } from './durations'
 import type { TimingSettings, WordItem } from './types'
+import type { WordInfo } from '../text-processor'
 import { DEFAULTS } from '../../config/defaults'
 
-export function createWordItem (text: string, settings: TimingSettings): WordItem {
+export function createWordItem (wordInfo: WordInfo, settings: TimingSettings): WordItem {
+  const text = wordInfo.text
   const wordLength = text.length
   const frequency = getWordFrequency(text)
 
   const duration = calculateWordTiming({ text, wordLength, frequency } as WordItem, settings)
   const timing = calculatePunctuationTiming({ text, wordLength } as WordItem, settings)
 
+  // Apply 1.5x timing multiplier for bold words
+  const adjustedDuration = wordInfo.isBold ? duration * 1.5 : duration
+
   return {
     text,
     originalText: text,
     optimalLetterPosition: assignOptimalLetterPosition(text),
-    duration,
+    duration: adjustedDuration,
     predelay: timing.predelay,
     postdelay: timing.postdelay,
     wordLength,
     frequency,
     wordsInChunk: 1,
-    isGrouped: false
+    isGrouped: false,
+    isBold: wordInfo.isBold
   }
 }
 
-export function createChunks (words: string[], settings: TimingSettings): WordItem[] {
+export function createChunks (words: WordInfo[], settings: TimingSettings): WordItem[] {
   if (settings.chunkSize <= 1) {
     return words.map(word => createWordItem(word, settings))
   }
@@ -37,28 +43,38 @@ export function createChunks (words: string[], settings: TimingSettings): WordIt
     let j = i + 1
 
     // Only attempt grouping if the first word is also ≤3 characters
-    const canGroup = words[i].length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping
+    const canGroup = words[i].text.length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping
 
     while (
       canGroup &&
       j < words.length &&
       chunkWords.length < settings.chunkSize &&
-      words[j].length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping &&
-      !/[.!?]/.test(words[j]) &&
-      !/\n/.test(words[j])
+      words[j].text.length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping &&
+      !/[.!?]/.test(words[j].text) &&
+      !/\n/.test(words[j].text)
     ) {
       chunkWords.push(words[j])
       j++
     }
 
-    const chunkText = chunkWords.join(' ')
-    const wordItem = createWordItem(chunkText, settings)
+    const chunkText = chunkWords.map(w => w.text).join(' ')
+    const hasBoldWords = chunkWords.some(w => w.isBold)
+
+    // Create base word item using the first word's bold status (will be overridden)
+    const wordItem = createWordItem({ text: chunkText, isBold: false }, settings)
     wordItem.wordsInChunk = chunkWords.length
     wordItem.isGrouped = chunkWords.length > 1
-    wordItem.originalText = chunkWords.join(' ')
+    wordItem.originalText = chunkWords.map(w => w.text).join(' ')
 
+    // Apply grouping speed bonus
     if (wordItem.isGrouped) {
       wordItem.duration = wordItem.duration * 0.9
+    }
+
+    // Apply 1.5x timing multiplier if any word in chunk is bold
+    if (hasBoldWords) {
+      wordItem.duration = wordItem.duration * 1.5
+      wordItem.isBold = true // Mark the entire chunk as bold for display purposes
     }
 
     chunks.push(wordItem)

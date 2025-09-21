@@ -137,6 +137,7 @@ async function runBuild(browser) {
       content: path.join(repoRoot, 'src', 'content', 'index.ts'),
       popup: path.join(repoRoot, 'src', 'popup', 'index.ts'),
       reader: path.join(repoRoot, 'src', 'reader', 'index.ts'),
+      settings: path.join(repoRoot, 'src', 'settings', 'index.ts'),
     },
     bundle: true,
     format: 'esm',

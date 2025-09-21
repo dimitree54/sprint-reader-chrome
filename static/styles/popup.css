@@ -41,8 +41,14 @@ body.popup--light {
 .popup__header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
   margin-bottom: 16px;
+}
+
+.popup__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .popup__logo {
@@ -53,6 +59,34 @@ body.popup--light {
   font-size: 1.3rem;
   font-weight: 600;
   margin: 0;
+}
+
+.popup__icon-button {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  font-size: 1.1rem;
+}
+
+.popup__icon-button:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+body.popup--light .popup__icon-button {
+  border-color: rgba(74, 0, 224, 0.2);
+  background: rgba(74, 0, 224, 0.12);
+}
+
+body.popup--light .popup__icon-button:hover {
+  background: rgba(74, 0, 224, 0.2);
 }
 
 .popup__section {

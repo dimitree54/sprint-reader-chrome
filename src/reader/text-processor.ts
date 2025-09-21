@@ -96,10 +96,45 @@ export function splitLongWords (text: string): string[] {
   return parts
 }
 
-export function preprocessText (text: string): string[] {
+export interface WordInfo {
+  text: string
+  isBold: boolean
+}
+
+export function extractBoldWords(text: string): { processedText: string, boldWords: Set<string> } {
+  const boldWords = new Set<string>()
+  let processedText = text
+
+  // Find all **word** patterns and extract the words
+  const boldRegex = /\*\*([^*]+)\*\*/g
+  let match
+
+  while ((match = boldRegex.exec(text)) !== null) {
+    const boldPhrase = match[1].trim()
+    // Remove the bold markers from the text
+    processedText = processedText.replace(match[0], boldPhrase)
+
+    // Split the phrase into individual words and add to bold set
+    const wordsInPhrase = boldPhrase.split(/\s+/)
+    wordsInPhrase.forEach(word => {
+      // Clean word from punctuation but preserve for matching
+      const cleanWord = word.replace(/[^\w\u0400-\u04FF]/g, '')
+      if (cleanWord.length > 0) {
+        boldWords.add(cleanWord.toLowerCase())
+      }
+    })
+  }
+
+  return { processedText, boldWords }
+}
+
+export function preprocessText (text: string): WordInfo[] {
+  // Step 0: Extract bold words and clean the text
+  const { processedText, boldWords } = extractBoldWords(text)
+
   // Step 1: Preserve paragraph breaks, then normalize other whitespace
   const PARA = '¶¶'
-  const preserved = text.replace(/\r?\n\r?\n/g, ` ${PARA} `)
+  const preserved = processedText.replace(/\r?\n\r?\n/g, ` ${PARA} `)
   const normalized = preserved.replace(/\s+/g, ' ').trim()
   let words = normalized.length > 0 ? normalized.split(' ') : []
   // Restore paragraph markers as actual double newlines so downstream can detect
@@ -112,10 +147,15 @@ export function preprocessText (text: string): string[] {
   words = preserveNumbersDecimals(words)
 
   // Step 4: Split very long words
-  const finalWords: string[] = []
+  const finalWords: WordInfo[] = []
   words.forEach(word => {
     const splitWords = splitLongWords(word)
-    finalWords.push(...splitWords)
+    splitWords.forEach(splitWord => {
+      // Check if this word should be bold
+      const cleanWord = splitWord.replace(/[^\w\u0400-\u04FF]/g, '')
+      const isBold = cleanWord.length > 0 && boldWords.has(cleanWord.toLowerCase())
+      finalWords.push({ text: splitWord, isBold })
+    })
   })
 
   return finalWords
