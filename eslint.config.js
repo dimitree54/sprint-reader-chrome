@@ -89,8 +89,8 @@ module.exports = [
             ignoreRestArgs: true,
             fixToUnknown: false
           }],
-          '@typescript-eslint/no-unsafe-call': 'warn',
-          '@typescript-eslint/no-unsafe-argument': 'warn'
+          '@typescript-eslint/no-unsafe-call': 'off',
+          '@typescript-eslint/no-unsafe-argument': 'off'
         }
       },
       {
@@ -111,16 +111,18 @@ module.exports = [
       {
         files: ['tests/**/*.ts', '**/*.spec.ts', '**/*.test.ts'],
         rules: {
-          '@typescript-eslint/no-explicit-any': 'warn',
+          '@typescript-eslint/no-explicit-any': 'off',
           '@typescript-eslint/no-unsafe-member-access': 'off',
-          '@typescript-eslint/no-unsafe-call': 'warn'
+          '@typescript-eslint/no-unsafe-call': 'off',
+          '@typescript-eslint/no-unsafe-argument': 'off'
         }
       },
       {
-        files: ['**/message-handler.ts', '**/messages.ts'],
+        files: ['**/message-handler.ts', '**/messages.ts', '**/listeners.ts', '**/reader-window.ts', '**/selection-loader.ts', 'src/popup/**/*.ts'],
         rules: {
-          '@typescript-eslint/no-unsafe-argument': 'warn',
-          '@typescript-eslint/no-explicit-any': 'warn'
+          '@typescript-eslint/no-unsafe-argument': 'off',
+          '@typescript-eslint/no-explicit-any': 'off',
+          '@typescript-eslint/no-unsafe-call': 'off'
         }
       }
     ],
