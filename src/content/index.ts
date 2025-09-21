@@ -1,5 +1,6 @@
 import { getBrowser } from '../platform/browser'
 import type { BackgroundMessage, ContentRequest } from '../common/messages'
+import { DEFAULTS } from '../config/defaults'
 
 const browser = getBrowser()
 
@@ -38,7 +39,7 @@ function ensureSelectionHint (): HTMLElement | null {
 }
 
 function positionSelectionHint (hint: HTMLElement, x: number, y: number): void {
-  const offset = 16
+  const offset = DEFAULTS.UI.selectionHintOffset
   const maxX = window.innerWidth - hint.offsetWidth - offset
   const maxY = window.innerHeight - hint.offsetHeight - offset
 
@@ -66,7 +67,7 @@ function showSelectionHint (x: number, y: number): void {
 
   hideHintTimeout = setTimeout(() => {
     removeSelectionHint()
-  }, 3000)
+  }, DEFAULTS.UI.selectionHintTimeoutMs)
 }
 
 
@@ -104,7 +105,7 @@ function scheduleSelectionCapture () {
   }
   selectionTimeout = setTimeout(() => {
     captureSelection()
-  }, 120)
+  }, DEFAULTS.TIMING.selectionCaptureDelayMs)
 }
 
 document.addEventListener('mouseup', scheduleSelectionCapture, true)
@@ -120,8 +121,8 @@ document.addEventListener('mousemove', (event) => {
   lastMouseY = event.clientY
 })
 
-browser.runtime.onMessage.addListener((rawMessage: any, _sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
-  const message = rawMessage as ContentRequest
+browser.runtime.onMessage.addListener((rawMessage: ContentRequest, _sender: chrome.runtime.MessageSender, sendResponse: (response?: unknown) => void) => {
+  const message = rawMessage
   if (message.target !== 'content') {
     return undefined
   }

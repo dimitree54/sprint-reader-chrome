@@ -1,13 +1,14 @@
 import { renderCurrentWord } from './render'
 import { setTimer, state, stopTimer } from './state'
+import { DEFAULTS } from '../config/defaults'
 
 function calculateDelay (): number {
   const currentWordItem = state.wordItems[state.index]
   if (currentWordItem) {
     const delay = (currentWordItem.duration ?? 0) + (currentWordItem.postdelay ?? 0)
-    return Math.max(delay, 20)
+    return Math.max(delay, DEFAULTS.TIMING.minimumDelayMs)
   }
-  return Math.max(60_000 / Math.max(100, state.wordsPerMinute), 20)
+  return Math.max(60_000 / Math.max(DEFAULTS.TIMING.minimumWpmForCalculation, state.wordsPerMinute), DEFAULTS.TIMING.minimumDelayMs)
 }
 
 function scheduleNextWord (): void {

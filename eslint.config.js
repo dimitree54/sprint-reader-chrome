@@ -75,7 +75,8 @@ module.exports = [
         ],
         parserOptions: {
           ecmaVersion: 2020,
-          sourceType: 'module'
+          sourceType: 'module',
+          project: './tsconfig.json'
         },
         rules: {
           'no-unused-vars': 'off',
@@ -84,13 +85,42 @@ module.exports = [
             args: 'after-used',
             ignoreRestSiblings: false
           }],
-          '@typescript-eslint/no-explicit-any': 'off'
+          '@typescript-eslint/no-explicit-any': ['error', {
+            ignoreRestArgs: true,
+            fixToUnknown: false
+          }],
+          '@typescript-eslint/no-unsafe-call': 'warn',
+          '@typescript-eslint/no-unsafe-argument': 'warn'
         }
       },
       {
         files: ['*.config.{js,ts}', 'scripts/**/*.{js,ts}'],
         env: {
           node: true
+        }
+      },
+      {
+        files: ['src/platform/**/*.ts'],
+        rules: {
+          '@typescript-eslint/no-explicit-any': 'off',
+          '@typescript-eslint/no-unsafe-call': 'off',
+          '@typescript-eslint/no-unsafe-member-access': 'off',
+          '@typescript-eslint/no-unsafe-assignment': 'off'
+        }
+      },
+      {
+        files: ['tests/**/*.ts', '**/*.spec.ts', '**/*.test.ts'],
+        rules: {
+          '@typescript-eslint/no-explicit-any': 'warn',
+          '@typescript-eslint/no-unsafe-member-access': 'off',
+          '@typescript-eslint/no-unsafe-call': 'warn'
+        }
+      },
+      {
+        files: ['**/message-handler.ts', '**/messages.ts'],
+        rules: {
+          '@typescript-eslint/no-unsafe-argument': 'warn',
+          '@typescript-eslint/no-explicit-any': 'warn'
         }
       }
     ],

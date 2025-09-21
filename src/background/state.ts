@@ -1,4 +1,5 @@
 import type { ReaderPreferences } from '../common/storage'
+import { getDefaultSelectionState } from '../config/defaults'
 
 export type SelectionState = {
   text: string;
@@ -7,12 +8,7 @@ export type SelectionState = {
   timestamp: number;
 }
 
-const defaultSelection: SelectionState = {
-  text: '',
-  hasSelection: false,
-  isRTL: false,
-  timestamp: Date.now()
-}
+const defaultSelection: SelectionState = getDefaultSelectionState()
 
 let latestSelection: SelectionState = { ...defaultSelection }
 let readerWindowId: number | undefined
@@ -36,7 +32,7 @@ export function updateSelectionState (partial: Partial<SelectionState>): Selecti
 }
 
 export function resetSelectionState (): void {
-  latestSelection = { ...defaultSelection, timestamp: Date.now() }
+  latestSelection = getDefaultSelectionState()
 }
 
 export function getReaderWindowId (): number | undefined {

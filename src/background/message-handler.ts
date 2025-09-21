@@ -25,6 +25,7 @@ export async function handleBackgroundMessage (
   sendResponse: (value?: unknown) => void
 ): Promise<boolean | undefined> {
   if (rawMessage.target !== 'background') {
+    // Informational: message not intended for background
     return undefined
   }
 
@@ -34,13 +35,16 @@ export async function handleBackgroundMessage (
     case 'getSelection':
       selectionFromMessage(message)
       sendResponse({ ok: true })
+      // Informational: selection message processed
       return true
     case 'openReaderFromContent':
       selectionFromMessage(message)
       await openReaderWindowSetup(true, message.selectionText, message.haveSelection, message.dirRTL)
+      // Informational: reader opened from content script
       return true
     case 'openReaderFromContextMenu':
       await openReaderWindowSetup(true, message.selectionText, message.selectionText.length > 0, false)
+      // Informational: reader opened from context menu
       return true
     case 'openReaderFromPopup': {
       const prefs = await ensurePreferencesLoaded()
@@ -53,19 +57,24 @@ export async function handleBackgroundMessage (
 
       const providedText = message.selectionText?.trim() ?? ''
       if (providedText.length === 0) {
+        // Informational: popup request processed but no text provided
         return true
       }
 
       await openReaderWindowSetup(false, providedText, true, false)
+      // Informational: reader opened from popup
       return true
     }
     case 'getMenuEntryText':
       sendResponse({ menuEntryText: CONTEXT_MENU_TITLE })
+      // Informational: menu entry text requested
       return true
     case 'getCurrentSelection':
       sendResponse({ selection: getSelectionState() })
+      // Informational: current selection requested
       return true
     default:
+      // Informational: unknown message type
       return undefined
   }
 }

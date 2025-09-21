@@ -63,8 +63,8 @@ function normalizeSendMessageArgs (args: SendMessageArgs): {
   return { callArgs, callback: undefined }
 }
 
-function wrapSendMessage(
-  send: (...args: unknown[]) => void,
+function wrapSendMessage<Fn extends (...inner: unknown[]) => void>(
+  send: Fn,
   chromeApi: ChromeAPI
 ) {
   return (...args: unknown[]) => {
@@ -132,7 +132,7 @@ export function wrapChromeToBrowserLike (chromeApi: ChromeAPI): MinimalBrowserAP
   ], chrome.tabs.Tab[]>(chromeApi.tabs.query.bind(chromeApi.tabs), chromeApi)
 
   const wrapRuntimeSendMessage = wrapSendMessage(
-    chromeApi.runtime.sendMessage.bind(chromeApi.runtime) as (...args: unknown[]) => void,
+    chromeApi.runtime.sendMessage.bind(chromeApi.runtime),
     chromeApi
   ) as {
     (message: unknown, options?: RuntimeMessageOptions): Promise<unknown>;
@@ -140,7 +140,7 @@ export function wrapChromeToBrowserLike (chromeApi: ChromeAPI): MinimalBrowserAP
   }
 
   const wrapTabsSendMessage = wrapSendMessage(
-    chromeApi.tabs.sendMessage.bind(chromeApi.tabs) as (...args: unknown[]) => void,
+    chromeApi.tabs.sendMessage.bind(chromeApi.tabs),
     chromeApi
   ) as {
     (tabId: number, message: unknown, options?: TabsMessageOptions): Promise<unknown>;

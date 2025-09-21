@@ -8,6 +8,7 @@ import {
   setReaderWindowId,
   type SelectionState
 } from './state'
+import { DEFAULTS } from '../config/defaults'
 
 async function focusExistingWindow (): Promise<boolean> {
   const windowId = getReaderWindowId()
@@ -17,7 +18,7 @@ async function focusExistingWindow (): Promise<boolean> {
 
   try {
     await browser.windows.update(windowId, { focused: true })
-    await (browser.runtime.sendMessage as any)({ target: 'reader', type: 'refreshReader' })
+    await browser.runtime.sendMessage({ target: 'reader', type: 'refreshReader' })
     return true
   } catch (error) {
     console.warn('[Speed Reader] Failed to focus reader window, opening a new one.', error)
@@ -31,8 +32,8 @@ async function createReaderWindow (): Promise<void> {
   const created = await browser.windows.create({
     url,
     type: 'popup',
-    width: 960,
-    height: 640,
+    width: DEFAULTS.UI.windowDimensions.width,
+    height: DEFAULTS.UI.windowDimensions.height,
     focused: true
   })
 

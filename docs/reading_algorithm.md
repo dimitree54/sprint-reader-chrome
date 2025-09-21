@@ -222,7 +222,7 @@ Sprint Reader includes sophisticated text preprocessing that optimizes text befo
 For improved reading flow, Sprint Reader can group short words together:
 
 ### Chunking Rules
-
+1
 - **Target**: Words ≤ 3 characters
 - **Group Size**: Configurable (default: disabled, can be 2-4 words)
 - **Boundary Respect**: Never chunks across sentence endings (`.!?`)

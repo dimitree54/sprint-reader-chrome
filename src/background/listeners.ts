@@ -10,6 +10,7 @@ import {
   getSelectionState
 } from './state'
 import { ensureSelectionLoaded } from './selection'
+import { DEFAULTS } from '../config/defaults'
 
 async function handleInstall (details: chrome.runtime.InstalledDetails): Promise<void> {
   await ensureSelectionLoaded()
@@ -75,9 +76,9 @@ function registerCommandListener (): void {
     if (!tabId) return
 
     try {
-      const response = await (browser.tabs.sendMessage as any)(tabId, { target: 'content', type: 'getMouseCoordinates' })
-      const coords = (response as { x: number, y: number } | undefined) ?? { x: 0, y: 0 }
-      await (browser.tabs.sendMessage as any)(tabId, { target: 'content', type: 'showSelectionHint', x: coords.x, y: coords.y })
+      const response = await browser.tabs.sendMessage(tabId, { target: 'content', type: 'getMouseCoordinates' })
+      const coords = (response as { x: number, y: number } | undefined) ?? DEFAULTS.UI.mouseCoordinates
+      await browser.tabs.sendMessage(tabId, { target: 'content', type: 'showSelectionHint', x: coords.x, y: coords.y })
     } catch (error) {
       console.error('Failed to show selection hint', error)
     }
@@ -93,8 +94,9 @@ function registerInstallListener (): void {
 
 function registerMessageListener (): void {
   browser.runtime.onMessage.addListener((message: unknown, sender: chrome.runtime.MessageSender, sendResponse: (response?: unknown) => void) => {
-    const maybePromise = handleBackgroundMessage(message as RuntimeMessage, sender, sendResponse)
-    return maybePromise instanceof Promise ? true : maybePromise
+    // Fire-and-forget: handle message asynchronously without keeping channel open
+    handleBackgroundMessage(message as RuntimeMessage, sender, sendResponse).catch(console.error)
+    return false
   })
 }
 

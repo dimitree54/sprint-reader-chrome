@@ -19,24 +19,24 @@ export function encodeHtml (value: string): string {
 }
 
 export function decodeHtml (value: string): string {
-  return value.replace(/&(#?)(x?)(\w+);/g, (_match, prefix: string, isHex: string, code: string) => {
+  return value.replace(/&(#?)(x?)(\w+);/gi, (_match, prefix: string, isHex: string, code: string) => {
     if (prefix === '') {
       const named = NAMED_ENTITIES[code]
       if (typeof named !== 'undefined') {
         return named
       }
-      return code
+      return _match
     }
 
-    const base = isHex === 'x' ? 16 : 10
+    const base = isHex.toLowerCase() === 'x' ? 16 : 10
     const parsed = Number.parseInt(code, base)
     if (Number.isNaN(parsed)) {
-      return code
+      return _match
     }
     try {
       return String.fromCodePoint(parsed)
     } catch {
-      return code
+      return _match
     }
   })
 }

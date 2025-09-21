@@ -3,6 +3,7 @@ import { persistPreferences, syncThemeToggle } from './preferences'
 import { renderCurrentWord } from './render'
 import { state } from './state'
 import { rebuildWordItems, updateOptimalFontSize } from './text'
+import { DEFAULTS } from '../config/defaults'
 
 function updateWpmDisplay (value: number): void {
   const wpmValue = document.getElementById('wpmValue')
@@ -33,7 +34,7 @@ function attachPlaybackControls (): void {
 function attachSpeedControl (): void {
   const slider = document.getElementById('sliderWpm') as HTMLInputElement | null
   slider?.addEventListener('input', () => {
-    const value = Number.parseInt(slider.value, 10) || 400
+    const value = Number.parseInt(slider.value, 10) || DEFAULTS.READER_PREFERENCES.wordsPerMinute
     state.wordsPerMinute = value
     updateWpmDisplay(value)
 
@@ -60,7 +61,7 @@ function attachResizeHandler (): void {
     resizeTimeout = setTimeout(() => {
       updateOptimalFontSize()
       renderCurrentWord()
-    }, 150)
+    }, DEFAULTS.UI.resizeDebounceMs)
   })
 }
 

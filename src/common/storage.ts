@@ -1,4 +1,5 @@
 import { getBrowser } from '../platform/browser'
+import { getDefaultReaderPreferences } from '../config/defaults'
 
 export type StoredSelection = {
   text: string;
@@ -77,15 +78,16 @@ export async function writeSelection (selection: StoredSelection): Promise<void>
 
 export async function readReaderPreferences (): Promise<ReaderPreferences> {
   const result = await getFromStorage<ReaderPreferences>([STORAGE_KEYS.readerPrefs])
+  const defaults = getDefaultReaderPreferences()
   return {
-    wordsPerMinute: result[STORAGE_KEYS.readerPrefs]?.wordsPerMinute ?? 400,
-    pauseAfterComma: result[STORAGE_KEYS.readerPrefs]?.pauseAfterComma ?? true,
-    pauseAfterPeriod: result[STORAGE_KEYS.readerPrefs]?.pauseAfterPeriod ?? true,
-    pauseAfterParagraph: result[STORAGE_KEYS.readerPrefs]?.pauseAfterParagraph ?? true,
-    chunkSize: result[STORAGE_KEYS.readerPrefs]?.chunkSize ?? 3,
-    wordFlicker: result[STORAGE_KEYS.readerPrefs]?.wordFlicker ?? true,
-    wordFlickerPercent: result[STORAGE_KEYS.readerPrefs]?.wordFlickerPercent ?? 10,
-    theme: result[STORAGE_KEYS.readerPrefs]?.theme ?? 'dark'
+    wordsPerMinute: result[STORAGE_KEYS.readerPrefs]?.wordsPerMinute ?? defaults.wordsPerMinute,
+    pauseAfterComma: result[STORAGE_KEYS.readerPrefs]?.pauseAfterComma ?? defaults.pauseAfterComma,
+    pauseAfterPeriod: result[STORAGE_KEYS.readerPrefs]?.pauseAfterPeriod ?? defaults.pauseAfterPeriod,
+    pauseAfterParagraph: result[STORAGE_KEYS.readerPrefs]?.pauseAfterParagraph ?? defaults.pauseAfterParagraph,
+    chunkSize: result[STORAGE_KEYS.readerPrefs]?.chunkSize ?? defaults.chunkSize,
+    wordFlicker: result[STORAGE_KEYS.readerPrefs]?.wordFlicker ?? defaults.wordFlicker,
+    wordFlickerPercent: result[STORAGE_KEYS.readerPrefs]?.wordFlickerPercent ?? defaults.wordFlickerPercent,
+    theme: result[STORAGE_KEYS.readerPrefs]?.theme ?? defaults.theme
   }
 }
 
