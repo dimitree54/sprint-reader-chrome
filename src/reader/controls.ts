@@ -42,8 +42,9 @@ function attachKeyboardControls (): void {
       return
     }
 
-    const target = event.target as HTMLElement | null
-    if (target?.closest('input, button, textarea, [contenteditable="true"]')) {
+    const target = event.target
+    if (target instanceof Element &&
+        target.closest('input, button, textarea, select, [contenteditable]')) {
       return
     }
 
