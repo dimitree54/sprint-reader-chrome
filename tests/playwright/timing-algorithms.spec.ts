@@ -146,9 +146,17 @@ test.describe('Sprint Reader - Timing Algorithms', () => {
       });
     });
 
-    // Verify that longer words are not grouped
-    const longWordChunks = chunks.filter((chunk: any) => chunk.wordLength > 3 && !chunk.isGrouped);
-    longWordChunks.forEach((chunk: any) => {
+    // Verify that chunks containing individual long words are not grouped
+    const groupedChunksWithLongWords = chunks.filter((chunk: any) => {
+      if (!chunk.isGrouped) return false;
+      const words = chunk.originalText.split(' ');
+      return words.some((word: string) => word.length > 3);
+    });
+    expect(groupedChunksWithLongWords.length).toBe(0);
+
+    // Verify that single long words (not grouped) have expected properties
+    const singleLongWordChunks = chunks.filter((chunk: any) => !chunk.isGrouped && chunk.wordLength > 3);
+    singleLongWordChunks.forEach((chunk: any) => {
       expect(chunk.wordsInChunk).toBe(1);
       expect(chunk.isGrouped).toBe(false);
     });
