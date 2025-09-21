@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures';
+import { DEFAULTS } from '../../src/config/defaults';
 
 type BackgroundContext = {
   openReaderWindowSetup: (
@@ -59,7 +60,7 @@ test.describe('Sprint Reader - Word Grouping Debug', () => {
 
     expect(chunkingDetails).not.toBeNull();
     expect(chunkingDetails!.originalWords).toEqual(['I', 'am', 'a', 'super', 'hero']);
-    expect(chunkingDetails!.chunkSize).toBe(3); // Should be using default chunk size of 3
+    expect(chunkingDetails!.chunkSize).toBe(DEFAULTS.READER_PREFERENCES.chunkSize);
 
     const wordItems = chunkingDetails!.wordItems;
 

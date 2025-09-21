@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures';
+import { DEFAULTS } from '../../src/config/defaults';
 
 type BackgroundContext = {
   openReaderWindowSetup: (
@@ -127,7 +128,7 @@ test.describe('Sprint Reader - Timing Algorithms', () => {
     // Verify grouped chunks contain multiple words
     groupedChunks.forEach((chunk: any) => {
       expect(chunk.wordsInChunk).toBeGreaterThan(1);
-      expect(chunk.wordsInChunk).toBeLessThanOrEqual(3); // Default chunk size
+      expect(chunk.wordsInChunk).toBeLessThanOrEqual(DEFAULTS.READER_PREFERENCES.chunkSize);
 
       // Verify the text contains spaces (multiple words)
       expect(chunk.text).toMatch(/\s/);
