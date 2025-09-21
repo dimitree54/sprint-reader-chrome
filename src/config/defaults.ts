@@ -16,6 +16,11 @@ export const DEFAULTS = {
     theme: 'dark' as ReaderTheme
   } satisfies ReaderPreferences,
 
+  // Word processing defaults
+  WORD_PROCESSING: {
+    maxWordLengthForGrouping: 3
+  },
+
   // Selection state defaults
   SELECTION_STATE: {
     text: '',
@@ -40,7 +45,24 @@ export const DEFAULTS = {
       width: 960,
       height: 640
     },
-    selectionHintOffset: 16
+    selectionHintOffset: 16,
+    highlightOptimalLetterColor: '#FF8C00',
+    optimalFontSize: '128px'
+  },
+
+  // Visual effects defaults
+  VISUAL: {
+    flickerOpacity: 0.3,
+    flickerDurationMultiplier: 0.3,
+    maxTheoreticalLength: 16,
+    maxFontSize: 128,
+    minFontSize: 48
+  },
+
+  // Theme constants
+  THEMES: {
+    light: 'light' as ReaderTheme,
+    dark: 'dark' as ReaderTheme
   },
 
   // Error handling defaults

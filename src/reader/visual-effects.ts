@@ -5,6 +5,7 @@
 
 import { escapeHtml } from '../common/html'
 import type { WordItem } from './timing-engine'
+import { DEFAULTS } from '../config/defaults'
 
 export type VisualSettings = {
   highlightOptimalLetter: boolean;
@@ -60,13 +61,13 @@ export function applyFlickerEffect (wordElement: HTMLElement, wordItem: WordItem
 
     // Quick fade to 30% opacity
     wordElement.style.transition = 'opacity 50ms ease-in-out'
-    wordElement.style.opacity = '0.3'
+    wordElement.style.opacity = String(DEFAULTS.VISUAL.flickerOpacity)
 
     // Restore opacity after flicker duration
     setTimeout(() => {
       wordElement.style.opacity = originalOpacity
     }, flickerDelay)
-  }, wordItem.duration * 0.3) // Flicker at 30% through the word display
+  }, wordItem.duration * DEFAULTS.VISUAL.flickerDurationMultiplier) // Flicker at 30% through the word display
 }
 
 /**
@@ -76,7 +77,7 @@ export function applyFlickerEffect (wordElement: HTMLElement, wordItem: WordItem
 export function calculateOptimalFontSizeForText (wordItems: WordItem[]): string {
   if (wordItems.length === 0) {
     // Fallback to the CSS clamp maximum when no words are available.
-    return '128px'
+    return DEFAULTS.UI.optimalFontSize
   }
   // Prefer the content container width to avoid overestimating space
   const container = document.querySelector('.reader__main') as HTMLElement | null
@@ -92,7 +93,7 @@ export function calculateOptimalFontSizeForText (wordItems: WordItem[]): string 
   const longestWordLength = Math.max(...wordItems.map(item => item.text.length))
 
   // Maximum theoretical word length based on algorithm (before splitting at 17 chars)
-  const maxTheoreticalLength = 16
+  const maxTheoreticalLength = DEFAULTS.VISUAL.maxTheoreticalLength
 
   // Use the longer of actual longest word or theoretical maximum
   const effectiveLength = Math.max(longestWordLength, maxTheoreticalLength)
@@ -109,8 +110,8 @@ export function calculateOptimalFontSizeForText (wordItems: WordItem[]): string 
   const maxFontSizeForLength = availableWidth / (effectiveLength * estimatedCharWidth)
 
   // Get the CSS maximum values (from original clamp)
-  const cssMaxFontSize = 128
-  const cssMinFontSize = 48
+  const cssMaxFontSize = DEFAULTS.VISUAL.maxFontSize
+  const cssMinFontSize = DEFAULTS.VISUAL.minFontSize
 
   // Use the smaller of calculated max or CSS max
   const dynamicFontSize = Math.min(maxFontSizeForLength, cssMaxFontSize)

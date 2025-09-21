@@ -4,6 +4,7 @@ import { renderCurrentWord } from './render'
 import { state } from './state'
 import { decodeHtml, setWords } from './text'
 import { browser } from '../platform/browser'
+import { DEFAULTS } from '../config/defaults'
 
 function normaliseText (rawText: string): string {
   return rawText.replace(/\s+/g, ' ').trim()
@@ -22,7 +23,7 @@ function syncControls (): void {
 
   const themeToggle = document.getElementById('toggleTheme') as HTMLInputElement | null
   if (themeToggle) {
-    themeToggle.checked = state.theme === 'light'
+    themeToggle.checked = state.theme === DEFAULTS.THEMES.light
   }
 }
 

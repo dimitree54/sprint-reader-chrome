@@ -5,6 +5,7 @@ import {
   type ReaderTheme
 } from '../common/storage'
 import { browser } from '../platform/browser'
+import { DEFAULTS } from '../config/defaults'
 
 const THEME_OPTIONS = {
   lightClass: 'popup--light',
@@ -17,7 +18,7 @@ type PopupElements = {
   menuEntryTextSpan: HTMLSpanElement;
 };
 
-let currentTheme: ReaderTheme = 'dark'
+let currentTheme: ReaderTheme = DEFAULTS.READER_PREFERENCES.theme
 
 async function loadPreferences () {
   const prefs = await readReaderPreferences()

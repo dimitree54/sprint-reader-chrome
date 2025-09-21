@@ -30,17 +30,17 @@ export const state: ReaderState = {
   index: 0,
   playing: false,
   timerId: undefined,
-  wordsPerMinute: 400,
+  wordsPerMinute: DEFAULTS.READER_PREFERENCES.wordsPerMinute,
   highlightOptimalLetter: true,
-  highlightOptimalLetterColor: '#FF8C00',
-  pauseAfterComma: true,
-  pauseAfterPeriod: true,
-  pauseAfterParagraph: true,
+  highlightOptimalLetterColor: DEFAULTS.UI.highlightOptimalLetterColor,
+  pauseAfterComma: DEFAULTS.READER_PREFERENCES.pauseAfterComma,
+  pauseAfterPeriod: DEFAULTS.READER_PREFERENCES.pauseAfterPeriod,
+  pauseAfterParagraph: DEFAULTS.READER_PREFERENCES.pauseAfterParagraph,
   chunkSize: DEFAULTS.READER_PREFERENCES.chunkSize,
-  wordFlicker: false,
-  wordFlickerPercent: 10,
-  optimalFontSize: '128px',
-  theme: 'dark'
+  wordFlicker: DEFAULTS.READER_PREFERENCES.wordFlicker,
+  wordFlickerPercent: DEFAULTS.READER_PREFERENCES.wordFlickerPercent,
+  optimalFontSize: DEFAULTS.UI.optimalFontSize,
+  theme: DEFAULTS.READER_PREFERENCES.theme
 }
 
 export function setTimer (timer: PlaybackTimer): void {

@@ -1,12 +1,13 @@
 import { calculateShannonEntropy, detectPunctuation, getWordFrequency } from './word-analysis'
 import type { TimingSettings, WordItem } from './types'
+import { DEFAULTS } from '../../config/defaults'
 
-const MIN_WPM = 100
+const MIN_WPM = DEFAULTS.TIMING.minimumWpmForCalculation
 const MAX_DELAY_MS = 2000
 const MIN_DELAY_MS = 50
 
 const baseDurationFor = (settings: TimingSettings): number => {
-  return Math.max(60_000 / Math.max(MIN_WPM, settings.wordsPerMinute), 20)
+  return Math.max(60_000 / Math.max(MIN_WPM, settings.wordsPerMinute), DEFAULTS.TIMING.minimumDelayMs)
 }
 
 export function calculateWordTiming (wordItem: WordItem, settings: TimingSettings): number {

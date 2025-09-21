@@ -1,6 +1,6 @@
 # Default Values Configuration
 
-_Last updated: December 2024_
+_Last updated: December 2024 (Post-Hardcode Elimination)_
 
 This document describes all default values used throughout the extension and their purposes. All defaults are centralized in `src/config/defaults.ts` to ensure consistency and easy maintenance.
 
@@ -52,6 +52,37 @@ These values control visual positioning and timing for UI elements.
 | `windowDimensions.width` | `960` | Default reader window width |
 | `windowDimensions.height` | `640` | Default reader window height |
 | `selectionHintOffset` | `16` | Pixel offset for selection hint positioning |
+| `highlightOptimalLetterColor` | `'#FF8C00'` | Orange color for highlighting the optimal reading letter |
+| `optimalFontSize` | `'128px'` | Default font size for word display (dynamically adjusted) |
+
+## Word Processing Defaults
+
+These values control how text is processed and grouped for optimal reading.
+
+| Setting | Default Value | Purpose |
+|---------|---------------|---------|
+| `maxWordLengthForGrouping` | `3` | Maximum word length (in characters) for grouping multiple words together |
+
+## Visual Effects Defaults
+
+These values control animations and visual effects during reading.
+
+| Setting | Default Value | Purpose |
+|---------|---------------|---------|
+| `flickerOpacity` | `0.3` | Opacity level (0.0-1.0) for word flicker effect |
+| `flickerDurationMultiplier` | `0.3` | Fraction of word display time when flicker occurs (30%) |
+| `maxTheoreticalLength` | `16` | Maximum expected word length for font size calculations |
+| `maxFontSize` | `128` | Maximum font size in pixels for word display |
+| `minFontSize` | `48` | Minimum font size in pixels for word display |
+
+## Theme Constants
+
+These values define the available theme options.
+
+| Setting | Default Value | Purpose |
+|---------|---------------|---------|
+| `THEMES.light` | `'light'` | Identifier for light theme mode |
+| `THEMES.dark` | `'dark'` | Identifier for dark theme mode |
 
 ## Error Handling Defaults
 
@@ -99,9 +130,39 @@ All defaults are defined in `src/config/defaults.ts` using TypeScript's `satisfi
 export const DEFAULTS = {
   READER_PREFERENCES: {
     wordsPerMinute: 400,
+    chunkSize: 3,
+    theme: 'dark' as ReaderTheme
     // ... other preferences
   } satisfies ReaderPreferences,
-  // ... other sections
+
+  WORD_PROCESSING: {
+    maxWordLengthForGrouping: 3
+  },
+
+  TIMING: {
+    minimumDelayMs: 20,
+    minimumWpmForCalculation: 100,
+    selectionCaptureDelayMs: 120
+  },
+
+  UI: {
+    highlightOptimalLetterColor: '#FF8C00',
+    optimalFontSize: '128px',
+    windowDimensions: { width: 960, height: 640 }
+    // ... other UI settings
+  },
+
+  VISUAL: {
+    flickerOpacity: 0.3,
+    maxFontSize: 128,
+    minFontSize: 48
+    // ... other visual effects
+  },
+
+  THEMES: {
+    light: 'light' as ReaderTheme,
+    dark: 'dark' as ReaderTheme
+  }
 } as const
 ```
 
@@ -124,3 +185,30 @@ As part of the extension's architecture principles, the centralized defaults rep
 - **After**: `value ?? DEFAULTS.READER_PREFERENCES.wordsPerMinute`
 
 This approach ensures consistency and makes it easier to understand and maintain the extension's behavior.
+
+## Recent Changes
+
+### December 2024 - Hardcode Elimination
+
+A comprehensive audit was performed to eliminate hardcoded values throughout the codebase. The following new configuration sections were added:
+
+**Word Processing Defaults:**
+- Added `maxWordLengthForGrouping` to centralize the 3-character limit for word grouping logic
+
+**Visual Effects Defaults:**
+- Added `flickerOpacity`, `flickerDurationMultiplier` for flicker effect control
+- Added `maxTheoreticalLength` for font size calculation consistency
+- Added `maxFontSize` and `minFontSize` for dynamic font sizing boundaries
+
+**Enhanced UI Defaults:**
+- Added `highlightOptimalLetterColor` for consistent letter highlighting
+- Added `optimalFontSize` as the default font size for words
+
+**Theme Constants:**
+- Added `THEMES.light` and `THEMES.dark` to replace string literals throughout the code
+
+**Impact:**
+- Eliminated 15+ hardcoded values across 12 files
+- Improved maintainability and reduced risk of configuration drift
+- Enhanced type safety with centralized constants
+- Enabled easier customization of visual effects and behavior

@@ -4,6 +4,7 @@ import {
 } from '../common/storage'
 import { state } from './state'
 import { applyThemeToElement } from '../common/theme'
+import { DEFAULTS } from '../config/defaults'
 
 const THEME_OPTIONS = {
   lightClass: 'reader--light',
@@ -38,6 +39,6 @@ export function persistPreferences (): void {
 }
 
 export function syncThemeToggle (checked: boolean): void {
-  state.theme = checked ? 'light' : 'dark'
+  state.theme = checked ? DEFAULTS.THEMES.light : DEFAULTS.THEMES.dark
   applyThemeToElement(document.body, state.theme, THEME_OPTIONS)
 }

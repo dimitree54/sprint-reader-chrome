@@ -1,6 +1,7 @@
 import { assignOptimalLetterPosition, getWordFrequency } from './word-analysis'
 import { calculatePunctuationTiming, calculateWordTiming } from './durations'
 import type { TimingSettings, WordItem } from './types'
+import { DEFAULTS } from '../../config/defaults'
 
 export function createWordItem (text: string, settings: TimingSettings): WordItem {
   const wordLength = text.length
@@ -36,13 +37,13 @@ export function createChunks (words: string[], settings: TimingSettings): WordIt
     let j = i + 1
 
     // Only attempt grouping if the first word is also ≤3 characters
-    const canGroup = words[i].length <= 3
+    const canGroup = words[i].length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping
 
     while (
       canGroup &&
       j < words.length &&
       chunkWords.length < settings.chunkSize &&
-      words[j].length <= 3 &&
+      words[j].length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping &&
       !/[.!?]/.test(words[j]) &&
       !/\n/.test(words[j])
     ) {

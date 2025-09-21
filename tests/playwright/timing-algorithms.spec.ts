@@ -137,8 +137,8 @@ test.describe('Sprint Reader - Timing Algorithms', () => {
       const wordsInGroup = chunk.originalText.split(' ');
       wordsInGroup.forEach((word: any, index: number) => {
         if (index > 0) {
-          // Additional words in chunk must be ≤3 characters
-          expect(word.length).toBeLessThanOrEqual(3);
+          // Additional words in chunk must be ≤3 characters for grouping
+          expect(word.length).toBeLessThanOrEqual(DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping);
           // Additional words should not contain punctuation that breaks grouping
           expect(word).not.toMatch(/[.!?]/);
         }
