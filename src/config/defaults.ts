@@ -11,7 +11,7 @@ export const DEFAULTS = {
     pauseAfterPeriod: true,
     pauseAfterParagraph: true,
     chunkSize: 3,
-    wordFlicker: true,
+    wordFlicker: false,
     wordFlickerPercent: 10,
     theme: 'dark' as ReaderTheme
   } satisfies ReaderPreferences,
@@ -71,7 +71,7 @@ export const DEFAULTS = {
   // OpenAI API defaults
   OPENAI: {
     model: 'gpt-5-mini',
-    service_tier: 'flex',
+    service_tier: 'priority',
     reasoning: {
       effort: 'minimal'
     }
