@@ -245,13 +245,12 @@ The system automatically selects the best available provider:
 
 ### 7.5.5 Implementation Details
 
-The preprocessing system is implemented in `src/reader/text-preprocessor.ts` with:
+The preprocessing system is implemented under `src/preprocessing/` with:
 
-* **Provider Classes**: OpenAIProvider and PassthroughProvider implementing the PreprocessingProvider interface
-* **Manager**: PreprocessingManager that handles provider selection and fallback logic
+* **Provider Classes**: `providers/openai.ts`, `providers/passthrough.ts` implementing `PreprocessingProvider`
+* **Manager**: `manager.ts` handling provider selection and fallback logic
 * **Integration**: Seamlessly integrated into the reader text processing pipeline
-* **Storage Integration**: Uses Chrome extension storage for API key persistence
-
+* **Storage Integration**: Uses extension storage for API key persistence
 ### 7.5.6 Future Extensibility
 
 The architecture supports easy addition of new providers:
