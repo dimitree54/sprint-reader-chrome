@@ -1,5 +1,5 @@
 import { getBrowser } from '../platform/browser'
-import { getDefaultReaderPreferences } from '../config/defaults'
+import { getDefaultReaderPreferences, DEFAULTS } from '../config/defaults'
 import {
   DEFAULT_TRANSLATION_LANGUAGE,
   isTranslationLanguage,
@@ -69,7 +69,8 @@ export const STORAGE_KEYS = {
   readerPrefs: 'sprintReader.readerPrefs',
   openaiApiKey: 'sprintReader.openaiApiKey',
   translationLanguage: 'sprintReader.translationLanguage',
-  summarizationLevel: 'sprintReader.summarizationLevel'
+  summarizationLevel: 'sprintReader.summarizationLevel',
+  preprocessingEnabled: 'sprintReader.preprocessingEnabled'
 } as const
 
 
@@ -126,5 +127,17 @@ export async function readSummarizationLevel (): Promise<SummarizationLevel> {
 export async function writeSummarizationLevel (level: SummarizationLevel): Promise<void> {
   await setInStorage({
     [STORAGE_KEYS.summarizationLevel]: level
+  })
+}
+
+export async function readPreprocessingEnabled (): Promise<boolean> {
+  const validator = (value: unknown): value is boolean =>
+    typeof value === 'boolean'
+  return readStorageValue(STORAGE_KEYS.preprocessingEnabled, validator, DEFAULTS.PREPROCESSING.enabled)
+}
+
+export async function writePreprocessingEnabled (enabled: boolean): Promise<void> {
+  await setInStorage({
+    [STORAGE_KEYS.preprocessingEnabled]: enabled
   })
 }

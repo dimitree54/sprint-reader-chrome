@@ -1,12 +1,13 @@
 import type { PreprocessingProvider, PreprocessingResult } from './types'
 import type { PreprocessingConfig } from '../config'
+import { preprocessingConfigService } from '../config'
 
 export class PassthroughProvider implements PreprocessingProvider {
   name = 'passthrough'
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  isAvailable(_config: PreprocessingConfig): boolean {
-    return true // Always available as fallback
+  isAvailable(config: PreprocessingConfig): boolean {
+    // Only available when skipping processing is explicitly allowed
+    return preprocessingConfigService.shouldSkipProcessing(config)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

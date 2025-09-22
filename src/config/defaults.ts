@@ -77,9 +77,14 @@ export const DEFAULTS = {
     }
   },
 
+  // Preprocessing defaults
+  PREPROCESSING: {
+    enabled: false
+  },
+
   // Translation and summarization defaults
   TRANSLATION: {
-    defaultLanguage: 'none'
+    defaultLanguage: 'en'
   },
 
   SUMMARIZATION: {

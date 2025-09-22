@@ -13,13 +13,20 @@ test.describe('Sprint Reader - OpenAI Integration', () => {
   test.beforeEach(async ({ background }) => {
     // Set up OpenAI settings for Russian language with aggressive summarization
     await background.evaluate(() => {
-      // Set Russian language and aggressive summarization using chrome.storage API
-      if (typeof chrome !== 'undefined' && chrome.storage) {
-        chrome.storage.local.set({
-          'sprintReader.translationLanguage': 'ru',
-          'sprintReader.summarizationLevel': 'aggressive'
-        });
-      }
+      // Set Russian language, aggressive summarization, and enable preprocessing using chrome.storage API
+      return new Promise<void>((resolve) => {
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+          chrome.storage.local.set({
+            'sprintReader.translationLanguage': 'ru',
+            'sprintReader.summarizationLevel': 'aggressive',
+            'sprintReader.preprocessingEnabled': true
+          }, () => {
+            resolve();
+          });
+        } else {
+          resolve();
+        }
+      });
     });
   });
 
@@ -33,11 +40,17 @@ test.describe('Sprint Reader - OpenAI Integration', () => {
 
     // Configure API key in extension storage
     await background.evaluate(({ apiKey }) => {
-      if (typeof chrome !== 'undefined' && chrome.storage) {
-        chrome.storage.local.set({
-          'sprintReader.openaiApiKey': apiKey
-        });
-      }
+      return new Promise<void>((resolve) => {
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+          chrome.storage.local.set({
+            'sprintReader.openaiApiKey': apiKey
+          }, () => {
+            resolve();
+          });
+        } else {
+          resolve();
+        }
+      });
     }, { apiKey: openaiApiKey });
 
     // Navigate to example.com
@@ -196,5 +209,20 @@ test.describe('Sprint Reader - OpenAI Integration', () => {
     }) as Record<string, unknown>;
 
     expect(summarizationResult['sprintReader.summarizationLevel']).toBe('aggressive');
+
+    // Verify that preprocessing is enabled
+    const preprocessingResult = await background.evaluate(() => {
+      return new Promise((resolve) => {
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+          chrome.storage.local.get(['sprintReader.preprocessingEnabled'], (result) => {
+            resolve(result);
+          });
+        } else {
+          resolve({});
+        }
+      });
+    }) as Record<string, unknown>;
+
+    expect(preprocessingResult['sprintReader.preprocessingEnabled']).toBe(true);
   });
 });

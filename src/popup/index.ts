@@ -2,15 +2,12 @@ import { applyThemeToElement } from '../common/theme'
 import type { BackgroundMessage } from '../common/messages'
 import {
   readReaderPreferences,
-  readTranslationLanguage,
-  writeTranslationLanguage,
   readSummarizationLevel,
   writeSummarizationLevel,
+  readPreprocessingEnabled,
+  writePreprocessingEnabled,
   type ReaderTheme
 } from '../common/storage'
-import {
-  type TranslationLanguage
-} from '../common/translation'
 import {
   sliderIndexToSummarizationLevel,
   summarizationLevelToSliderIndex,
@@ -29,7 +26,7 @@ type PopupElements = {
   speedReadButton: HTMLButtonElement;
   menuEntryTextSpan: HTMLSpanElement;
   settingsButton: HTMLButtonElement;
-  enableTranslationCheckbox: HTMLInputElement;
+  enablePreprocessingToggle: HTMLInputElement;
   summarizationSlider: HTMLInputElement;
   summarizationLabel: HTMLElement;
 };
@@ -41,10 +38,9 @@ async function loadPreferences (elements: PopupElements) {
   currentTheme = prefs.theme
   applyThemeToElement(document.body, currentTheme, THEME_OPTIONS)
 
-  // Load translation settings
-  const language = await readTranslationLanguage()
-  const isTranslationEnabled = language !== 'none'
-  elements.enableTranslationCheckbox.checked = isTranslationEnabled
+  // Load preprocessing settings
+  const isPreprocessingEnabled = await readPreprocessingEnabled()
+  elements.enablePreprocessingToggle.checked = isPreprocessingEnabled
 
   // Load summarization settings
   const summarizationLevel = await readSummarizationLevel()
@@ -112,16 +108,15 @@ async function registerEvents (elements: PopupElements) {
     }
   })
 
-  // Handle translation checkbox change
-  elements.enableTranslationCheckbox.addEventListener('change', async () => {
-    const isEnabled = elements.enableTranslationCheckbox.checked
-    const language: TranslationLanguage = isEnabled ? 'en' : 'none'
+  // Handle preprocessing toggle change
+  elements.enablePreprocessingToggle.addEventListener('change', async () => {
+    const isEnabled = elements.enablePreprocessingToggle.checked
 
     // Save immediately
     try {
-      await writeTranslationLanguage(language)
+      await writePreprocessingEnabled(isEnabled)
     } catch (error) {
-      console.error('Failed to save translation setting', error)
+      console.error('Failed to save preprocessing setting', error)
     }
   })
 
@@ -150,7 +145,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     speedReadButton: document.getElementById('speedReadButton') as HTMLButtonElement,
     menuEntryTextSpan: document.getElementById('menuEntryText') as HTMLSpanElement,
     settingsButton: document.getElementById('openSettings') as HTMLButtonElement,
-    enableTranslationCheckbox: document.getElementById('popupEnableTranslation') as HTMLInputElement,
+    enablePreprocessingToggle: document.getElementById('popupEnablePreprocessing') as HTMLInputElement,
     summarizationSlider: document.getElementById('popupSummarizationLevel') as HTMLInputElement,
     summarizationLabel: document.getElementById('popupSummarizationLabel') as HTMLElement
   }

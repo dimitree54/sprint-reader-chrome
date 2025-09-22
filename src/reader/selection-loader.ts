@@ -1,6 +1,7 @@
 import { loadPreferences } from './preferences'
 import { state } from './state'
 import { decodeHtml, setWords } from './text'
+import { wordsToTokens } from './text-types'
 import { browser } from '../platform/browser'
 import { DEFAULTS } from '../config/defaults'
 
@@ -49,7 +50,7 @@ export async function loadSelectionContent (): Promise<void> {
   const normalised = normaliseText(rawText)
   const words = normalised.length > 0 ? normalised.split(' ') : []
 
-  await setWords(words)
+  await setWords(wordsToTokens(words))
 
   // Update UI after text processing
   const { renderCurrentWord } = await import('./render')

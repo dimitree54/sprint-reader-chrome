@@ -4,6 +4,7 @@ import { preprocessTextForReader } from '../preprocessing/index'
 import { createChunks } from './timing-engine'
 import { calculateOptimalFontSizeForText } from './visual-effects'
 import { getTimingSettings, state } from './state'
+import type { ReaderToken } from './text-types'
 
 export async function rebuildWordItems (): Promise<void> {
   const rawText = state.words.map(w => w.text).join(' ')
@@ -20,9 +21,8 @@ export async function rebuildWordItems (): Promise<void> {
   state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems)
 }
 
-export async function setWords (words: string[]): Promise<void> {
-  // Convert string array to ReaderToken array (no bold information)
-  state.words = words.map(word => ({ text: word, isBold: false }))
+export async function setWords (words: ReaderToken[]): Promise<void> {
+  state.words = words
   await rebuildWordItems()
   state.index = 0
 }
@@ -31,4 +31,20 @@ export function updateOptimalFontSize (): void {
   if (state.wordItems.length > 0) {
     state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems)
   }
+}
+
+export function recalculateTimingOnly (): void {
+  // Only recalculate timing without preprocessing - use existing words
+  const preprocessedWords = preprocessText(state.words.map(w => w.text).join(' '))
+
+  // Preserve the isBold information from existing state.words
+  const wordsWithBoldInfo = preprocessedWords.map((word, index) => ({
+    text: word.text,
+    isBold: state.words[index]?.isBold || word.isBold
+  }))
+
+  const timingSettings = getTimingSettings()
+  state.wordItems = createChunks(wordsWithBoldInfo, timingSettings)
+
+  state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems)
 }

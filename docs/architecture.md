@@ -218,15 +218,15 @@ interface PreprocessingResult {
 
 ### 7.5.2 Current Providers
 
-* **OpenAI Provider**: Translates text to Russian using OpenAI's GPT-3.5-turbo model
-  - Requires API key stored in extension storage or environment variable
-  - Includes 10-second timeout and error handling
-  - Automatically falls back if unavailable
+* **OpenAI Provider**: Translates text to the configured target language using the model from service defaults/config
+  * Requires API key stored in extension storage or environment variable
+  * Includes 10-second timeout and error handling
+  * Automatically falls back if unavailable
 
 * **Passthrough Provider**: Returns text unchanged
-  - Always available as fallback
-  - Zero processing time
-  - Used when no other providers are available
+  * Always available as fallback
+  * Zero processing time
+  * Used when no other providers are available
 
 ### 7.5.3 Provider Selection Logic
 

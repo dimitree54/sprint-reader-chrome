@@ -8,6 +8,8 @@ import {
   writeTranslationLanguage,
   readSummarizationLevel,
   writeSummarizationLevel,
+  readPreprocessingEnabled,
+  writePreprocessingEnabled,
   type ReaderTheme
 } from '../common/storage'
 import { DEFAULTS } from '../config/defaults'
@@ -32,7 +34,7 @@ type SettingsElements = {
   form: HTMLFormElement;
   apiKeyInput: HTMLInputElement;
   clearButton: HTMLButtonElement;
-  enableTranslationCheckbox: HTMLInputElement;
+  enablePreprocessingToggle: HTMLInputElement;
   languageSelect: HTMLSelectElement;
   wpmSlider: HTMLInputElement;
   wpmValue: HTMLElement;
@@ -65,10 +67,8 @@ function populateLanguageOptions (selectElement: HTMLSelectElement): void {
   // Clear existing options
   selectElement.innerHTML = ''
 
-  // Add all languages except 'none'
-  TRANSLATION_LANGUAGES
-    .filter(lang => lang.value !== 'none')
-    .forEach(lang => {
+  // Add all languages
+  TRANSLATION_LANGUAGES.forEach(lang => {
       const option = document.createElement('option')
       option.value = lang.value
       option.textContent = lang.label
@@ -89,28 +89,25 @@ async function loadInitialState (elements: SettingsElements): Promise<void> {
     elements.apiKeyInput.value = apiKey
   }
 
-  // Populate language dropdown with all available languages except 'none'
+  // Populate language dropdown with all available languages
   populateLanguageOptions(elements.languageSelect)
 
   const language = await readTranslationLanguage()
-  const isTranslationEnabled = language !== 'none'
+  const isPreprocessingEnabled = await readPreprocessingEnabled()
 
-  // Set checkbox state
-  elements.enableTranslationCheckbox.checked = isTranslationEnabled
+  // Set toggle state
+  elements.enablePreprocessingToggle.checked = isPreprocessingEnabled
 
   // Set dropdown state
-  if (isTranslationEnabled && isTranslationLanguage(language)) {
+  if (isTranslationLanguage(language)) {
     elements.languageSelect.value = language
-  } else if (!isTranslationEnabled) {
-    // Set to first available language when translation is disabled
-    elements.languageSelect.value = elements.languageSelect.options[0]?.value || 'en'
   } else {
     // Fallback for invalid language codes
     elements.languageSelect.value = 'en'
   }
 
-  // Enable/disable dropdown based on checkbox
-  elements.languageSelect.disabled = !isTranslationEnabled
+  // Enable/disable dropdown based on preprocessing toggle
+  elements.languageSelect.disabled = !isPreprocessingEnabled
 
   // Set WPM slider
   elements.wpmSlider.value = String(prefs.wordsPerMinute)
@@ -138,9 +135,9 @@ function registerEvents (elements: SettingsElements): void {
     elements.summarizationLabel.textContent = getSummarizationLevelLabel(level)
   })
 
-  // Handle checkbox change to enable/disable dropdown
-  elements.enableTranslationCheckbox.addEventListener('change', () => {
-    const isEnabled = elements.enableTranslationCheckbox.checked
+  // Handle preprocessing toggle change to enable/disable language dropdown
+  elements.enablePreprocessingToggle.addEventListener('change', () => {
+    const isEnabled = elements.enablePreprocessingToggle.checked
     elements.languageSelect.disabled = !isEnabled
   })
 
@@ -164,14 +161,12 @@ function registerEvents (elements: SettingsElements): void {
     event.preventDefault()
     const value = elements.apiKeyInput.value.trim()
 
-    // Determine language based on checkbox state
-    let language: TranslationLanguage
-    if (elements.enableTranslationCheckbox.checked) {
-      const selectedLanguage = elements.languageSelect.value
-      language = isTranslationLanguage(selectedLanguage) ? selectedLanguage : 'en'
-    } else {
-      language = 'none'
-    }
+    // Get preprocessing enabled state
+    const preprocessingEnabled = elements.enablePreprocessingToggle.checked
+
+    // Get language from dropdown
+    const selectedLanguage = elements.languageSelect.value
+    const language: TranslationLanguage = isTranslationLanguage(selectedLanguage) ? selectedLanguage : 'en'
 
     // Get WPM value
     const wpmValue = Number.parseInt(elements.wpmSlider.value, 10) || DEFAULTS.READER_PREFERENCES.wordsPerMinute
@@ -186,6 +181,7 @@ function registerEvents (elements: SettingsElements): void {
 
       await Promise.all([
         persistApiKey(value),
+        writePreprocessingEnabled(preprocessingEnabled),
         writeTranslationLanguage(language),
         writeSummarizationLevel(summarizationLevel),
         writeReaderPreferences(updatedPrefs)
@@ -214,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form: document.getElementById('settingsForm') as HTMLFormElement,
     apiKeyInput: document.getElementById('openaiApiKey') as HTMLInputElement,
     clearButton: document.getElementById('clearSettings') as HTMLButtonElement,
-    enableTranslationCheckbox: document.getElementById('enableTranslation') as HTMLInputElement,
+    enablePreprocessingToggle: document.getElementById('enablePreprocessing') as HTMLInputElement,
     languageSelect: document.getElementById('targetLanguage') as HTMLSelectElement,
     wpmSlider: document.getElementById('wordsPerMinute') as HTMLInputElement,
     wpmValue: document.getElementById('wpmValue') as HTMLElement,

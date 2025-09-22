@@ -2,7 +2,7 @@ import { startPlayback, stopPlayback } from './playback'
 import { persistPreferences, syncThemeToggle } from './preferences'
 import { renderCurrentWord } from './render'
 import { state } from './state'
-import { rebuildWordItems, updateOptimalFontSize } from './text'
+import { updateOptimalFontSize, recalculateTimingOnly } from './text'
 import { DEFAULTS } from '../config/defaults'
 import { browser } from '../platform/browser'
 
@@ -61,7 +61,7 @@ function attachSpeedControl (): void {
     state.wordsPerMinute = value
     updateWpmDisplay(value)
 
-    rebuildWordItems()
+    recalculateTimingOnly()
     renderCurrentWord()
     persistPreferences()
   })

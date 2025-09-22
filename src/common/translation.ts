@@ -1,7 +1,6 @@
 import { DEFAULTS } from '../config/defaults'
 
 export const TRANSLATION_LANGUAGES = [
-  { value: 'none', label: 'Do not translate' },
   { value: 'af', label: 'Afrikaans' },
   { value: 'sq', label: 'Albanian' },
   { value: 'ar', label: 'Arabic' },
@@ -67,4 +66,30 @@ export function getTranslationLanguageLabel (value: string): string {
   }
   const fallback = TRANSLATION_LANGUAGES[0]
   return fallback.label
+}
+
+/**
+ * Map ISO language codes to prompt filenames for OpenAI preprocessing
+ */
+const LANGUAGE_CODE_TO_FILENAME: Record<string, string> = {
+  'en': 'english',
+  'es': 'spanish',
+  'fr': 'french',
+  'pt': 'portuguese',
+  'pt-BR': 'portuguese', // Use same prompts for both Portuguese variants
+  'ru': 'russian',
+  'de': 'german',
+  'tr': 'turkish',
+  'it': 'italian',
+  'pl': 'polish',
+  'uk': 'ukrainian',
+  'nl': 'dutch'
+} as const
+
+export function getPromptFilename(languageCode: TranslationLanguage): string | null {
+  return LANGUAGE_CODE_TO_FILENAME[languageCode] || null
+}
+
+export function getSupportedPromptLanguages(): TranslationLanguage[] {
+  return Object.keys(LANGUAGE_CODE_TO_FILENAME) as TranslationLanguage[]
 }

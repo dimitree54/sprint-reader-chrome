@@ -131,6 +131,25 @@ async function runBuild(browser) {
     copyDirectory(path.join(repoRoot, 'static', 'assets'), path.join(distDir, 'assets')),
   ]);
 
+  // Security check: prevent API key embedding in production builds
+  const isProduction = process.env.NODE_ENV === 'production';
+  let apiKeyValue = '';
+
+  if (isProduction) {
+    // Fail fast if API key is present in production environment
+    if (process.env.OPENAI_API_KEY) {
+      console.error('❌ SECURITY ERROR: OPENAI_API_KEY detected in production build environment!');
+      console.error('   API keys should never be embedded in production builds.');
+      console.error('   Remove OPENAI_API_KEY from environment variables for production builds.');
+      process.exit(1);
+    }
+    // Always use empty string for production builds
+    apiKeyValue = '';
+  } else {
+    // For non-production builds, keep existing behavior
+    apiKeyValue = process.env.OPENAI_API_KEY || '';
+  }
+
   await build({
     entryPoints: {
       background: path.join(repoRoot, 'src', 'background', 'index.ts'),
@@ -148,7 +167,7 @@ async function runBuild(browser) {
     outdir: path.join(distDir, 'scripts'),
     logLevel: 'info',
     define: {
-      'process.env.OPENAI_API_KEY': JSON.stringify(process.env.OPENAI_API_KEY || ''),
+      'process.env.OPENAI_API_KEY': JSON.stringify(apiKeyValue),
     },
   });
 

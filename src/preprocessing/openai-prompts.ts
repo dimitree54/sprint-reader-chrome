@@ -9,29 +9,20 @@ import italianPrompts from './prompts/italian.json'
 import polishPrompts from './prompts/polish.json'
 import ukrainianPrompts from './prompts/ukrainian.json'
 import dutchPrompts from './prompts/dutch.json'
+import { SUMMARIZATION_LEVELS, type SummarizationLevel } from '../common/summarization'
+import { getSupportedPromptLanguages, getPromptFilename, type TranslationLanguage } from '../common/translation'
 
-export const SUMMARIZATION_LEVELS = ['none', 'moderate', 'aggressive'] as const
-export type SummarizationLevel = typeof SUMMARIZATION_LEVELS[number]
+// Extract the values array for iteration
+const SUMMARIZATION_LEVEL_VALUES = SUMMARIZATION_LEVELS.map(s => s.value)
 
-export const SUPPORTED_LANGUAGES = [
-  'english',
-  'spanish',
-  'french',
-  'portuguese',
-  'russian',
-  'german',
-  'turkish',
-  'italian',
-  'polish',
-  'ukrainian',
-  'dutch'
-] as const satisfies readonly string[]
+export const SUPPORTED_LANGUAGES = getSupportedPromptLanguages()
 
-export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number]
+export type SupportedLanguage = TranslationLanguage
 
 export type LanguagePromptSet = Record<SummarizationLevel, string>
 
-const rawLanguagePrompts: Record<SupportedLanguage, unknown> = {
+// Map from filename to actual imported prompt data
+const filenameToPrompts: Record<string, unknown> = {
   english: englishPrompts,
   spanish: spanishPrompts,
   french: frenchPrompts,
@@ -45,12 +36,23 @@ const rawLanguagePrompts: Record<SupportedLanguage, unknown> = {
   dutch: dutchPrompts
 }
 
+// Create the mapping using ISO codes
+const rawLanguagePrompts: Record<SupportedLanguage, unknown> = Object.fromEntries(
+  SUPPORTED_LANGUAGES.map(langCode => {
+    const filename = getPromptFilename(langCode)
+    if (!filename || !filenameToPrompts[filename]) {
+      throw new Error(`No prompt file found for language: ${langCode}`)
+    }
+    return [langCode, filenameToPrompts[filename]]
+  })
+) as Record<SupportedLanguage, unknown>
+
 function isLanguagePromptSet (value: unknown): value is LanguagePromptSet {
   if (typeof value !== 'object' || value === null) {
     return false
   }
 
-  for (const level of SUMMARIZATION_LEVELS) {
+  for (const level of SUMMARIZATION_LEVEL_VALUES) {
     if (typeof (value as Record<string, unknown>)[level] !== 'string') {
       return false
     }

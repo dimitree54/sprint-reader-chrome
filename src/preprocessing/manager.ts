@@ -11,7 +11,32 @@ export class PreprocessingManager {
   async process(text: string, config: PreprocessingConfig): Promise<PreprocessingResult> {
     for (const provider of this.providers) {
       if (provider.isAvailable(config)) {
-        return provider.process(text, config)
+        const startTime = Date.now()
+        try {
+          return await provider.process(text, config)
+        } catch (error) {
+          const processingTime = Date.now() - startTime
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+
+          return {
+            text,
+            metadata: {
+              originalLength: text.length,
+              processedLength: text.length,
+              wasModified: false,
+              provider: provider.name,
+              processingTime
+            },
+            error: {
+              type: 'unknown_error',
+              message: errorMessage,
+              details: {
+                providerName: provider.name,
+                originalError: error instanceof Error ? error.name : 'UnknownError'
+              }
+            }
+          }
+        }
       }
     }
 

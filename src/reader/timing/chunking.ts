@@ -42,8 +42,10 @@ export function createChunks (words: WordInfo[], settings: TimingSettings): Word
     const chunkWords = [words[i]]
     let j = i + 1
 
-    // Only attempt grouping if the first word is also ≤3 characters
-    const canGroup = words[i].text.length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping
+    // Only attempt grouping if the first word is ≤3 characters AND doesn't end with punctuation or contain newlines
+    const canGroup = words[i].text.length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping &&
+      !/[.!?]/.test(words[i].text) &&
+      !/\n/.test(words[i].text)
 
     while (
       canGroup &&

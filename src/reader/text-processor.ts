@@ -3,6 +3,9 @@
  * Handles acronyms, numbers, and long word splitting
  */
 
+import type { ReaderToken } from './text-types'
+import { tokensToWords, wordsToTokens } from './text-types'
+
 export function consolidateAcronyms (words: string[]): string[] {
   const result: string[] = []
   let i = 0
@@ -159,4 +162,22 @@ export function preprocessText (text: string): WordInfo[] {
   })
 
   return finalWords
+}
+
+/**
+ * Token-aware wrapper for consolidateAcronyms function
+ */
+export function consolidateAcronymsTokens(tokens: ReaderToken[]): ReaderToken[] {
+  const words = tokensToWords(tokens)
+  const processedWords = consolidateAcronyms(words)
+  return wordsToTokens(processedWords)
+}
+
+/**
+ * Token-aware wrapper for preserveNumbersDecimals function
+ */
+export function preserveNumbersDecimalsTokens(tokens: ReaderToken[]): ReaderToken[] {
+  const words = tokensToWords(tokens)
+  const processedWords = preserveNumbersDecimals(words)
+  return wordsToTokens(processedWords)
 }
