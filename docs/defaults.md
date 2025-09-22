@@ -97,7 +97,7 @@ These values configure the OpenAI API requests for translation and summarization
 | Setting | Default Value | Purpose |
 |---------|---------------|---------|
 | `model` | `'gpt-5-mini'` | Model to use for processing requests |
-| `service_tier` | `'flex'` | Processing tier - flex is cheaper/slower, priority is faster |
+| `service_tier` | `'priority'` | Processing tier - priority is faster (higher cost), flex is cheaper/slower |
 | `reasoning.effort` | `'minimal'` | Reasoning effort level - minimal, low, medium, or high |
 
 ## Translation Defaults
