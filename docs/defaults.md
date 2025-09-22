@@ -15,7 +15,7 @@ These values control the initial reading experience when a user first installs t
 | `pauseAfterPeriod` | `true` | Enables pause after periods for sentence boundaries |
 | `pauseAfterParagraph` | `true` | Enables pause after paragraphs for content separation |
 | `chunkSize` | `3` | Number of words to group together (1=single word, 2-4=word groups) |
-| `wordFlicker` | `true` | Enables flicker effect to improve concentration |
+| `wordFlicker` | `false` | Enables flicker effect to improve concentration |
 | `wordFlickerPercent` | `10` | Percentage of word display time for flicker effect |
 | `theme` | `'dark'` | Default visual theme (dark reduces eye strain) |
 

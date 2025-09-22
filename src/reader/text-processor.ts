@@ -4,7 +4,15 @@
  */
 
 import type { ReaderToken } from './text-types'
-import { tokensToWords, wordsToTokens } from './text-types'
+
+/**
+ * Unicode-aware helper to clean words for matching purposes
+ * Removes punctuation and normalizes text while preserving Unicode characters
+ */
+function cleanForMatch(word: string): string {
+  // Remove punctuation but preserve Unicode letters, numbers, and combining marks
+  return word.replace(/[^\p{L}\p{N}\p{M}]/gu, '')
+}
 
 export function consolidateAcronyms (words: string[]): string[] {
   const result: string[] = []
@@ -106,7 +114,6 @@ export interface WordInfo {
 
 export function extractBoldWords(text: string): { processedText: string, boldWords: Set<string> } {
   const boldWords = new Set<string>()
-  let processedText = text
 
   // Find all **word** patterns and extract the words
   const boldRegex = /\*\*([^*]+)\*\*/g
@@ -114,19 +121,20 @@ export function extractBoldWords(text: string): { processedText: string, boldWor
 
   while ((match = boldRegex.exec(text)) !== null) {
     const boldPhrase = match[1].trim()
-    // Remove the bold markers from the text
-    processedText = processedText.replace(match[0], boldPhrase)
 
     // Split the phrase into individual words and add to bold set
     const wordsInPhrase = boldPhrase.split(/\s+/)
     wordsInPhrase.forEach(word => {
-      // Clean word from punctuation but preserve for matching
-      const cleanWord = word.replace(/[^\w\u0400-\u04FF]/g, '')
+      // Clean word using Unicode-aware helper and store in lowercase
+      const cleanWord = cleanForMatch(word)
       if (cleanWord.length > 0) {
         boldWords.add(cleanWord.toLowerCase())
       }
     })
   }
+
+  // Perform global transformation to remove all ** markers at once
+  const processedText = text.replace(boldRegex, '$1')
 
   return { processedText, boldWords }
 }
@@ -154,8 +162,8 @@ export function preprocessText (text: string): WordInfo[] {
   words.forEach(word => {
     const splitWords = splitLongWords(word)
     splitWords.forEach(splitWord => {
-      // Check if this word should be bold
-      const cleanWord = splitWord.replace(/[^\w\u0400-\u04FF]/g, '')
+      // Check if this word should be bold using unified cleaning
+      const cleanWord = cleanForMatch(splitWord)
       const isBold = cleanWord.length > 0 && boldWords.has(cleanWord.toLowerCase())
       finalWords.push({ text: splitWord, isBold })
     })
@@ -166,18 +174,83 @@ export function preprocessText (text: string): WordInfo[] {
 
 /**
  * Token-aware wrapper for consolidateAcronyms function
+ * Preserves bold metadata during acronym consolidation
  */
 export function consolidateAcronymsTokens(tokens: ReaderToken[]): ReaderToken[] {
-  const words = tokensToWords(tokens)
-  const processedWords = consolidateAcronyms(words)
-  return wordsToTokens(processedWords)
+  const result: ReaderToken[] = []
+  let i = 0
+
+  while (i < tokens.length) {
+    const token = tokens[i]
+
+    // Check if this looks like an acronym (2-4 uppercase letters)
+    if (/^[A-Z]{2,4}$/.test(token.text) && i + 1 < tokens.length) {
+      // Check if next tokens are also part of acronym
+      let acronym = token.text
+      let j = i + 1
+      let hasAnyBold = token.isBold
+
+      while (j < tokens.length && j < i + 3 && /^[A-Z]{1,2}$/.test(tokens[j].text)) {
+        acronym += tokens[j].text
+        hasAnyBold = hasAnyBold || tokens[j].isBold
+        j++
+      }
+
+      if (j > i + 1) {
+        result.push({ text: acronym, isBold: hasAnyBold })
+        i = j
+        continue
+      }
+    }
+
+    result.push(token)
+    i++
+  }
+
+  return result
 }
 
 /**
  * Token-aware wrapper for preserveNumbersDecimals function
+ * Preserves bold metadata during number consolidation
  */
 export function preserveNumbersDecimalsTokens(tokens: ReaderToken[]): ReaderToken[] {
-  const words = tokensToWords(tokens)
-  const processedWords = preserveNumbersDecimals(words)
-  return wordsToTokens(processedWords)
+  const result: ReaderToken[] = []
+  let i = 0
+
+  while (i < tokens.length) {
+    const token = tokens[i]
+
+    // Check for number patterns like "3.14" or "1,000"
+    if (/^\d+$/.test(token.text) && i + 1 < tokens.length) {
+      const nextToken = tokens[i + 1]
+
+      // Decimal point case: "3" + "." + "14"
+      if (nextToken.text === '.' && i + 2 < tokens.length && /^\d+$/.test(tokens[i + 2].text)) {
+        const hasAnyBold = token.isBold || nextToken.isBold || tokens[i + 2].isBold
+        result.push({
+          text: token.text + '.' + tokens[i + 2].text,
+          isBold: hasAnyBold
+        })
+        i += 3
+        continue
+      }
+
+      // Comma in numbers: "1" + "," + "000"
+      if (nextToken.text === ',' && i + 2 < tokens.length && /^\d+$/.test(tokens[i + 2].text)) {
+        const hasAnyBold = token.isBold || nextToken.isBold || tokens[i + 2].isBold
+        result.push({
+          text: token.text + ',' + tokens[i + 2].text,
+          isBold: hasAnyBold
+        })
+        i += 3
+        continue
+      }
+    }
+
+    result.push(token)
+    i++
+  }
+
+  return result
 }
