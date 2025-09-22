@@ -107,35 +107,18 @@ export function splitLongWords (text: string): string[] {
   return parts
 }
 
-export interface WordInfo {
-  text: string
-  isBold: boolean
-}
+export type WordInfo = ReaderToken
 
-export function extractBoldWords(text: string): { processedText: string, boldWords: Set<string> } {
+export function extractBoldWords(text: string): { processedText: string; boldWords: Set<string> } {
   const boldWords = new Set<string>()
-
-  // Find all **word** patterns and extract the words
-  const boldRegex = /\*\*([^*]+)\*\*/g
-  let match
-
-  while ((match = boldRegex.exec(text)) !== null) {
-    const boldPhrase = match[1].trim()
-
-    // Split the phrase into individual words and add to bold set
-    const wordsInPhrase = boldPhrase.split(/\s+/)
-    wordsInPhrase.forEach(word => {
-      // Clean word using Unicode-aware helper and store in lowercase
-      const cleanWord = cleanForMatch(word)
-      if (cleanWord.length > 0) {
-        boldWords.add(cleanWord.toLowerCase())
-      }
-    })
-  }
-
-  // Perform global transformation to remove all ** markers at once
-  const processedText = text.replace(boldRegex, '$1')
-
+  const boldRegex = /\*\*([\s\S]+?)\*\*/g
+  const processedText = text.replace(boldRegex, (_m, phrase: string) => {
+    for (const w of phrase.trim().split(/\s+/)) {
+      const clean = cleanForMatch(w)
+      if (clean) boldWords.add(clean.toLowerCase())
+    }
+    return phrase
+  })
   return { processedText, boldWords }
 }
 
@@ -164,7 +147,7 @@ export function preprocessText (text: string): WordInfo[] {
     splitWords.forEach(splitWord => {
       // Check if this word should be bold using unified cleaning
       const cleanWord = cleanForMatch(splitWord)
-      const isBold = cleanWord.length > 0 && boldWords.has(cleanWord.toLowerCase())
+      const isBold = !!cleanWord && boldWords.has(cleanWord.toLowerCase())
       finalWords.push({ text: splitWord, isBold })
     })
   })

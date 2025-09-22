@@ -16,8 +16,7 @@ test.describe('Sprint Reader - Word Flicker Defaults', () => {
     await paragraph.waitFor();
 
     await paragraph.click({ clickCount: 3 });
-    await page.waitForTimeout(300);
-
+    await page.waitForFunction(() => (window.getSelection()?.toString() ?? '').trim().length > 0);
     const selectionText = (await page.evaluate(() => window.getSelection()?.toString() ?? '')).trim();
     expect(selectionText.length).toBeGreaterThan(0);
 
@@ -39,14 +38,15 @@ test.describe('Sprint Reader - Word Flicker Defaults', () => {
     await readerPage.bringToFront();
 
     const wordLocator = readerPage.locator('#word');
-    await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
+    await expect(wordLocator).toHaveText(/\S/, { timeout: 10_000 });
 
     // Verify wordFlicker default state
     const initialFlickerState = await readerPage.evaluate(() => {
       const state = (window as any).state || (globalThis as any).state;
+      if (!state) throw new Error('reader state not found on window/globalThis');
       return {
-        wordFlicker: state?.wordFlicker,
-        wordFlickerPercent: state?.wordFlickerPercent
+        wordFlicker: state.wordFlicker,
+        wordFlickerPercent: state.wordFlickerPercent
       };
     });
 
@@ -83,14 +83,15 @@ test.describe('Sprint Reader - Word Flicker Defaults', () => {
     const readerPage = await readerPagePromise;
     await readerPage.waitForLoadState('domcontentloaded');
 
-    await expect(readerPage.locator('#word')).not.toHaveText('', { timeout: 10_000 });
+    await expect(readerPage.locator('#word')).toHaveText(/\S/, { timeout: 10_000 });
 
     // Verify that the default is correctly loaded from storage fallback
     const persistedFlickerState = await readerPage.evaluate(() => {
       const state = (window as any).state || (globalThis as any).state;
+      if (!state) throw new Error('reader state not found on window/globalThis');
       return {
-        wordFlicker: state?.wordFlicker,
-        wordFlickerPercent: state?.wordFlickerPercent
+        wordFlicker: state.wordFlicker,
+        wordFlickerPercent: state.wordFlickerPercent
       };
     });
 
