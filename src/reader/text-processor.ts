@@ -154,10 +154,12 @@ export function preprocessText (text: string): WordInfo[] {
   const finalWords: WordInfo[] = []
   words.forEach(word => {
     const splitWords = splitLongWords(word)
+    // Determine boldness at original word level; propagate to splits
+    const baseClean = cleanForMatch(word)
+    const baseIsBold = !!baseClean && boldWords.has(baseClean.toLowerCase())
     splitWords.forEach(splitWord => {
-      // Check if this word should be bold using unified cleaning
-      const cleanWord = cleanForMatch(splitWord)
-      const isBold = !!cleanWord && boldWords.has(cleanWord.toLowerCase())
+      const partClean = cleanForMatch(splitWord)
+      const isBold = baseIsBold || (!!partClean && boldWords.has(partClean.toLowerCase()))
       finalWords.push({ text: splitWord, isBold })
     })
   })
