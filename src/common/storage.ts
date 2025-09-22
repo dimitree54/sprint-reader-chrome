@@ -1,5 +1,16 @@
 import { getBrowser } from '../platform/browser'
-import { getDefaultReaderPreferences } from '../config/defaults'
+import { getDefaultReaderPreferences, DEFAULTS } from '../config/defaults'
+import {
+  DEFAULT_TRANSLATION_LANGUAGE,
+  isTranslationLanguage,
+  type TranslationLanguage
+} from './translation'
+import {
+  DEFAULT_SUMMARIZATION_LEVEL,
+  isSummarizationLevel,
+  type SummarizationLevel
+} from './summarization'
+import { readStorageValue } from './storage-helpers'
 
 
 export type ReaderTheme = 'dark' | 'light';
@@ -55,7 +66,11 @@ export async function setInStorage (items: Record<string, unknown>): Promise<voi
 }
 
 export const STORAGE_KEYS = {
-  readerPrefs: 'sprintReader.readerPrefs'
+  readerPrefs: 'sprintReader.readerPrefs',
+  openaiApiKey: 'sprintReader.openaiApiKey',
+  translationLanguage: 'sprintReader.translationLanguage',
+  summarizationLevel: 'sprintReader.summarizationLevel',
+  preprocessingEnabled: 'sprintReader.preprocessingEnabled'
 } as const
 
 
@@ -77,5 +92,52 @@ export async function readReaderPreferences (): Promise<ReaderPreferences> {
 export async function writeReaderPreferences (prefs: ReaderPreferences): Promise<void> {
   await setInStorage({
     [STORAGE_KEYS.readerPrefs]: prefs
+  })
+}
+
+export async function readOpenAIApiKey (): Promise<string | null> {
+  const result = await getFromStorage<string>([STORAGE_KEYS.openaiApiKey])
+  return result[STORAGE_KEYS.openaiApiKey] || null
+}
+
+export async function writeOpenAIApiKey (apiKey: string): Promise<void> {
+  await setInStorage({
+    [STORAGE_KEYS.openaiApiKey]: apiKey
+  })
+}
+
+export async function readTranslationLanguage (): Promise<TranslationLanguage> {
+  const validator = (value: unknown): value is TranslationLanguage =>
+    typeof value === 'string' && isTranslationLanguage(value)
+  return readStorageValue(STORAGE_KEYS.translationLanguage, validator, DEFAULT_TRANSLATION_LANGUAGE)
+}
+
+export async function writeTranslationLanguage (language: TranslationLanguage): Promise<void> {
+  await setInStorage({
+    [STORAGE_KEYS.translationLanguage]: language
+  })
+}
+
+export async function readSummarizationLevel (): Promise<SummarizationLevel> {
+  const validator = (value: unknown): value is SummarizationLevel =>
+    typeof value === 'string' && isSummarizationLevel(value)
+  return readStorageValue(STORAGE_KEYS.summarizationLevel, validator, DEFAULT_SUMMARIZATION_LEVEL)
+}
+
+export async function writeSummarizationLevel (level: SummarizationLevel): Promise<void> {
+  await setInStorage({
+    [STORAGE_KEYS.summarizationLevel]: level
+  })
+}
+
+export async function readPreprocessingEnabled (): Promise<boolean> {
+  const validator = (value: unknown): value is boolean =>
+    typeof value === 'boolean'
+  return readStorageValue(STORAGE_KEYS.preprocessingEnabled, validator, DEFAULTS.PREPROCESSING.enabled)
+}
+
+export async function writePreprocessingEnabled (enabled: boolean): Promise<void> {
+  await setInStorage({
+    [STORAGE_KEYS.preprocessingEnabled]: enabled
   })
 }

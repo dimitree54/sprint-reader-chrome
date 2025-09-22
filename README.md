@@ -6,7 +6,7 @@
 
 Simply select text on a webpage, right-click and select `10x your reading speed - read selected text` from the menu. This launches the reader window where selected text is displayed word-by-word in a fixed focal position. The duration of each slide is calculated based on your word-per-minute (WPM) setting.
 
-Prefer to paste something manually? Click the extension icon, drop your text into the popup, and then press **Speed read it** to open the reader with that content.
+Prefer to paste something manually? Click the extension icon, drop your text into the popup, and then press **Speed read it** to open the reader with that content. Use the gear icon in the popup or reader to open the dedicated settings page where you can manage the OpenAI API key, pick the target language, and choose the summarisation level for AI-powered translation.
 
 ## What makes this special
 
@@ -29,6 +29,9 @@ Our AI preprocessing optimizes text before presentation, allowing you to absorb 
 > Optional grammar delays
 > **Multi-browser support** (Chrome, Firefox, Safari)
 > **AI-powered text preprocessing** for enhanced comprehension
+> Dedicated settings page for managing translation providers
+> 47+ translation languages with "no translation" default
+> Adjustable summarisation depth (literal, 50% reduction, or key-point digest)
 > Keyboard shortcut helper that nudges you to select text when none is highlighted
 
 ## Table of Contents

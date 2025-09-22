@@ -58,7 +58,13 @@ test.describe('Sprint Reader - Word Grouping Debug', () => {
     console.log('Chunking Details:', JSON.stringify(chunkingDetails, null, 2));
 
     expect(chunkingDetails).not.toBeNull();
-    expect(chunkingDetails!.originalWords).toEqual(['I', 'am', 'a', 'super', 'hero']);
+    expect(chunkingDetails!.originalWords).toEqual([
+      { text: 'I', isBold: false },
+      { text: 'am', isBold: false },
+      { text: 'a', isBold: false },
+      { text: 'super', isBold: false },
+      { text: 'hero', isBold: false }
+    ]);
     expect(chunkingDetails!.chunkSize).toBe(DEFAULTS.READER_PREFERENCES.chunkSize);
 
     const wordItems = chunkingDetails!.wordItems;

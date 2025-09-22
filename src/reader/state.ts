@@ -1,12 +1,13 @@
 import type { ReaderTheme } from '../common/storage'
 import { DEFAULTS } from '../config/defaults'
 import type { TimingSettings, WordItem } from './timing-engine'
+import type { ReaderToken } from './text-types'
 import type { VisualSettings } from './visual-effects'
 
 type PlaybackTimer = ReturnType<typeof setTimeout> | undefined
 
 export type ReaderState = {
-  words: string[];
+  words: ReaderToken[];
   wordItems: WordItem[];
   index: number;
   playing: boolean;

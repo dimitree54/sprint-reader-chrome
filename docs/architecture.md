@@ -48,10 +48,11 @@ src/
     message-handler.ts → Runtime message router that coordinates selection + preferences.
     listeners.ts       → Commands, context menus, install, and message wiring.
     testing-hooks.ts   → Exposes global Playwright helpers.
-  common/          → Cross-context utilities (storage, message contracts, HTML + theme helpers).
+  common/          → Cross-context utilities (storage, message contracts, HTML + theme helpers, translation & summarisation metadata).
   content/         → Text selection capture and UX hints for web pages.
   platform/        → Runtime resolver split into `browser.ts`, `types.ts`, `wrap-chrome.ts`.
   popup/           → Action popup with quick-start controls.
+  settings/        → Dedicated settings surface for advanced preferences (API providers).
   reader/          → RSVP player UI assembled from focused modules:
     index.ts            → Entrypoint that wires selection loading, controls, messaging.
     state.ts            → Central playback state container + shared helpers.
@@ -64,9 +65,10 @@ src/
     timing-engine.ts    → Barrel file exporting the timing helpers above.
     text-processor.ts   → Advanced text preprocessing (acronyms, numbers, hyphenation).
     visual-effects.ts   → Letter highlighting, positioning, flicker effects.
+    openai-prompt.ts    → Builds chat completion payloads for OpenAI translation and summarisation requests.
 static/
   assets/          → Icons and imagery shared across contexts.
-  pages/           → HTML documents for popup, reader, welcome, updated pages.
+  pages/           → HTML documents for popup, reader, settings, welcome, updated pages.
   styles/          → Scoped stylesheets injected per context.
 config/
   manifest.base.json       → Canonical extension manifest definition.
@@ -138,6 +140,13 @@ The reader implementation follows a modular architecture with clear separation o
 * Manages CSS transforms for precise letter centering in the viewport.
 * Wraps individual letters in spans for granular styling control.
 
+### 3.5 Settings Page (`src/settings/index.ts`)
+
+* Exposed via the gear icon in the popup and reader footer as well as the extension options entry.
+* Applies the persisted reader theme so the experience matches the active light or dark mode.
+* Loads the OpenAI API key, preferred translation language, and summarisation level from storage, lets users update or clear them, and surfaces inline success or error feedback.
+* Target language options and summarisation levels live alongside storage helpers so the OpenAI provider can build prompts dynamically.
+
 ## 4. Cross-Cutting Modules
 
 * `platform/browser.ts`: resolves the runtime API once, exposes a shared `browser` singleton, and uses wrapper helpers from `platform/types.ts` + `platform/wrap-chrome.ts` to collapse Chrome/Firefox/Safari differences.
@@ -182,6 +191,82 @@ Each command prepares a fully self-contained directory that can be zipped for st
   * Chunking logic for short word grouping
 * The modular reader architecture (`timing-engine.ts`, `text-processor.ts`, `visual-effects.ts`) enables isolated unit testing of individual algorithms.
 * Future unit-test coverage can directly import modules under `src/common`, `src/platform`, and `src/reader` for Jest/Vitest testing.
+
+## 7.5. Text Preprocessing Architecture
+
+The text preprocessing system provides an extensible, provider-based architecture for text enhancement and translation.
+
+### 7.5.1 Provider Architecture
+
+```typescript
+interface PreprocessingProvider {
+  name: string
+  process(text: string): Promise<PreprocessingResult>
+  isAvailable(): boolean
+}
+interface PreprocessingResult {
+  text: string
+  metadata?: {
+    originalLength: number
+    processedLength: number
+    wasModified: boolean
+    provider: string
+    processingTime?: number
+  }
+}
+```
+
+### 7.5.2 Current Providers
+
+* **OpenAI Provider**: Translates text to the configured target language using the model from service defaults/config
+  * Requires API key stored in extension storage or environment variable
+  * Includes 10-second timeout and error handling
+  * Automatically falls back if unavailable
+
+* **Passthrough Provider**: Returns text unchanged
+  * Always available as fallback
+  * Zero processing time
+  * Used when no other providers are available
+
+### 7.5.3 Provider Selection Logic
+
+The system automatically selects the best available provider:
+
+1. **Check OpenAI availability**: If API key is present and valid
+2. **Fallback to Passthrough**: If OpenAI fails or unavailable
+3. **Error handling**: Each provider can fail gracefully to the next
+
+### 7.5.4 Configuration and Security
+
+* **API Key Storage**: Securely stored in Chrome extension storage
+* **User Configuration**: API key entered via popup interface
+* **Automatic Fallback**: No configuration needed - system handles provider selection
+* **No Key Leakage**: API keys never logged or exposed in client code
+
+### 7.5.5 Implementation Details
+
+The preprocessing system is implemented under `src/preprocessing/` with:
+
+* **Provider Classes**: `providers/openai.ts`, `providers/passthrough.ts` implementing `PreprocessingProvider`
+* **Manager**: `manager.ts` handling provider selection and fallback logic
+* **Integration**: Seamlessly integrated into the reader text processing pipeline
+* **Storage Integration**: Uses extension storage for API key persistence
+### 7.5.6 Future Extensibility
+
+The architecture supports easy addition of new providers:
+
+```typescript
+class CustomProvider implements PreprocessingProvider {
+  name = 'custom'
+  async isAvailable() { /* check availability */ }
+  async process(text) { /* process text */ }
+}
+```
+
+Future providers could include:
+* **Proxy Provider**: Authenticated requests through custom server
+* **Local AI Provider**: Chrome's built-in AI APIs for on-device processing
+* **Translation Services**: Google Translate, DeepL, etc.
 
 ## 8. Future Evolution
 

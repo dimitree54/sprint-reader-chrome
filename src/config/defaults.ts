@@ -11,7 +11,7 @@ export const DEFAULTS = {
     pauseAfterPeriod: true,
     pauseAfterParagraph: true,
     chunkSize: 3,
-    wordFlicker: true,
+    wordFlicker: false,
     wordFlickerPercent: 10,
     theme: 'dark' as ReaderTheme
   } satisfies ReaderPreferences,
@@ -66,6 +66,29 @@ export const DEFAULTS = {
   ERROR_HANDLING: {
     consoleErrorHandler: console.error,
     consoleWarnHandler: console.warn
+  },
+
+  // OpenAI API defaults
+  OPENAI: {
+    model: 'gpt-5-mini',
+    service_tier: 'priority',
+    reasoning: {
+      effort: 'minimal'
+    }
+  },
+
+  // Preprocessing defaults
+  PREPROCESSING: {
+    enabled: false
+  },
+
+  // Translation and summarization defaults
+  TRANSLATION: {
+    defaultLanguage: 'en'
+  },
+
+  SUMMARIZATION: {
+    defaultLevel: 'none'
   }
 } as const
 

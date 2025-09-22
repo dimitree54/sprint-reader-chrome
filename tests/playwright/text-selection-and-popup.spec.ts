@@ -49,7 +49,7 @@ test.describe('Sprint Reader - Text Selection and Popup', () => {
     const firstReaderText = await readerPage.evaluate(() => {
       const state = (window as any).state || (globalThis as any).state;
       if (!state || !state.words || state.words.length === 0) return null;
-      return state.words.join(' ');
+      return state.words.map((w: any) => w.text).join(' ');
     });
 
     expect(firstReaderText).toBe(firstText);
@@ -93,7 +93,7 @@ test.describe('Sprint Reader - Text Selection and Popup', () => {
     const secondReaderText = await readerPage.evaluate(() => {
       const state = (window as any).state || (globalThis as any).state;
       if (!state || !state.words || state.words.length === 0) return null;
-      return state.words.join(' ');
+      return state.words.map((w: any) => w.text).join(' ');
     });
 
     expect(secondReaderText).toBe(secondText);
@@ -131,7 +131,7 @@ test.describe('Sprint Reader - Text Selection and Popup', () => {
     const thirdReaderText = await readerPage.evaluate(() => {
       const state = (window as any).state || (globalThis as any).state;
       if (!state || !state.words || state.words.length === 0) return null;
-      return state.words.join(' ');
+      return state.words.map((w: any) => w.text).join(' ');
     });
 
     expect(thirdReaderText).toBe(thirdText);

@@ -41,8 +41,14 @@ body.popup--light {
 .popup__header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
   margin-bottom: 16px;
+}
+
+.popup__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .popup__logo {
@@ -53,6 +59,34 @@ body.popup--light {
   font-size: 1.3rem;
   font-weight: 600;
   margin: 0;
+}
+
+.popup__icon-button {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  font-size: 1.1rem;
+}
+
+.popup__icon-button:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+body.popup--light .popup__icon-button {
+  border-color: rgba(74, 0, 224, 0.2);
+  background: rgba(74, 0, 224, 0.12);
+}
+
+body.popup--light .popup__icon-button:hover {
+  background: rgba(74, 0, 224, 0.2);
 }
 
 .popup__section {
@@ -93,6 +127,19 @@ body.popup--light {
   gap: 8px;
 }
 
+.popup__field--checkbox {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.popup__field--slider {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
 .popup__field-label {
   font-size: 0.95rem;
 }
@@ -115,11 +162,70 @@ body.popup--light {
   outline-offset: 1px;
 }
 
+body.popup--light .popup__text-input {
+  border-color: rgba(124, 58, 237, 0.25);
+  background: rgba(124, 58, 237, 0.08);
+}
+
+body.popup--light .popup__text-input:focus {
+  outline: 2px solid rgba(124, 58, 237, 0.7);
+  outline-offset: 1px;
+}
+
+.popup__checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #8b5cf6;
+  cursor: pointer;
+}
+
+body.popup--light .popup__checkbox {
+  accent-color: #7c3aed;
+}
+
+.popup__slider {
+  width: 100%;
+  accent-color: #8b5cf6;
+  margin: 4px 0;
+}
+
+body.popup--light .popup__slider {
+  accent-color: #7c3aed;
+}
+
+.popup__slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: rgba(245, 246, 247, 0.7);
+  margin-top: 4px;
+}
+
+body.popup--light .popup__slider-ticks {
+  color: rgba(29, 26, 47, 0.7);
+}
+
+.popup__slider-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #8b5cf6;
+  text-align: center;
+  margin-top: 4px;
+}
+
+body.popup--light .popup__slider-value {
+  color: #7c3aed;
+}
+
 .popup__or {
   text-align: center;
   font-weight: bold;
   margin: 12px 0;
   color: rgba(245, 246, 247, 0.8);
+}
+
+body.popup--light .popup__or {
+  color: rgba(29, 26, 47, 0.8);
 }
 
 .popup__speed-read-button {

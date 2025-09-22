@@ -10,6 +10,7 @@ export function renderCurrentWord (): void {
   }
 
   const currentWordItem = state.wordItems[state.index]
+
   if (currentWordItem) {
     wordElement.style.fontSize = state.optimalFontSize
 

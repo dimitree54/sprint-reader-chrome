@@ -2,8 +2,9 @@ import { startPlayback, stopPlayback } from './playback'
 import { persistPreferences, syncThemeToggle } from './preferences'
 import { renderCurrentWord } from './render'
 import { state } from './state'
-import { rebuildWordItems, updateOptimalFontSize } from './text'
+import { updateOptimalFontSize, recalculateTimingOnly } from './text'
 import { DEFAULTS } from '../config/defaults'
+import { browser } from '../platform/browser'
 
 function updateWpmDisplay (value: number): void {
   const wpmValue = document.getElementById('wpmValue')
@@ -60,7 +61,7 @@ function attachSpeedControl (): void {
     state.wordsPerMinute = value
     updateWpmDisplay(value)
 
-    rebuildWordItems()
+    recalculateTimingOnly()
     renderCurrentWord()
     persistPreferences()
   })
@@ -87,10 +88,23 @@ function attachResizeHandler (): void {
   })
 }
 
+function attachSettingsButton (): void {
+  const button = document.getElementById('openReaderSettings') as HTMLButtonElement | null
+  button?.addEventListener('click', () => {
+    openSettingsPage().catch(console.error)
+  })
+}
+
+async function openSettingsPage (): Promise<void> {
+  const url = browser.runtime.getURL('pages/settings.html')
+  await browser.tabs.create({ url })
+}
+
 export function registerControls (): void {
   attachPlaybackControls()
   attachSpeedControl()
   attachThemeToggle()
   attachResizeHandler()
   attachKeyboardControls()
+  attachSettingsButton()
 }

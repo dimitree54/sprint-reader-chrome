@@ -45,7 +45,7 @@ test.describe('Sprint Reader - Popup Caching Bug', () => {
     const cachedReaderText = await readerPage.evaluate(() => {
       const state = (window as any).state || (globalThis as any).state;
       if (!state || !state.words || state.words.length === 0) return null;
-      return state.words.join(' ');
+      return state.words.map((w: any) => w.text).join(' ');
     });
 
     expect(cachedReaderText).toBe(cachedText);
@@ -85,7 +85,7 @@ test.describe('Sprint Reader - Popup Caching Bug', () => {
     const actualReaderText = await readerPage.evaluate(() => {
       const state = (window as any).state || (globalThis as any).state;
       if (!state || !state.words || state.words.length === 0) return null;
-      return state.words.join(' ');
+      return state.words.map((w: any) => w.text).join(' ');
     });
 
     // This should pass - popup text should be used, not cached text
@@ -133,7 +133,7 @@ test.describe('Sprint Reader - Popup Caching Bug', () => {
       const actualText = await readerPage.evaluate(() => {
         const state = (window as any).state || (globalThis as any).state;
         if (!state || !state.words || state.words.length === 0) return null;
-        return state.words.join(' ');
+        return state.words.map((w: any) => w.text).join(' ');
       });
 
       expect(actualText).toBe(currentText);
