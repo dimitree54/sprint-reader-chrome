@@ -202,9 +202,8 @@ The text preprocessing system provides an extensible, provider-based architectur
 interface PreprocessingProvider {
   name: string
   process(text: string): Promise<PreprocessingResult>
-  isAvailable(): Promise<boolean>
+  isAvailable(): boolean
 }
-
 interface PreprocessingResult {
   text: string
   metadata?: {
