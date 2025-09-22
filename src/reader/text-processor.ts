@@ -7,11 +7,11 @@ import type { ReaderToken } from './text-types'
 
 /**
  * Unicode-aware helper to clean words for matching purposes
- * Removes punctuation and normalizes text while preserving Unicode characters
+ * Normalizes (NFKC) and removes punctuation while preserving Unicode letters/numbers/marks
  */
 function cleanForMatch(word: string): string {
-  // Remove punctuation but preserve Unicode letters, numbers, and combining marks
-  return word.replace(/[^\p{L}\p{N}\p{M}]/gu, '')
+  // Normalize and keep only letters, numbers, combining marks (Unicode-aware)
+  return word.normalize('NFKC').replace(/[^\p{L}\p{N}\p{M}]+/gu, '')
 }
 
 export function consolidateAcronyms (words: string[]): string[] {
@@ -22,12 +22,12 @@ export function consolidateAcronyms (words: string[]): string[] {
     const word = words[i]
 
     // Check if this looks like an acronym (2-4 uppercase letters)
-    if (/^[A-Z]{2,4}$/.test(word) && i + 1 < words.length) {
+    if (/^\p{Lu}{2,4}$/u.test(word) && i + 1 < words.length) {
       // Check if next words are also part of acronym
       let acronym = word
       let j = i + 1
 
-      while (j < words.length && j < i + 3 && /^[A-Z]{1,2}$/.test(words[j])) {
+      while (j < words.length && j < i + 3 && /^\p{Lu}{1,2}$/u.test(words[j])) {
         acronym += words[j]
         j++
       }
@@ -46,6 +46,26 @@ export function consolidateAcronyms (words: string[]): string[] {
   return result
 }
 
+function mergeNumberParts(words: string[], startIndex: number): { text: string; endIndex: number } {
+  let text = words[startIndex]
+  let j = startIndex + 1
+  let sawDecimal = false
+
+  while (j + 1 < words.length) {
+    const sep = words[j]
+    const next = words[j + 1]
+    if ((sep === ',' || (!sawDecimal && sep === '.')) && /^\d+$/.test(next)) {
+      text += sep + next
+      if (sep === '.') sawDecimal = true
+      j += 2
+      continue
+    }
+    break
+  }
+
+  return { text, endIndex: j }
+}
+
 export function preserveNumbersDecimals (words: string[]): string[] {
   const result: string[] = []
   let i = 0
@@ -53,21 +73,11 @@ export function preserveNumbersDecimals (words: string[]): string[] {
   while (i < words.length) {
     const word = words[i]
 
-    // Check for number patterns like "3.14" or "1,000"
-    if (/^\d+$/.test(word) && i + 1 < words.length) {
-      const next = words[i + 1]
-
-      // Decimal point case: "3" + "." + "14"
-      if (next === '.' && i + 2 < words.length && /^\d+$/.test(words[i + 2])) {
-        result.push(word + '.' + words[i + 2])
-        i += 3
-        continue
-      }
-
-      // Comma in numbers: "1" + "," + "000"
-      if (next === ',' && i + 2 < words.length && /^\d+$/.test(words[i + 2])) {
-        result.push(word + ',' + words[i + 2])
-        i += 3
+    if (/^\d+$/.test(word)) {
+      const { text, endIndex } = mergeNumberParts(words, i)
+      if (endIndex > i + 1) {
+        result.push(text)
+        i = endIndex
         continue
       }
     }
@@ -111,7 +121,7 @@ export type WordInfo = ReaderToken
 
 export function extractBoldWords(text: string): { processedText: string; boldWords: Set<string> } {
   const boldWords = new Set<string>()
-  const boldRegex = /\*\*([\s\S]+?)\*\*/g
+  const boldRegex = /\*\*(.+?)\*\*/gs
   const processedText = text.replace(boldRegex, (_m, phrase: string) => {
     for (const w of phrase.trim().split(/\s+/)) {
       const clean = cleanForMatch(w)
@@ -128,7 +138,7 @@ export function preprocessText (text: string): WordInfo[] {
 
   // Step 1: Preserve paragraph breaks, then normalize other whitespace
   const PARA = '¶¶'
-  const preserved = processedText.replace(/\r?\n\r?\n/g, ` ${PARA} `)
+  const preserved = processedText.replace(/(?:\r?\n){2,}/g, ` ${PARA} `)
   const normalized = preserved.replace(/\s+/g, ' ').trim()
   let words = normalized.length > 0 ? normalized.split(' ') : []
   // Restore paragraph markers as actual double newlines so downstream can detect
@@ -167,13 +177,13 @@ export function consolidateAcronymsTokens(tokens: ReaderToken[]): ReaderToken[] 
     const token = tokens[i]
 
     // Check if this looks like an acronym (2-4 uppercase letters)
-    if (/^[A-Z]{2,4}$/.test(token.text) && i + 1 < tokens.length) {
+    if (/^\p{Lu}{2,4}$/u.test(token.text) && i + 1 < tokens.length) {
       // Check if next tokens are also part of acronym
       let acronym = token.text
       let j = i + 1
       let hasAnyBold = token.isBold
 
-      while (j < tokens.length && j < i + 3 && /^[A-Z]{1,2}$/.test(tokens[j].text)) {
+      while (j < tokens.length && j < i + 3 && /^\p{Lu}{1,2}$/u.test(tokens[j].text)) {
         acronym += tokens[j].text
         hasAnyBold = hasAnyBold || tokens[j].isBold
         j++
@@ -197,6 +207,28 @@ export function consolidateAcronymsTokens(tokens: ReaderToken[]): ReaderToken[] 
  * Token-aware wrapper for preserveNumbersDecimals function
  * Preserves bold metadata during number consolidation
  */
+function mergeNumberTokens(tokens: ReaderToken[], startIndex: number): { token: ReaderToken; endIndex: number } {
+  let text = tokens[startIndex].text
+  let isBold = tokens[startIndex].isBold
+  let j = startIndex + 1
+  let sawDecimal = false
+
+  while (j + 1 < tokens.length) {
+    const sep = tokens[j].text
+    const next = tokens[j + 1]
+    if ((sep === ',' || (!sawDecimal && sep === '.')) && next && /^\d+$/.test(next.text)) {
+      text += sep + next.text
+      isBold = isBold || tokens[j].isBold || next.isBold
+      if (sep === '.') sawDecimal = true
+      j += 2
+      continue
+    }
+    break
+  }
+
+  return { token: { text, isBold }, endIndex: j }
+}
+
 export function preserveNumbersDecimalsTokens(tokens: ReaderToken[]): ReaderToken[] {
   const result: ReaderToken[] = []
   let i = 0
@@ -204,29 +236,11 @@ export function preserveNumbersDecimalsTokens(tokens: ReaderToken[]): ReaderToke
   while (i < tokens.length) {
     const token = tokens[i]
 
-    // Check for number patterns like "3.14" or "1,000"
-    if (/^\d+$/.test(token.text) && i + 1 < tokens.length) {
-      const nextToken = tokens[i + 1]
-
-      // Decimal point case: "3" + "." + "14"
-      if (nextToken.text === '.' && i + 2 < tokens.length && /^\d+$/.test(tokens[i + 2].text)) {
-        const hasAnyBold = token.isBold || nextToken.isBold || tokens[i + 2].isBold
-        result.push({
-          text: token.text + '.' + tokens[i + 2].text,
-          isBold: hasAnyBold
-        })
-        i += 3
-        continue
-      }
-
-      // Comma in numbers: "1" + "," + "000"
-      if (nextToken.text === ',' && i + 2 < tokens.length && /^\d+$/.test(tokens[i + 2].text)) {
-        const hasAnyBold = token.isBold || nextToken.isBold || tokens[i + 2].isBold
-        result.push({
-          text: token.text + ',' + tokens[i + 2].text,
-          isBold: hasAnyBold
-        })
-        i += 3
+    if (/^\d+$/.test(token.text)) {
+      const { token: mergedToken, endIndex } = mergeNumberTokens(tokens, i)
+      if (endIndex > i + 1) {
+        result.push(mergedToken)
+        i = endIndex
         continue
       }
     }
