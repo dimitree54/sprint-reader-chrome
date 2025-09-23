@@ -1,12 +1,21 @@
 import { wrapLettersInSpans, highlightOptimalLetter, setOptimalWordPositioning, applyFlickerEffect } from './visual-effects'
-import { getVisualSettings, state } from './state'
+import { getVisualSettings, state, getTimingSettings } from './state'
 import { updateControlsState } from './controls'
+import { getTimeProgress, formatTimeRemaining, formatProgressPercent } from './time-calculator'
+
+const PROGRESS_ZERO = '0%'
+const ARIA_VALUE_ZERO = '0'
+const EMPTY_STRING = ''
+const ARIA_VALUE_NOW = 'aria-valuenow'
 
 export function renderCurrentWord (): void {
   const wordElement = document.getElementById('word')
   const statusElement = document.getElementById('labelStatus')
   const progressElement = document.getElementById('labelProgress')
-  if (!wordElement || !statusElement || !progressElement) {
+  const progressBarElement = document.querySelector('.reader__progress-bar') as HTMLElement
+  const progressFillElement = document.getElementById('progressBarFill')
+
+  if (!wordElement || !statusElement || !progressElement || !progressBarElement || !progressFillElement) {
     return
   }
 
@@ -15,6 +24,8 @@ export function renderCurrentWord (): void {
     wordElement.innerHTML = '<span style="opacity: 0.6;">Processing text...</span>'
     statusElement.textContent = 'Preprocessing...'
     progressElement.textContent = 'Please wait'
+    progressFillElement.style.width = PROGRESS_ZERO
+    progressBarElement.setAttribute(ARIA_VALUE_NOW, ARIA_VALUE_ZERO)
     updateControlsState()
     return
   }
@@ -35,17 +46,28 @@ export function renderCurrentWord (): void {
       applyFlickerEffect(wordElement, currentWordItem, visualSettings)
     }
   } else {
-    wordElement.textContent = ''
+    wordElement.textContent = EMPTY_STRING
   }
 
   statusElement.textContent = state.playing ? 'Playing' : 'Paused'
+
+  // Update progress bar and time display
   if (state.wordItems.length > 0) {
-    const shown = Math.min(state.index + 1, state.wordItems.length)
-    const total = state.wordItems.length
-    const percent = Math.min(100, Math.round((shown / total) * 100))
-    progressElement.textContent = `${percent}% • ${shown} / ${total}`
+    const timingSettings = getTimingSettings()
+    const timeProgress = getTimeProgress(state.wordItems, state.index, timingSettings)
+
+    // Update progress bar
+    progressFillElement.style.width = `${timeProgress.progressPercent}%`
+    progressBarElement.setAttribute(ARIA_VALUE_NOW, String(Math.round(timeProgress.progressPercent)))
+
+    // Update time display
+    const percentDisplay = formatProgressPercent(timeProgress.progressPercent)
+    const timeDisplay = formatTimeRemaining(timeProgress.remainingMs)
+    progressElement.textContent = `${percentDisplay} • ${timeDisplay}`
   } else {
-    progressElement.textContent = ''
+    progressFillElement.style.width = PROGRESS_ZERO
+    progressBarElement.setAttribute(ARIA_VALUE_NOW, ARIA_VALUE_ZERO)
+    progressElement.textContent = EMPTY_STRING
   }
 
   const playButton = document.getElementById('btnPlay')
