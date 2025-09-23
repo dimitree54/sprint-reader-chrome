@@ -21,7 +21,7 @@ export function renderCurrentWord (): void {
 
   // Handle preprocessing state
   if (state.isPreprocessing) {
-    wordElement.innerHTML = '<span style="opacity: 0.6;">Processing text...</span>'
+    wordElement.textContent = 'Processing text...'
     statusElement.textContent = 'Preprocessing...'
     progressElement.textContent = 'Please wait'
     progressFillElement.style.width = PROGRESS_ZERO
