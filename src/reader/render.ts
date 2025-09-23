@@ -1,11 +1,21 @@
 import { wrapLettersInSpans, highlightOptimalLetter, setOptimalWordPositioning, applyFlickerEffect } from './visual-effects'
 import { getVisualSettings, state } from './state'
+import { updateControlsState } from './controls'
 
 export function renderCurrentWord (): void {
   const wordElement = document.getElementById('word')
   const statusElement = document.getElementById('labelStatus')
   const progressElement = document.getElementById('labelProgress')
   if (!wordElement || !statusElement || !progressElement) {
+    return
+  }
+
+  // Handle preprocessing state
+  if (state.isPreprocessing) {
+    wordElement.innerHTML = '<span style="opacity: 0.6;">Processing text...</span>'
+    statusElement.textContent = 'Preprocessing...'
+    progressElement.textContent = 'Please wait'
+    updateControlsState()
     return
   }
 
@@ -42,4 +52,7 @@ export function renderCurrentWord (): void {
   if (playButton) {
     playButton.textContent = state.playing ? 'Pause' : 'Play'
   }
+
+  // Update controls state
+  updateControlsState()
 }

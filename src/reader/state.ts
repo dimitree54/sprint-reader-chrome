@@ -23,6 +23,7 @@ export type ReaderState = {
   wordFlickerPercent: number;
   optimalFontSize: string;
   theme: ReaderTheme;
+  isPreprocessing: boolean;
 }
 
 export const state: ReaderState = {
@@ -41,7 +42,8 @@ export const state: ReaderState = {
   wordFlicker: DEFAULTS.READER_PREFERENCES.wordFlicker,
   wordFlickerPercent: DEFAULTS.READER_PREFERENCES.wordFlickerPercent,
   optimalFontSize: DEFAULTS.UI.optimalFontSize,
-  theme: DEFAULTS.READER_PREFERENCES.theme
+  theme: DEFAULTS.READER_PREFERENCES.theme,
+  isPreprocessing: false
 }
 
 export function setTimer (timer: PlaybackTimer): void {
