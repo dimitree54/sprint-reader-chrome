@@ -8,8 +8,11 @@ test.describe('Sprint Reader - Settings Page', () => {
 
     // 2. Modify some settings
     const wpmSlider = page.locator('#wordsPerMinute');
-    await wpmSlider.fill('450');
-
+    await wpmSlider.evaluate((el, value) => {
+      const input = el as HTMLInputElement;
+      input.value = String(value);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }, 450);
     const enableTranslationCheckbox = page.locator('#enableTranslation');
     await enableTranslationCheckbox.check();
 
