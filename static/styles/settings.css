@@ -407,7 +407,7 @@ body.settings--light .settings__theme-switch-input:checked + .settings__theme-sw
   background: rgba(124, 58, 237, 0.7);
 }
 
-.settings__theme-switch-input:checked + .settings__theme-switch-track .settings__theme-switch-thumb {
+.settings__theme-switch:not(.settings__theme-switch--header) .settings__theme-switch-input:checked + .settings__theme-switch-track .settings__theme-switch-thumb {
   transform: translateX(20px);
 }
 

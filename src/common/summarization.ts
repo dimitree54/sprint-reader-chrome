@@ -3,7 +3,7 @@ import { DEFAULTS } from '../config/defaults'
 export const SUMMARIZATION_LEVELS = [
   { value: 'none', label: 'No summarization', sliderIndex: 0 } as const,
   { value: 'moderate', label: 'Moderate summarization', sliderIndex: 1 } as const,
-  { value: 'aggressive', label: 'Hard summarization', sliderIndex: 2 } as const
+  { value: 'aggressive', label: 'Significant summarization', sliderIndex: 2 } as const
 ]
 
 export type SummarizationLevel = typeof SUMMARIZATION_LEVELS[number]['value']
