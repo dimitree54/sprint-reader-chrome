@@ -30,67 +30,62 @@ export function createWordItem (wordInfo: WordInfo, settings: TimingSettings): W
   }
 }
 
-export function createChunks (words: WordInfo[], settings: TimingSettings): WordItem[] {
-  let baseChunks: WordItem[]
+function groupWordsIntoChunks (words: WordInfo[], settings: TimingSettings): WordItem[] {
+  const chunks: WordItem[] = []
+  let i = 0
 
-  if (settings.chunkSize <= 1) {
-    baseChunks = words.map(word => createWordItem(word, settings))
-  } else {
-    const chunks: WordItem[] = []
-    let i = 0
+  while (i < words.length) {
+    const chunkWords = [words[i]]
+    let j = i + 1
 
-    while (i < words.length) {
-      const chunkWords = [words[i]]
-      let j = i + 1
+    const canGroup = words[i].text.length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping &&
+      !/[.!?]/.test(words[i].text) &&
+      !/\n/.test(words[i].text)
 
-      const canGroup = words[i].text.length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping &&
-        !/[.!?]/.test(words[i].text) &&
-        !/\n/.test(words[i].text)
-
-      while (
-        canGroup &&
-        j < words.length &&
-        chunkWords.length < settings.chunkSize &&
-        words[j].text.length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping &&
-        !/[.!?]/.test(words[j].text) &&
-        !/\n/.test(words[j].text)
-      ) {
-        chunkWords.push(words[j])
-        j++
-      }
-
-      const chunkText = chunkWords.map(w => w.text).join(' ')
-      const hasBoldWords = chunkWords.some(w => w.isBold)
-
-      const wordItem = createWordItem({ text: chunkText, isBold: false }, settings)
-      wordItem.wordsInChunk = chunkWords.length
-      wordItem.isGrouped = chunkWords.length > 1
-      wordItem.originalText = chunkWords.map(w => w.text).join(' ')
-
-      if (wordItem.isGrouped) {
-        wordItem.duration *= 0.9
-      }
-
-      if (hasBoldWords) {
-        wordItem.duration *= 1.5
-        wordItem.isBold = true
-      }
-
-      chunks.push(wordItem)
-      i = j
+    while (
+      canGroup &&
+      j < words.length &&
+      chunkWords.length < settings.chunkSize &&
+      words[j].text.length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping &&
+      !/[.!?]/.test(words[j].text) &&
+      !/\n/.test(words[j].text)
+    ) {
+      chunkWords.push(words[j])
+      j++
     }
-    baseChunks = chunks
+
+    const chunkText = chunkWords.map(w => w.text).join(' ')
+    const hasBoldWords = chunkWords.some(w => w.isBold)
+
+    const wordItem = createWordItem({ text: chunkText, isBold: false }, settings)
+    wordItem.wordsInChunk = chunkWords.length
+    wordItem.isGrouped = chunkWords.length > 1
+    wordItem.originalText = chunkWords.map(w => w.text).join(' ')
+
+    if (wordItem.isGrouped) {
+      wordItem.duration *= 0.9
+    }
+
+    if (hasBoldWords) {
+      wordItem.duration *= 1.5
+      wordItem.isBold = true
+    }
+
+    chunks.push(wordItem)
+    i = j
+  }
+  return chunks
+}
+
+function mergeChunksWithoutOptimalLetter (chunks: WordItem[]): WordItem[] {
+  if (chunks.length < 2) {
+    return chunks
   }
 
-  if (baseChunks.length < 2) {
-    return baseChunks
-  }
+  const mergedChunks: WordItem[] = [chunks[0]]
+  for (let i = 1; i < chunks.length; i++) {
+    const currentChunk = chunks[i]
 
-  const mergedChunks: WordItem[] = [baseChunks[0]]
-  for (let i = 1; i < baseChunks.length; i++) {
-    const currentChunk = baseChunks[i]
-
-    // If a chunk has no optimal letter, merge it with the previous one.
     if (currentChunk.optimalLetterPosition === 0 && mergedChunks.length > 0) {
       const previousChunk = mergedChunks[mergedChunks.length - 1]
       previousChunk.text += ` ${currentChunk.text}`
@@ -103,6 +98,17 @@ export function createChunks (words: WordInfo[], settings: TimingSettings): Word
       mergedChunks.push(currentChunk)
     }
   }
-
   return mergedChunks
+}
+
+export function createChunks (words: WordInfo[], settings: TimingSettings): WordItem[] {
+  let baseChunks: WordItem[]
+
+  if (settings.chunkSize <= 1) {
+    baseChunks = words.map(word => createWordItem(word, settings))
+  } else {
+    baseChunks = groupWordsIntoChunks(words, settings)
+  }
+
+  return mergeChunksWithoutOptimalLetter(baseChunks)
 }

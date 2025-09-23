@@ -1,7 +1,8 @@
 import { expect, test } from './fixtures';
 
 test.describe('Sprint Reader - Settings Page', () => {
-  test('should allow modifying and saving settings', { timeout: 30000 }, async ({ page, context, extensionId }) => {
+    test('should allow modifying and saving settings', async ({ page, context, extensionId }) => {
+    test.setTimeout(30000);
     // 1. Open the settings page directly
     await page.goto(`chrome-extension://${extensionId}/pages/settings.html`);
     await page.waitForLoadState('domcontentloaded');
