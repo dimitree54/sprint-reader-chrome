@@ -39,7 +39,7 @@ export function calculateTotalReadingTime(wordItems: WordItem[], settings: Timin
 export function calculateElapsedTime(wordItems: WordItem[], currentIndex: number, settings: TimingSettings): number {
   let elapsedMs = 0
 
-  for (let i = 0; i < currentIndex && i < wordItems.length; i++) {
+  for (let i = 0; i <= currentIndex && i < wordItems.length; i++) {
     const wordItem = wordItems[i]
 
     // Calculate word timing
