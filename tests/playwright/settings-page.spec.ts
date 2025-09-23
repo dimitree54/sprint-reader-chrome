@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures';
 
 test.describe('Sprint Reader - Settings Page', () => {
-    test('should allow modifying and saving settings', async ({ page, context, extensionId }) => {
+    test('should allow modifying and saving settings', async ({ page, extensionId, background }) => {
     test.setTimeout(30000);
     // 1. Open the settings page directly
     await page.goto(`chrome-extension://${extensionId}/pages/settings.html`);
@@ -31,7 +31,6 @@ test.describe('Sprint Reader - Settings Page', () => {
     await expect(statusMessage).toBeHidden({ timeout: 5000 });
 
     // 4. Validate that the settings were actually saved
-    const background = context.serviceWorkers()[0];
     const savedSettings = await background.evaluate(() => {
       return new Promise((resolve) => {
         chrome.storage.local.get([

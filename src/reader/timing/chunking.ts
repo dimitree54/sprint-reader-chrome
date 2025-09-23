@@ -4,6 +4,13 @@ import type { TimingSettings, WordItem } from './types'
 import type { WordInfo } from '../text-processor'
 import { DEFAULTS } from '../../config/defaults'
 
+const PUNCT_OR_BREAK_RE = /[.!?]|\n/
+
+function isGroupable (text: string): boolean {
+  return text.length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping &&
+    !PUNCT_OR_BREAK_RE.test(text)
+}
+
 export function createWordItem (wordInfo: WordInfo, settings: TimingSettings): WordItem {
   const text = wordInfo.text
   const wordLength = text.length
@@ -30,29 +37,32 @@ export function createWordItem (wordInfo: WordInfo, settings: TimingSettings): W
   }
 }
 
+function collectChunkWords (startIndex: number, words: WordInfo[], settings: TimingSettings): { chunkWords: WordInfo[], nextIndex: number } {
+  const chunkWords = [words[startIndex]]
+  let nextIndex = startIndex + 1
+
+  if (!isGroupable(words[startIndex].text)) {
+    return { chunkWords, nextIndex }
+  }
+
+  while (
+    nextIndex < words.length &&
+    chunkWords.length < settings.chunkSize &&
+    isGroupable(words[nextIndex].text)
+  ) {
+    chunkWords.push(words[nextIndex])
+    nextIndex++
+  }
+
+  return { chunkWords, nextIndex }
+}
+
 function groupWordsIntoChunks (words: WordInfo[], settings: TimingSettings): WordItem[] {
   const chunks: WordItem[] = []
   let i = 0
 
   while (i < words.length) {
-    const chunkWords = [words[i]]
-    let j = i + 1
-
-    const canGroup = words[i].text.length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping &&
-      !/[.!?]/.test(words[i].text) &&
-      !/\n/.test(words[i].text)
-
-    while (
-      canGroup &&
-      j < words.length &&
-      chunkWords.length < settings.chunkSize &&
-      words[j].text.length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping &&
-      !/[.!?]/.test(words[j].text) &&
-      !/\n/.test(words[j].text)
-    ) {
-      chunkWords.push(words[j])
-      j++
-    }
+    const { chunkWords, nextIndex } = collectChunkWords(i, words, settings)
 
     const chunkText = chunkWords.map(w => w.text).join(' ')
     const hasBoldWords = chunkWords.some(w => w.isBold)
@@ -72,7 +82,7 @@ function groupWordsIntoChunks (words: WordInfo[], settings: TimingSettings): Wor
     }
 
     chunks.push(wordItem)
-    i = j
+    i = nextIndex
   }
   return chunks
 }
