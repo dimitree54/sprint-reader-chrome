@@ -19,6 +19,7 @@ type ExtensionFixtures = {
 };
 
 export const test = base.extend<ExtensionFixtures>({
+  // Empty destructuring is standard Playwright pattern when no base fixtures are needed
   // eslint-disable-next-line no-empty-pattern
   context: async ({}, use: (context: BrowserContext) => Promise<void>) => {
     const userDataDir = await createTempUserDataDir();

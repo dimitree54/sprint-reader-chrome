@@ -100,15 +100,6 @@ module.exports = [
         }
       },
       {
-        files: ['src/platform/**/*.ts'],
-        rules: {
-          '@typescript-eslint/no-explicit-any': 'off',
-          '@typescript-eslint/no-unsafe-call': 'off',
-          '@typescript-eslint/no-unsafe-member-access': 'off',
-          '@typescript-eslint/no-unsafe-assignment': 'off'
-        }
-      },
-      {
         files: ['tests/**/*.ts', '**/*.spec.ts', '**/*.test.ts'],
         rules: {
           '@typescript-eslint/no-explicit-any': 'off',
@@ -117,14 +108,6 @@ module.exports = [
           '@typescript-eslint/no-unsafe-argument': 'off'
         }
       },
-      {
-        files: ['**/message-handler.ts', '**/messages.ts', '**/listeners.ts', '**/reader-window.ts', '**/selection-loader.ts', 'src/popup/**/*.ts'],
-        rules: {
-          '@typescript-eslint/no-unsafe-argument': 'off',
-          '@typescript-eslint/no-explicit-any': 'off',
-          '@typescript-eslint/no-unsafe-call': 'off'
-        }
-      }
     ],
     rules: {
       'max-lines': ['error', { max: 200, skipBlankLines: true, skipComments: true }],

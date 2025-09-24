@@ -59,15 +59,15 @@ async function sendOpenReaderMessage (selectionText: string) {
     theme: currentTheme
   }
 
-  await (browser.runtime.sendMessage as any)(message)
+  await (browser.runtime.sendMessage as (message: BackgroundMessage) => Promise<unknown>)(message)
 }
 
 async function loadMenuEntryText (elements: PopupElements) {
   try {
-    const response = await (browser.runtime.sendMessage as any)({
+    const response = await (browser.runtime.sendMessage as (message: BackgroundMessage) => Promise<{ menuEntryText: string }>)({
       target: 'background',
       type: 'getMenuEntryText'
-    })
+    } satisfies BackgroundMessage)
     if (response?.menuEntryText) {
       elements.menuEntryTextSpan.textContent = response.menuEntryText
     }

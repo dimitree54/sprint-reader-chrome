@@ -4,7 +4,7 @@
  * Coordinates streaming preprocessing with the OpenAI provider and text processor
  */
 
-import { preprocessingConfigService } from './config'
+import { preprocessingConfigService, type PreprocessingConfig } from './config'
 import { OpenAIProvider, type StreamingTokenCallback } from './providers/openai'
 import { PassthroughProvider } from './providers/passthrough'
 import type { StreamingTextProcessorInstance } from '../reader/streaming-text'
@@ -69,7 +69,7 @@ export class StreamingPreprocessingManager {
   private async processWithStreamingProvider(
     rawText: string,
     provider: OpenAIProvider,
-    config: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    config: PreprocessingConfig,
     streamingProcessor: StreamingTextProcessorInstance
   ): Promise<void> {
     // Create token callback that feeds to streaming processor
@@ -105,8 +105,8 @@ export class StreamingPreprocessingManager {
    */
   private async processWithNonStreamingProvider(
     rawText: string,
-    provider: any, // eslint-disable-line @typescript-eslint/no-explicit-any
-    config: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    provider: PassthroughProvider,
+    config: PreprocessingConfig,
     streamingProcessor: StreamingTextProcessorInstance
   ): Promise<void> {
     // Streaming processor should already be initialized by caller
