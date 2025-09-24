@@ -14,6 +14,10 @@ function updateWpmDisplay (value: number): void {
 }
 
 function togglePlayback (): void {
+  if (state.isPreprocessing) {
+    return // Block playback during preprocessing
+  }
+
   if (state.playing) {
     stopPlayback()
   } else {
@@ -30,6 +34,9 @@ function attachPlaybackControls (): void {
 
   const restartButton = document.getElementById('btnRestart')
   restartButton?.addEventListener('click', () => {
+    if (state.isPreprocessing) {
+      return // Block restart during preprocessing
+    }
     stopPlayback()
     state.index = 0
     renderCurrentWord()
@@ -49,6 +56,11 @@ function attachKeyboardControls (): void {
       return
     }
 
+    if (state.isPreprocessing) {
+      event.preventDefault()
+      return // Block keyboard controls during preprocessing
+    }
+
     event.preventDefault()
     togglePlayback()
   })
@@ -57,6 +69,10 @@ function attachKeyboardControls (): void {
 function attachSpeedControl (): void {
   const slider = document.getElementById('sliderWpm') as HTMLInputElement | null
   slider?.addEventListener('input', () => {
+    if (state.isPreprocessing) {
+      return // Block speed control during preprocessing
+    }
+
     const value = Number.parseInt(slider.value, 10) || DEFAULTS.READER_PREFERENCES.wordsPerMinute
     state.wordsPerMinute = value
     updateWpmDisplay(value)
@@ -98,6 +114,22 @@ function attachSettingsButton (): void {
 async function openSettingsPage (): Promise<void> {
   const url = browser.runtime.getURL('pages/settings.html')
   await browser.tabs.create({ url })
+}
+
+export function updateControlsState (): void {
+  const playButton = document.getElementById('btnPlay') as HTMLButtonElement | null
+  const restartButton = document.getElementById('btnRestart') as HTMLButtonElement | null
+  const wpmSlider = document.getElementById('sliderWpm') as HTMLInputElement | null
+  const themeToggle = document.getElementById('toggleTheme') as HTMLInputElement | null
+  const settingsButton = document.getElementById('openReaderSettings') as HTMLButtonElement | null
+
+  const isDisabled = state.isPreprocessing
+
+  if (playButton) playButton.disabled = isDisabled
+  if (restartButton) restartButton.disabled = isDisabled
+  if (wpmSlider) wpmSlider.disabled = isDisabled
+  if (themeToggle) themeToggle.disabled = isDisabled
+  if (settingsButton) settingsButton.disabled = isDisabled
 }
 
 export function registerControls (): void {

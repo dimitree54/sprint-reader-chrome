@@ -29,6 +29,8 @@ body {
   --reader-thumb-bg: #fff;
   --reader-thumb-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   --reader-switch-icon-color: rgba(246, 247, 251, 0.85);
+  --reader-progress-bg: rgba(255, 255, 255, 0.1);
+  --reader-progress-fill: linear-gradient(135deg, #8e2de2, #4a00e0);
 }
 
 body.reader--dark {
@@ -54,6 +56,8 @@ body.reader--light {
   --reader-thumb-bg: #fff;
   --reader-thumb-shadow: 0 4px 12px rgba(74, 0, 224, 0.25);
   --reader-switch-icon-color: rgba(33, 31, 51, 0.7);
+  --reader-progress-bg: rgba(74, 0, 224, 0.15);
+  --reader-progress-fill: linear-gradient(135deg, #7f5af0, #ff7d5c);
 }
 
 .reader__header,
@@ -153,10 +157,60 @@ body.reader--light {
   color: var(--reader-accent);
 }
 
-.reader__progress {
+.reader__progress-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-left: 12px;
+}
+
+.reader__progress-bar {
+  width: 120px;
+  height: 6px;
+  background: var(--reader-progress-bg);
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.reader__progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--reader-progress-fill);
+  border-radius: 3px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.reader__progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: progress-shimmer 2s infinite;
+}
+
+@keyframes progress-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.reader__progress-text {
   font-size: 0.85rem;
   color: var(--reader-muted);
+  font-weight: 500;
+  min-width: 80px;
+  text-align: left;
 }
 
 input[type='range'] {

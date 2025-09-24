@@ -9,8 +9,7 @@ import {
   readSummarizationLevel,
   writeSummarizationLevel,
   readPreprocessingEnabled,
-  writePreprocessingEnabled,
-  type ReaderTheme
+  writePreprocessingEnabled
 } from '../common/storage'
 import { DEFAULTS } from '../config/defaults'
 import {
@@ -40,11 +39,9 @@ type SettingsElements = {
   wpmValue: HTMLElement;
   summarizationSlider: HTMLInputElement;
   summarizationLabel: HTMLElement;
-  themeToggle: HTMLInputElement;
   status: HTMLElement;
 };
 
-let currentTheme: ReaderTheme = DEFAULTS.READER_PREFERENCES.theme
 let statusTimeout: ReturnType<typeof setTimeout> | undefined
 
 function showStatus (elements: SettingsElements, message: string, variant: 'success' | 'error'): void {
@@ -78,11 +75,7 @@ function populateLanguageOptions (selectElement: HTMLSelectElement): void {
 
 async function loadInitialState (elements: SettingsElements): Promise<void> {
   const prefs = await readReaderPreferences()
-  currentTheme = prefs.theme
-  applyThemeToElement(document.body, currentTheme, THEME_OPTIONS)
-
-  // Set theme toggle state
-  elements.themeToggle.checked = currentTheme === 'light'
+  applyThemeToElement(document.body, prefs.theme, THEME_OPTIONS)
 
   const apiKey = await readOpenAIApiKey()
   if (apiKey) {
@@ -141,22 +134,7 @@ function registerEvents (elements: SettingsElements): void {
     elements.languageSelect.disabled = !isEnabled
   })
 
-  // Handle theme toggle
-  elements.themeToggle.addEventListener('change', async () => {
-    const newTheme: ReaderTheme = elements.themeToggle.checked ? 'light' : 'dark'
-    currentTheme = newTheme
-    applyThemeToElement(document.body, currentTheme, THEME_OPTIONS)
-
-    // Save theme preference
-    try {
-      const currentPrefs = await readReaderPreferences()
-      const updatedPrefs = { ...currentPrefs, theme: newTheme }
-      await writeReaderPreferences(updatedPrefs)
-    } catch (error) {
-      console.error('Failed to save theme preference', error)
-    }
-  })
-
+  
   elements.form.addEventListener('submit', async (event) => {
     event.preventDefault()
     const value = elements.apiKeyInput.value.trim()
@@ -210,13 +188,12 @@ document.addEventListener('DOMContentLoaded', () => {
     form: document.getElementById('settingsForm') as HTMLFormElement,
     apiKeyInput: document.getElementById('openaiApiKey') as HTMLInputElement,
     clearButton: document.getElementById('clearSettings') as HTMLButtonElement,
-    enablePreprocessingToggle: document.getElementById('enablePreprocessing') as HTMLInputElement,
+    enablePreprocessingToggle: document.getElementById('enableTranslation') as HTMLInputElement,
     languageSelect: document.getElementById('targetLanguage') as HTMLSelectElement,
     wpmSlider: document.getElementById('wordsPerMinute') as HTMLInputElement,
     wpmValue: document.getElementById('wpmValue') as HTMLElement,
     summarizationSlider: document.getElementById('summarizationLevel') as HTMLInputElement,
     summarizationLabel: document.getElementById('summarizationLabel') as HTMLElement,
-    themeToggle: document.getElementById('settingsToggleTheme') as HTMLInputElement,
     status: document.getElementById('settingsStatus') as HTMLElement
   }
 

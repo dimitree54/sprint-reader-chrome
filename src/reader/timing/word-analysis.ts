@@ -117,17 +117,20 @@ export function detectPunctuation (text: string): { hasComma: boolean; hasPeriod
 }
 
 export function assignOptimalLetterPosition (text: string): number {
-  const indices: number[] = []
+  const letterIndices: number[] = []
   for (let i = 0; i < text.length; i++) {
-    if (text[i] !== ' ') {
-      indices.push(i + 1)
+    // Use a regex to match any Unicode letter or number, ensuring we don't select punctuation or symbols
+    if (/[\p{L}\p{N}]/u.test(text[i])) {
+      letterIndices.push(i + 1)
     }
   }
 
-  const count = indices.length
-  if (count === 0) return 1
-  if (count === 1) return indices[0]
-  if (count <= 4) return indices[1] ?? indices[count - 1]
-  if (count <= 9) return indices[2] ?? indices[count - 1]
-  return indices[3] ?? indices[count - 1]
+  const count = letterIndices.length
+  if (count === 0) return 0 // No letters or numbers found, indicating no valid highlight position
+
+  // Existing logic for determining optimal position based on letter count
+  if (count === 1) return letterIndices[0]
+  if (count <= 4) return letterIndices[1] ?? letterIndices[count - 1]
+  if (count <= 9) return letterIndices[2] ?? letterIndices[count - 1]
+  return letterIndices[3] ?? letterIndices[count - 1]
 }

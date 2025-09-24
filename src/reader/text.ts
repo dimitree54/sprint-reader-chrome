@@ -9,16 +9,25 @@ import type { ReaderToken } from './text-types'
 export async function rebuildWordItems (): Promise<void> {
   const rawText = state.words.map(w => w.text).join(' ')
 
-  const preprocessingResult = await preprocessTextForReader(rawText)
-  const preprocessedWords = preprocessText(preprocessingResult.text)
+  state.isPreprocessing = true
+  const { renderCurrentWord } = await import('./render')
+  renderCurrentWord()
 
-  // Update the state.words with the new preprocessed words (including bold information)
-  state.words = preprocessedWords.map(word => ({ text: word.text, isBold: word.isBold }))
+  try {
+    const preprocessingResult = await preprocessTextForReader(rawText)
+    const preprocessedWords = preprocessText(preprocessingResult.text)
 
-  const timingSettings = getTimingSettings()
-  state.wordItems = createChunks(preprocessedWords, timingSettings)
+    // Update the state.words with the new preprocessed words (including bold information)
+    state.words = preprocessedWords.map(word => ({ text: word.text, isBold: word.isBold }))
 
-  state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems)
+    const timingSettings = getTimingSettings()
+    state.wordItems = createChunks(preprocessedWords, timingSettings)
+
+    state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems)
+  } finally {
+    state.isPreprocessing = false
+    renderCurrentWord()
+  }
 }
 
 export async function setWords (words: ReaderToken[]): Promise<void> {

@@ -12,7 +12,12 @@
       <div class="reader__header-right">
         <div class="reader__meta">
           <span id="labelStatus" class="reader__status">Loading...</span>
-          <span id="labelProgress" class="reader__progress" aria-live="polite"></span>
+          <div class="reader__progress-container">
+            <div class="reader__progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div id="progressBarFill" class="reader__progress-fill"></div>
+            </div>
+            <span id="labelProgress" class="reader__progress-text" aria-live="polite"></span>
+          </div>
         </div>
         <label class="reader__theme-switch reader__theme-switch--header" for="toggleTheme">
           <input
@@ -41,7 +46,7 @@
       <div class="reader__controls-group reader__controls-group--settings">
         <label class="reader__slider-label">
           <span>Words per minute</span>
-          <input id="sliderWpm" type="range" min="100" max="2000" step="50" />
+          <input id="sliderWpm" type="range" min="200" max="500" step="25" />
           <span id="wpmValue" class="reader__wpm-value"></span>
         </label>
         <button id="openReaderSettings" class="reader__settings-button" type="button" aria-label="Open settings">

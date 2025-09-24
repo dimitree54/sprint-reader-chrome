@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     speedReadButton: document.getElementById('speedReadButton') as HTMLButtonElement,
     menuEntryTextSpan: document.getElementById('menuEntryText') as HTMLSpanElement,
     settingsButton: document.getElementById('openSettings') as HTMLButtonElement,
-    enablePreprocessingToggle: document.getElementById('popupEnablePreprocessing') as HTMLInputElement,
+    enablePreprocessingToggle: document.getElementById('popupEnableTranslation') as HTMLInputElement,
     summarizationSlider: document.getElementById('popupSummarizationLevel') as HTMLInputElement,
     summarizationLabel: document.getElementById('popupSummarizationLabel') as HTMLElement
   }

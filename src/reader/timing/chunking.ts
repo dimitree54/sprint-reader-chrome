@@ -4,6 +4,13 @@ import type { TimingSettings, WordItem } from './types'
 import type { WordInfo } from '../text-processor'
 import { DEFAULTS } from '../../config/defaults'
 
+const PUNCT_OR_BREAK_RE = /[.!?]|\n/
+
+function isGroupable (text: string): boolean {
+  return text.length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping &&
+    !PUNCT_OR_BREAK_RE.test(text)
+}
+
 export function createWordItem (wordInfo: WordInfo, settings: TimingSettings): WordItem {
   const text = wordInfo.text
   const wordLength = text.length
@@ -30,58 +37,88 @@ export function createWordItem (wordInfo: WordInfo, settings: TimingSettings): W
   }
 }
 
-export function createChunks (words: WordInfo[], settings: TimingSettings): WordItem[] {
-  if (settings.chunkSize <= 1) {
-    return words.map(word => createWordItem(word, settings))
+function collectChunkWords (startIndex: number, words: WordInfo[], settings: TimingSettings): { chunkWords: WordInfo[], nextIndex: number } {
+  const chunkWords = [words[startIndex]]
+  let nextIndex = startIndex + 1
+
+  if (!isGroupable(words[startIndex].text)) {
+    return { chunkWords, nextIndex }
   }
 
+  while (
+    nextIndex < words.length &&
+    chunkWords.length < settings.chunkSize &&
+    isGroupable(words[nextIndex].text)
+  ) {
+    chunkWords.push(words[nextIndex])
+    nextIndex++
+  }
+
+  return { chunkWords, nextIndex }
+}
+
+function groupWordsIntoChunks (words: WordInfo[], settings: TimingSettings): WordItem[] {
   const chunks: WordItem[] = []
   let i = 0
 
   while (i < words.length) {
-    const chunkWords = [words[i]]
-    let j = i + 1
-
-    // Only attempt grouping if the first word is ≤3 characters AND doesn't end with punctuation or contain newlines
-    const canGroup = words[i].text.length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping &&
-      !/[.!?]/.test(words[i].text) &&
-      !/\n/.test(words[i].text)
-
-    while (
-      canGroup &&
-      j < words.length &&
-      chunkWords.length < settings.chunkSize &&
-      words[j].text.length <= DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping &&
-      !/[.!?]/.test(words[j].text) &&
-      !/\n/.test(words[j].text)
-    ) {
-      chunkWords.push(words[j])
-      j++
-    }
+    const { chunkWords, nextIndex } = collectChunkWords(i, words, settings)
 
     const chunkText = chunkWords.map(w => w.text).join(' ')
     const hasBoldWords = chunkWords.some(w => w.isBold)
 
-    // Create base word item using the first word's bold status (will be overridden)
     const wordItem = createWordItem({ text: chunkText, isBold: false }, settings)
     wordItem.wordsInChunk = chunkWords.length
     wordItem.isGrouped = chunkWords.length > 1
     wordItem.originalText = chunkWords.map(w => w.text).join(' ')
 
-    // Apply grouping speed bonus
     if (wordItem.isGrouped) {
-      wordItem.duration = wordItem.duration * 0.9
+      wordItem.duration *= 0.9
     }
 
-    // Apply 1.5x timing multiplier if any word in chunk is bold
     if (hasBoldWords) {
-      wordItem.duration = wordItem.duration * 1.5
-      wordItem.isBold = true // Mark the entire chunk as bold for display purposes
+      wordItem.duration *= 1.5
+      wordItem.isBold = true
     }
 
     chunks.push(wordItem)
-    i = j
+    i = nextIndex
+  }
+  return chunks
+}
+
+function mergeChunksWithoutOptimalLetter (chunks: WordItem[]): WordItem[] {
+  if (chunks.length < 2) {
+    return chunks
   }
 
-  return chunks
+  const mergedChunks: WordItem[] = [chunks[0]]
+  for (let i = 1; i < chunks.length; i++) {
+    const currentChunk = chunks[i]
+
+    if (currentChunk.optimalLetterPosition === 0 && mergedChunks.length > 0) {
+      const previousChunk = mergedChunks[mergedChunks.length - 1]
+      previousChunk.text += ` ${currentChunk.text}`
+      previousChunk.originalText += ` ${currentChunk.originalText}`
+      previousChunk.duration += currentChunk.duration
+      previousChunk.wordsInChunk += currentChunk.wordsInChunk
+      previousChunk.postdelay = currentChunk.postdelay
+      previousChunk.isBold = previousChunk.isBold || currentChunk.isBold
+    } else {
+      mergedChunks.push(currentChunk)
+    }
+  }
+  return mergedChunks
+}
+
+export function createChunks (words: WordInfo[], settings: TimingSettings): WordItem[] {
+  let baseChunks: WordItem[]
+
+  if (settings.chunkSize <= 1) {
+    baseChunks = words.map(word => createWordItem(word, settings))
+  } else {
+    baseChunks = groupWordsIntoChunks(words, settings)
+  }
+
+  return mergeChunksWithoutOptimalLetter(baseChunks)
 }
