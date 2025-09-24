@@ -1,6 +1,6 @@
 import { loadPreferences } from './preferences'
 import { state } from './state'
-import { decodeHtml, setWords } from './text'
+import { decodeHtml, setWords, setWordsWithStreaming } from './text'
 import { wordsToTokens } from './text-types'
 import { browser } from '../platform/browser'
 import { DEFAULTS } from '../config/defaults'
@@ -50,9 +50,27 @@ export async function loadSelectionContent (): Promise<void> {
   const normalised = normaliseText(rawText)
   const words = normalised.length > 0 ? normalised.split(' ') : []
 
-  await setWords(wordsToTokens(words))
+  // Check if streaming should be used (when OpenAI API key is available)
+  const shouldUseStreaming = await shouldEnableStreaming()
+
+  if (shouldUseStreaming) {
+    await setWordsWithStreaming(wordsToTokens(words))
+  } else {
+    await setWords(wordsToTokens(words))
+  }
 
   // Update UI after text processing
   const { renderCurrentWord } = await import('./render')
   renderCurrentWord()
+}
+
+async function shouldEnableStreaming(): Promise<boolean> {
+  try {
+    const { readOpenAIApiKey } = await import('../common/storage')
+    const apiKey = await readOpenAIApiKey()
+    return !!apiKey && apiKey.length > 0
+  } catch (error) {
+    console.debug('Could not check API key for streaming:', error)
+    return false
+  }
 }

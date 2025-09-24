@@ -1,38 +1,78 @@
 export { decodeHtml } from '../common/html'
 import { preprocessText } from './text-processor'
 import { preprocessTextForReader } from '../preprocessing/index'
+import { initializeStreamingText } from './streaming-text'
+import { StreamingPreprocessingManager } from '../preprocessing/streaming-manager'
 import { createChunks } from './timing-engine'
 import { calculateOptimalFontSizeForText } from './visual-effects'
-import { getTimingSettings, state } from './state'
+import { getTimingSettings, state, resetStreamingState } from './state'
 import type { ReaderToken } from './text-types'
 
 export async function rebuildWordItems (): Promise<void> {
   const rawText = state.words.map(w => w.text).join(' ')
 
-  state.isPreprocessing = true
+  const preprocessingResult = await preprocessTextForReader(rawText)
+  const preprocessedWords = preprocessText(preprocessingResult.text)
+
+  // Update the state.words with the new preprocessed words (including bold information)
+  state.words = preprocessedWords.map(word => ({ text: word.text, isBold: word.isBold }))
+
+  const timingSettings = getTimingSettings()
+  state.wordItems = createChunks(preprocessedWords, timingSettings)
+
+  state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems)
+}
+
+/**
+ * Rebuild word items with streaming preprocessing
+ */
+export async function rebuildWordItemsWithStreaming (): Promise<void> {
+  const originalRawText = state.words.map(w => w.text).join(' ')
+
+  // Clear any existing streaming state
+  resetStreamingState()
+
+  // Initialize streaming
+  const streamingProcessor = await initializeStreamingText(originalRawText)
+  const streamingManager = new StreamingPreprocessingManager()
+
   const { renderCurrentWord } = await import('./render')
   renderCurrentWord()
 
   try {
-    const preprocessingResult = await preprocessTextForReader(rawText)
-    const preprocessedWords = preprocessText(preprocessingResult.text)
-
-    // Update the state.words with the new preprocessed words (including bold information)
-    state.words = preprocessedWords.map(word => ({ text: word.text, isBold: word.isBold }))
-
-    const timingSettings = getTimingSettings()
-    state.wordItems = createChunks(preprocessedWords, timingSettings)
-
-    state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems)
-  } finally {
-    state.isPreprocessing = false
-    renderCurrentWord()
+    // Start streaming preprocessing
+    await streamingManager.startStreamingPreprocessing(originalRawText, streamingProcessor, {
+      onStreamingStart: () => {
+        renderCurrentWord()
+      },
+      onStreamingComplete: () => {
+        renderCurrentWord()
+      },
+      onError: async (error) => {
+        console.error('Streaming preprocessing error:', error)
+        // Fallback to regular processing
+        await rebuildWordItems()
+      }
+    })
+  } catch (error) {
+    console.error('Error during streaming:', error)
+    // Fallback to regular processing
+    await rebuildWordItems()
   }
 }
 
 export async function setWords (words: ReaderToken[]): Promise<void> {
   state.words = words
   await rebuildWordItems()
+  state.index = 0
+}
+
+/**
+ * Set words with streaming processing - processes text chunks as they arrive
+ */
+export async function setWordsWithStreaming (words: ReaderToken[]): Promise<void> {
+  state.words = words
+  await rebuildWordItemsWithStreaming()
   state.index = 0
 }
 

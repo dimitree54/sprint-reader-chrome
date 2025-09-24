@@ -23,7 +23,12 @@ export type ReaderState = {
   wordFlickerPercent: number;
   optimalFontSize: string;
   theme: ReaderTheme;
+  // Unified preprocessing/streaming state
   isPreprocessing: boolean;
+  isStreaming: boolean;
+  streamingComplete: boolean;
+  processedChunkCount: number;
+  estimatedTotalChunks?: number;
 }
 
 export const state: ReaderState = {
@@ -43,7 +48,12 @@ export const state: ReaderState = {
   wordFlickerPercent: DEFAULTS.READER_PREFERENCES.wordFlickerPercent,
   optimalFontSize: DEFAULTS.UI.optimalFontSize,
   theme: DEFAULTS.READER_PREFERENCES.theme,
-  isPreprocessing: false
+  // Unified preprocessing/streaming state
+  isPreprocessing: false,
+  isStreaming: false,
+  streamingComplete: false,
+  processedChunkCount: 0,
+  estimatedTotalChunks: undefined
 }
 
 export function setTimer (timer: PlaybackTimer): void {
@@ -77,4 +87,36 @@ export function getVisualSettings (): VisualSettings {
     wordFlicker: state.wordFlicker,
     wordFlickerPercent: state.wordFlickerPercent
   }
+}
+
+// Streaming state management functions
+export function startStreaming (): void {
+  state.isStreaming = true
+  state.streamingComplete = false
+  state.processedChunkCount = 0
+  state.estimatedTotalChunks = undefined
+}
+
+export function completeStreaming (): void {
+  state.isStreaming = false
+  state.streamingComplete = true
+}
+
+export function appendWordItems (newWordItems: WordItem[]): void {
+  state.wordItems.push(...newWordItems)
+  state.processedChunkCount += newWordItems.length
+}
+
+export function updateStreamingProgress (processedChunks: number, estimatedTotal?: number): void {
+  state.processedChunkCount = processedChunks
+  if (estimatedTotal !== undefined) {
+    state.estimatedTotalChunks = estimatedTotal
+  }
+}
+
+export function resetStreamingState (): void {
+  state.isStreaming = false
+  state.streamingComplete = false
+  state.processedChunkCount = 0
+  state.estimatedTotalChunks = undefined
 }
