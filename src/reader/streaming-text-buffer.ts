@@ -26,23 +26,25 @@ export class StreamingTextBuffer {
   addToken(token: string): string | null {
     this.buffer += token
 
-    // Check if we have enough content and a sentence delimiter
-    if (this.buffer.length >= this.minBufferSize) {
-      // Find the last sentence delimiter
-      let lastDelimiterPos = -1
-      for (const delimiter of this.sentenceDelimiters) {
-        const pos = this.buffer.lastIndexOf(delimiter)
-        if (pos > lastDelimiterPos) {
-          lastDelimiterPos = pos
-        }
+    // Search for last sentence delimiter regardless of buffer length
+    let lastDelimiterPos = -1
+    for (const delimiter of this.sentenceDelimiters) {
+      const pos = this.buffer.lastIndexOf(delimiter)
+      if (pos > lastDelimiterPos) {
+        lastDelimiterPos = pos
       }
+    }
 
-      if (lastDelimiterPos > 0) {
-        // Extract the complete sentence(s)
-        const sentence = this.buffer.slice(0, lastDelimiterPos + 1).trim()
-        this.buffer = this.buffer.slice(lastDelimiterPos + 1).trim()
-        return sentence
-      }
+    if (lastDelimiterPos > 0) {
+      // Extract the complete sentence(s)
+      const sentence = this.buffer.slice(0, lastDelimiterPos + 1).trim()
+      this.buffer = this.buffer.slice(lastDelimiterPos + 1).trim()
+      return sentence
+    }
+
+    // No delimiter found; fall back to min buffer guard for partial flush decisions
+    if (this.buffer.length >= this.minBufferSize) {
+      return null
     }
 
     return null
