@@ -32,6 +32,7 @@ class StreamingTextOrchestrator {
   private isProcessing = false
   private pendingTokens: string[] = []
   private processingTokens = false
+  private currentProcessingPromise: Promise<void> | null = null
 
   constructor() {
     this.textBuffer = new StreamingTextBuffer({
@@ -132,27 +133,38 @@ class StreamingTextOrchestrator {
   }
 
   private async processTokenQueue(): Promise<void> {
-    if (this.processingTokens || this.pendingTokens.length === 0) {
-      return
+    if (this.processingTokens) {
+      return this.currentProcessingPromise ?? Promise.resolve()
+    }
+
+    if (this.pendingTokens.length === 0) {
+      return this.currentProcessingPromise ?? Promise.resolve()
     }
 
     this.processingTokens = true
 
-    try {
-      while (this.pendingTokens.length > 0) {
-        const token = this.pendingTokens.shift()!
+    const processingPromise = (async () => {
+      try {
+        while (this.pendingTokens.length > 0) {
+          const token = this.pendingTokens.shift()!
 
-        // Add token to buffer and check for complete sentences
-        const completeSentence = this.textBuffer.addToken(token)
+          // Add token to buffer and check for complete sentences
+          const completeSentence = this.textBuffer.addToken(token)
 
-        if (completeSentence) {
-          // Process the complete sentence through text processor
-          await this.textProcessor.processTextChunk(completeSentence)
+          if (completeSentence) {
+            // Process the complete sentence through text processor
+            await this.textProcessor.processTextChunk(completeSentence)
+          }
         }
+      } finally {
+        this.processingTokens = false
+        this.currentProcessingPromise = null
       }
-    } finally {
-      this.processingTokens = false
-    }
+    })()
+
+    this.currentProcessingPromise = processingPromise
+
+    return processingPromise
   }
 
   async completeStreamingText(): Promise<void> {
