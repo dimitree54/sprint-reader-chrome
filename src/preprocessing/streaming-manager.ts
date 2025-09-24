@@ -79,8 +79,8 @@ export class StreamingPreprocessingManager {
       }
     }
 
-    // Start streaming processing with initial text
-    await streamingProcessor.startStreamingText(rawText)
+    // Streaming processor should already be initialized by caller
+    // No need to call startStreamingText again as it would reset state and repeat preprocessing
 
     try {
       // Process with streaming OpenAI
@@ -109,8 +109,8 @@ export class StreamingPreprocessingManager {
     config: any, // eslint-disable-line @typescript-eslint/no-explicit-any
     streamingProcessor: StreamingTextProcessorInstance
   ): Promise<void> {
-    // Start streaming processing with initial text
-    await streamingProcessor.startStreamingText(rawText)
+    // Streaming processor should already be initialized by caller
+    // No need to call startStreamingText again as it would reset state and repeat preprocessing
 
     try {
       // Process through regular preprocessing
