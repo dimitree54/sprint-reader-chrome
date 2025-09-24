@@ -15,12 +15,17 @@ export interface StreamingTextProcessorOptions {
   onChunksReady: (chunks: WordItem[]) => void
   onProgressUpdate: (progress: { processedChunks: number; estimatedTotal?: number }) => void
   onProcessingComplete: () => void
+  onProcessingError?: (error: Error, textChunk: string) => void
 }
+
+let lastFontSizeUpdate = 0
+const FONT_SIZE_UPDATE_THROTTLE = 100
 
 export class StreamingTextProcessor {
   private readonly onChunksReady: (chunks: WordItem[]) => void
   private readonly onProgressUpdate: (progress: { processedChunks: number; estimatedTotal?: number }) => void
   private readonly onProcessingComplete: () => void
+  private readonly onProcessingError?: (error: Error, textChunk: string) => void
 
   private processedChunkCount = 0
   private isProcessingComplete = false
@@ -29,6 +34,7 @@ export class StreamingTextProcessor {
     this.onChunksReady = options.onChunksReady
     this.onProgressUpdate = options.onProgressUpdate
     this.onProcessingComplete = options.onProcessingComplete
+    this.onProcessingError = options.onProcessingError
   }
 
   /**
@@ -71,7 +77,9 @@ export class StreamingTextProcessor {
         })
       }
     } catch (error) {
-      console.error('Error processing text chunk:', error)
+      const normalisedError = error instanceof Error ? error : new Error(String(error))
+      console.error('Error processing text chunk:', normalisedError)
+      this.onProcessingError?.(normalisedError, textChunk)
     }
   }
 
@@ -111,6 +119,14 @@ export class StreamingTextProcessor {
  * This should be called periodically as new chunks are added
  */
 export function updateOptimalFontSizeForStreamedChunks(allChunks: WordItem[]): string {
+  const now = Date.now()
+
+  if (now - lastFontSizeUpdate < FONT_SIZE_UPDATE_THROTTLE) {
+    return state.optimalFontSize
+  }
+
+  lastFontSizeUpdate = now
+
   if (allChunks.length > 0) {
     return calculateOptimalFontSizeForText(allChunks)
   }

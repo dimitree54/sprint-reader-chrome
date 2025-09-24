@@ -1,10 +1,15 @@
 import { loadPreferences } from './preferences'
 import { state } from './state'
-import { decodeHtml, setWords, setWordsWithStreaming } from './text'
 import { wordsToTokens } from './text-types'
+import { decodeHtml, setWords, setWordsWithStreaming } from './text'
+import { renderCurrentWord } from './render'
 import { browser } from '../platform/browser'
 import { DEFAULTS } from '../config/defaults'
 import type { BackgroundMessage } from '../common/messages'
+
+const STREAMING_AVAILABILITY_CACHE_DURATION = 60000
+let cachedStreamingAvailability: boolean | null = null
+let lastStreamingAvailabilityCheck = 0
 
 function normaliseText (rawText: string): string {
   return rawText.replace(/\s+/g, ' ').trim()
@@ -53,25 +58,34 @@ export async function loadSelectionContent (): Promise<void> {
 
   // Check if streaming should be used (when OpenAI API key is available)
   const shouldUseStreaming = await shouldEnableStreaming()
+  const tokens = wordsToTokens(words)
+  const setWordsFunction = shouldUseStreaming ? setWordsWithStreaming : setWords
 
-  if (shouldUseStreaming) {
-    await setWordsWithStreaming(wordsToTokens(words))
-  } else {
-    await setWords(wordsToTokens(words))
-  }
+  await setWordsFunction(tokens)
 
   // Update UI after text processing
-  const { renderCurrentWord } = await import('./render')
   renderCurrentWord()
 }
 
 async function shouldEnableStreaming(): Promise<boolean> {
+  const now = Date.now()
+  if (
+    cachedStreamingAvailability !== null &&
+    now - lastStreamingAvailabilityCheck < STREAMING_AVAILABILITY_CACHE_DURATION
+  ) {
+    return cachedStreamingAvailability
+  }
+
   try {
     const { readOpenAIApiKey } = await import('../common/storage')
     const apiKey = await readOpenAIApiKey()
-    return !!apiKey && apiKey.length > 0
+    cachedStreamingAvailability = !!apiKey && apiKey.length > 0
+    lastStreamingAvailabilityCheck = now
+    return cachedStreamingAvailability
   } catch (error) {
     console.debug('Could not check API key for streaming:', error)
+    cachedStreamingAvailability = false
+    lastStreamingAvailabilityCheck = now
     return false
   }
 }

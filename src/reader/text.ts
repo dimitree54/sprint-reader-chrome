@@ -9,6 +9,18 @@ import { calculateOptimalFontSizeForText } from './visual-effects'
 import { getTimingSettings, state, resetStreamingState } from './state'
 import type { ReaderToken } from './text-types'
 
+type RenderCallback = () => void
+
+let renderCallback: RenderCallback | null = null
+
+export function registerRenderCallback(callback: RenderCallback): void {
+  renderCallback = callback
+}
+
+function notifyRender(): void {
+  renderCallback?.()
+}
+
 export async function rebuildWordItems (): Promise<void> {
   const rawText = state.words.map(w => w.text).join(' ')
 
@@ -42,27 +54,28 @@ export async function rebuildWordItemsWithStreaming (): Promise<void> {
     resetStreamingState()
     streamingProcessor?.cancelStreaming()
     await rebuildWordItems()
+    notifyRender()
     return
   }
   const streamingManager = new StreamingPreprocessingManager()
 
-  const { renderCurrentWord } = await import('./render')
-  renderCurrentWord()
+  notifyRender()
 
   const cleanupAndFallback = async () => {
     resetStreamingState()
     streamingProcessor?.cancelStreaming()
     await rebuildWordItems()
+    notifyRender()
   }
 
   try {
     // Start streaming preprocessing
     await streamingManager.startStreamingPreprocessing(originalRawText, streamingProcessor, {
       onStreamingStart: () => {
-        renderCurrentWord()
+        notifyRender()
       },
       onStreamingComplete: () => {
-        renderCurrentWord()
+        notifyRender()
       },
       onError: async (error) => {
         console.error('Streaming preprocessing error:', error)

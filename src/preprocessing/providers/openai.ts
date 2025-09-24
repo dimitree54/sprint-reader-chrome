@@ -183,11 +183,25 @@ export class OpenAIProvider implements PreprocessingProvider {
         const { done, value } = await reader.read()
         if (done) break
 
+        if (!value || value.length === 0) {
+          continue
+        }
+
         buffer += decoder.decode(value, { stream: true })
         const { updatedBuffer, newText } = await processStreamLinesWithCallback(buffer, onToken)
         buffer = updatedBuffer
         collectedText += newText
       }
+    } catch (error) {
+      if (signal.aborted) {
+        throw new Error('Streaming request was cancelled')
+      }
+
+      if (error instanceof TypeError && error.message.toLowerCase().includes('network')) {
+        throw new Error('Network error during streaming')
+      }
+
+      throw error
     } finally {
       reader.releaseLock()
     }

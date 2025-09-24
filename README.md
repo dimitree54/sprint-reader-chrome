@@ -52,7 +52,7 @@ Our AI preprocessing optimizes text before presentation, and with streaming enab
 ## <a name="original-attribution"></a>Original Attribution
 
 This extension is based on **Sprint Reader** originally created by Anthony Nosek. We've enhanced it with:
-- AI-powered text preprocessing with real-time streaming
+- AI-powered text preprocessing with real-time streaming (see docs/architecture.md#76-real-time-streaming-architecture)
 - Progressive content loading and visual progress feedback
 - Multi-browser support (Chrome, Firefox, Safari)
 - Modernized architecture and UI improvements

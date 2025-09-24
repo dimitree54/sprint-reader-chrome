@@ -43,7 +43,8 @@ class StreamingTextOrchestrator {
     this.textProcessor = new StreamingTextProcessor({
       onChunksReady: this.handleChunksReady.bind(this),
       onProgressUpdate: this.handleProgressUpdate.bind(this),
-      onProcessingComplete: this.handleProcessingComplete.bind(this)
+      onProcessingComplete: this.handleProcessingComplete.bind(this),
+      onProcessingError: this.handleProcessingError.bind(this)
     })
   }
 
@@ -89,6 +90,10 @@ class StreamingTextOrchestrator {
 
     // Final render update
     renderCurrentWord()
+  }
+
+  private handleProcessingError(error: Error, textChunk: string): void {
+    console.error('Streaming text processor failed on chunk:', error, textChunk)
   }
 
   async startStreamingText(rawText: string): Promise<void> {

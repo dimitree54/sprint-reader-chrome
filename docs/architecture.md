@@ -326,6 +326,12 @@ if (shouldUseStreaming) {
 * **Without API Key**: Graceful fallback to traditional preprocessing
 * **Error Handling**: Automatic fallback on streaming failures
 
+#### Requirements for Streaming
+
+* Valid OpenAI API key configured in the extension settings panel
+* Active internet connection to establish streaming requests to OpenAI
+* Available API quota to prevent mid-stream interruptions
+
 ### 7.6.5 UI Integration
 
 The streaming system provides enhanced visual feedback:

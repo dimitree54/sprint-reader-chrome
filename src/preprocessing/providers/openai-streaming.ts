@@ -28,26 +28,13 @@ export interface StreamingTokenCallback {
  * Process streaming lines without callback
  */
 export function processStreamLines(buffer: string): { updatedBuffer: string; newText: string } {
-  const lines = buffer.split('\n')
-  const updatedBuffer = lines.pop() || '' // Keep incomplete line in buffer
+  const { updatedBuffer, processableLines } = extractProcessableLines(buffer)
   let newText = ''
 
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (!trimmed || !trimmed.startsWith('data: ')) continue
-
-    const data = trimmed.slice(6) // Remove 'data: ' prefix
-    if (data === '[DONE]') continue
-
-    try {
-      const event: StreamingEvent = JSON.parse(data)
-      if (event.type === 'response.output_text.delta') {
-        const deltaEvent = event as ResponseOutputTextDelta
-        newText += deltaEvent.delta
-      }
-    } catch {
-      // Skip invalid JSON lines
-      continue
+  for (const line of processableLines) {
+    const token = extractDeltaFromLine(line)
+    if (token) {
+      newText += token
     }
   }
 
@@ -61,31 +48,60 @@ export async function processStreamLinesWithCallback(
   buffer: string,
   onToken: StreamingTokenCallback
 ): Promise<{ updatedBuffer: string; newText: string }> {
-  const lines = buffer.split('\n')
-  const updatedBuffer = lines.pop() || '' // Keep incomplete line in buffer
+  const { updatedBuffer, processableLines } = extractProcessableLines(buffer)
   let newText = ''
 
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (!trimmed || !trimmed.startsWith('data: ')) continue
+  for (const line of processableLines) {
+    const token = extractDeltaFromLine(line)
+    if (!token) continue
 
-    const data = trimmed.slice(6) // Remove 'data: ' prefix
-    if (data === '[DONE]') continue
-
-    try {
-      const event: StreamingEvent = JSON.parse(data)
-      if (event.type === 'response.output_text.delta') {
-        const deltaEvent = event as ResponseOutputTextDelta
-        const token = deltaEvent.delta
-        newText += token
-        // Await the token callback to ensure proper ordering and error propagation
-        await onToken(token)
-      }
-    } catch {
-      // Skip invalid JSON lines
-      continue
-    }
+    newText += token
+    // Await the token callback to ensure proper ordering and error propagation
+    await onToken(token)
   }
 
   return { updatedBuffer, newText }
+}
+
+function extractProcessableLines(buffer: string): { updatedBuffer: string; processableLines: string[] } {
+  const lines = buffer.split('\n')
+  let updatedBuffer = lines.pop() || '' // Keep potentially incomplete last line in buffer
+  const processableLines: string[] = []
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed || !trimmed.startsWith('data: ')) {
+      continue
+    }
+
+    if (trimmed !== 'data: [DONE]' && !trimmed.endsWith('}')) {
+      // Line might be incomplete JSON; keep it in the buffer for the next chunk
+      updatedBuffer = `${trimmed}\n${updatedBuffer}`.trim()
+      continue
+    }
+
+    processableLines.push(trimmed)
+  }
+
+  return { updatedBuffer, processableLines }
+}
+
+function extractDeltaFromLine(line: string): string | null {
+  if (line === 'data: [DONE]') {
+    return null
+  }
+
+  const data = line.slice(6)
+
+  try {
+    const event: StreamingEvent = JSON.parse(data)
+    if (event.type === 'response.output_text.delta') {
+      return (event as ResponseOutputTextDelta).delta
+    }
+  } catch {
+    // Skip invalid JSON lines
+    return null
+  }
+
+  return null
 }
