@@ -184,7 +184,7 @@ export class OpenAIProvider implements PreprocessingProvider {
         if (done) break
 
         buffer += decoder.decode(value, { stream: true })
-        const { updatedBuffer, newText } = processStreamLinesWithCallback(buffer, onToken)
+        const { updatedBuffer, newText } = await processStreamLinesWithCallback(buffer, onToken)
         buffer = updatedBuffer
         collectedText += newText
       }

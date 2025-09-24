@@ -21,7 +21,7 @@ export interface ResponseFailed {
 export type StreamingEvent = ResponseOutputTextDelta | ResponseCompleted | ResponseFailed | { type: string }
 
 export interface StreamingTokenCallback {
-  (token: string): void
+  (token: string): Promise<void>
 }
 
 /**
@@ -57,10 +57,10 @@ export function processStreamLines(buffer: string): { updatedBuffer: string; new
 /**
  * Process streaming lines with token callback
  */
-export function processStreamLinesWithCallback(
+export async function processStreamLinesWithCallback(
   buffer: string,
   onToken: StreamingTokenCallback
-): { updatedBuffer: string; newText: string } {
+): Promise<{ updatedBuffer: string; newText: string }> {
   const lines = buffer.split('\n')
   const updatedBuffer = lines.pop() || '' // Keep incomplete line in buffer
   let newText = ''
@@ -78,8 +78,8 @@ export function processStreamLinesWithCallback(
         const deltaEvent = event as ResponseOutputTextDelta
         const token = deltaEvent.delta
         newText += token
-        // Call the token callback immediately
-        onToken(token)
+        // Await the token callback to ensure proper ordering and error propagation
+        await onToken(token)
       }
     } catch {
       // Skip invalid JSON lines
