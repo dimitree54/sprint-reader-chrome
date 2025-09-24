@@ -2,6 +2,7 @@ export { decodeHtml } from '../common/html'
 import { preprocessText } from './text-processor'
 import { preprocessTextForReader } from '../preprocessing/index'
 import { initializeStreamingText } from './streaming-text'
+import type { StreamingTextProcessorInstance } from './streaming-text'
 import { StreamingPreprocessingManager } from '../preprocessing/streaming-manager'
 import { createChunks } from './timing-engine'
 import { calculateOptimalFontSizeForText } from './visual-effects'
@@ -33,11 +34,26 @@ export async function rebuildWordItemsWithStreaming (): Promise<void> {
   resetStreamingState()
 
   // Initialize streaming
-  const streamingProcessor = await initializeStreamingText(originalRawText)
+  let streamingProcessor: StreamingTextProcessorInstance | null = null
+  try {
+    streamingProcessor = await initializeStreamingText(originalRawText)
+  } catch (error) {
+    console.error('Failed to initialize streaming:', error)
+    resetStreamingState()
+    streamingProcessor?.cancelStreaming()
+    await rebuildWordItems()
+    return
+  }
   const streamingManager = new StreamingPreprocessingManager()
 
   const { renderCurrentWord } = await import('./render')
   renderCurrentWord()
+
+  const cleanupAndFallback = async () => {
+    resetStreamingState()
+    streamingProcessor?.cancelStreaming()
+    await rebuildWordItems()
+  }
 
   try {
     // Start streaming preprocessing
@@ -50,14 +66,14 @@ export async function rebuildWordItemsWithStreaming (): Promise<void> {
       },
       onError: async (error) => {
         console.error('Streaming preprocessing error:', error)
-        // Fallback to regular processing
-        await rebuildWordItems()
+        // Cleanup and fallback to regular processing
+        await cleanupAndFallback()
       }
     })
   } catch (error) {
     console.error('Error during streaming:', error)
-    // Fallback to regular processing
-    await rebuildWordItems()
+    // Cleanup and fallback to regular processing
+    await cleanupAndFallback()
   }
 }
 
