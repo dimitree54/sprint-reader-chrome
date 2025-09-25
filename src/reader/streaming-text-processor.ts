@@ -125,7 +125,9 @@ export class StreamingTextProcessor {
  * Should be called periodically as new chunks are added.
  */
 export function updateOptimalFontSizeForStreamedChunks(allChunks: WordItem[]): string {
-  const now = performance.now()
+  const now = (typeof performance !== 'undefined' && typeof performance.now === 'function')
+    ? performance.now()
+    : Date.now()
 
   if (now - lastFontSizeUpdate < FONT_SIZE_UPDATE_THROTTLE) {
     return state.optimalFontSize

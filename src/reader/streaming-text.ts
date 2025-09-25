@@ -215,6 +215,11 @@ let streamingOrchestrator: StreamingTextOrchestrator | null = null
  * Initialize a new streaming text session
  */
 export async function initializeStreamingText(rawText: string): Promise<StreamingTextProcessorInstance> {
+  // Ensure any previous session is torn down
+  if (streamingOrchestrator) {
+    try { streamingOrchestrator.cancelStreaming() } catch { /* ignore errors during cleanup */ }
+    streamingOrchestrator = null
+  }
   // Create new orchestrator for this session
   streamingOrchestrator = new StreamingTextOrchestrator()
 
