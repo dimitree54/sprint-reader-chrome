@@ -1,6 +1,6 @@
 # 10x your reading speed with AI*
 
-**10x your reading speed** is a multi-browser speed reading extension that supercharges your reading with RSVP (Rapid Serial Visual Presentation) technology enhanced by AI preprocessing.
+**10x your reading speed** is a multi-browser speed reading extension that supercharges your reading with RSVP (Rapid Serial Visual Presentation) technology enhanced by AI preprocessing and real-time streaming.
 
 > Current version: 3.0.3
 
@@ -8,11 +8,13 @@ Simply select text on a webpage, right-click and select `10x your reading speed 
 
 Prefer to paste something manually? Click the extension icon, drop your text into the popup, and then press **Speed read it** to open the reader with that content. Use the gear icon in the popup or reader to open the dedicated settings page where you can manage the OpenAI API key, pick the target language, and choose the summarisation level for AI-powered translation.
 
+**New**: When an OpenAI API key is configured, the extension uses real-time streaming processing that begins displaying content immediately while continuing to process text in the background, providing instant feedback and progress visualization.
+
 ## What makes this special
 
-On top of traditional **Rapid Serial Visual Presentation** (RSVP), we've added **LLM pre-processing** to further accelerate your reading comprehension. Studies show that the habit of internally "sounding out" (sub-vocalising) words is a limiting factor that prevents faster reading speeds. RSVP eliminates this by not displaying words long enough for sub-vocalisation to occur.
+On top of traditional **Rapid Serial Visual Presentation** (RSVP), we've added **LLM pre-processing** and **real-time streaming** to further accelerate your reading comprehension. Studies show that the habit of internally "sounding out" (sub-vocalising) words is a limiting factor that prevents faster reading speeds. RSVP eliminates this by not displaying words long enough for sub-vocalisation to occur.
 
-Our AI preprocessing optimizes text before presentation, allowing you to absorb information even faster than standard RSVP while maintaining the same level of comprehension.
+Our AI preprocessing optimizes text before presentation, and with streaming enabled, you can start reading immediately while the AI continues processing the remaining content in the background - allowing you to absorb information even faster than standard RSVP while maintaining the same level of comprehension.
 
 ## Key Features
 
@@ -29,6 +31,9 @@ Our AI preprocessing optimizes text before presentation, allowing you to absorb 
 > Optional grammar delays
 > **Multi-browser support** (Chrome, Firefox, Safari)
 > **AI-powered text preprocessing** for enhanced comprehension
+> **Real-time streaming processing** with visual progress feedback
+> Progressive content loading - start reading while processing continues
+> Intelligent feature detection (streaming when API key available, fallback otherwise)
 > Dedicated settings page for managing translation providers
 > 47+ translation languages with "no translation" default
 > Adjustable summarisation depth (literal, 50% reduction, or key-point digest)
@@ -47,7 +52,8 @@ Our AI preprocessing optimizes text before presentation, allowing you to absorb 
 ## <a name="original-attribution"></a>Original Attribution
 
 This extension is based on **Sprint Reader** originally created by Anthony Nosek. We've enhanced it with:
-- AI-powered text preprocessing
+- AI-powered text preprocessing with real-time streaming (see docs/architecture.md#76-real-time-streaming-architecture)
+- Progressive content loading and visual progress feedback
 - Multi-browser support (Chrome, Firefox, Safari)
 - Modernized architecture and UI improvements
 

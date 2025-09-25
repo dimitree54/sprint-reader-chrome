@@ -74,7 +74,7 @@ export function applyFlickerEffect (wordElement: HTMLElement, wordItem: WordItem
  * Calculate the optimal font size for all words in the text
  * Based on the longest word that will be displayed
  */
-export function calculateOptimalFontSizeForText (wordItems: WordItem[]): string {
+export function calculateOptimalFontSizeForText<T extends { text: string }>(wordItems: T[]): string {
   if (wordItems.length === 0) {
     // Fallback to the CSS clamp maximum when no words are available.
     return DEFAULTS.UI.optimalFontSize

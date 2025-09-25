@@ -1,9 +1,11 @@
 import { loadPreferences } from './preferences'
 import { state } from './state'
-import { decodeHtml, setWords } from './text'
 import { wordsToTokens } from './text-types'
+import { decodeHtml, setWords, setWordsWithStreaming } from './text'
+import { renderCurrentWord } from './render'
 import { browser } from '../platform/browser'
 import { DEFAULTS } from '../config/defaults'
+import type { BackgroundMessage } from '../common/messages'
 
 function normaliseText (rawText: string): string {
   return rawText.replace(/\s+/g, ' ').trim()
@@ -28,10 +30,10 @@ function syncControls (): void {
 
 async function getCurrentSelectionFromBackground() {
   try {
-    const response = await (browser.runtime.sendMessage as any)({
+    const response = await (browser.runtime.sendMessage as (message: BackgroundMessage) => Promise<{ selection: { text: string; hasSelection: boolean; isRTL: boolean; timestamp: number } }>)({
       target: 'background',
       type: 'getCurrentSelection'
-    })
+    } satisfies BackgroundMessage)
     return response?.selection
   } catch (error) {
     console.warn('Failed to get current selection from background:', error)
@@ -50,9 +52,24 @@ export async function loadSelectionContent (): Promise<void> {
   const normalised = normaliseText(rawText)
   const words = normalised.length > 0 ? normalised.split(' ') : []
 
-  await setWords(wordsToTokens(words))
+  // Check if streaming should be used (when OpenAI API key is available)
+  const shouldUseStreaming = await shouldEnableStreaming()
+  const tokens = wordsToTokens(words)
+  const setWordsFunction = shouldUseStreaming ? setWordsWithStreaming : setWords
+
+  await setWordsFunction(tokens)
 
   // Update UI after text processing
-  const { renderCurrentWord } = await import('./render')
   renderCurrentWord()
+}
+
+async function shouldEnableStreaming(): Promise<boolean> {
+  try {
+    const { readOpenAIApiKey } = await import('../common/storage')
+    const apiKey = await readOpenAIApiKey()
+    return !!apiKey && apiKey.length > 0
+  } catch (error) {
+    console.debug('Could not check API key for streaming:', error)
+    return false
+  }
 }

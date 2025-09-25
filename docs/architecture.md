@@ -61,6 +61,9 @@ src/
     playback.ts         → Timer management and playback progression.
     render.ts           → Word rendering, progress display, play/pause visuals.
     text.ts             → Word preprocessing glue and chunk/font recalculation.
+    streaming-text.ts   → Main streaming orchestrator for real-time text processing.
+    streaming-text-buffer.ts → Token buffering for sentence-based chunk delivery.
+    streaming-text-processor.ts → Real-time RSVP chunk generation from streaming text.
     timing/             → Split timing engine (`types.ts`, `word-analysis.ts`, `durations.ts`, `chunking.ts`).
     timing-engine.ts    → Barrel file exporting the timing helpers above.
     text-processor.ts   → Advanced text preprocessing (acronyms, numbers, hyphenation).
@@ -249,6 +252,7 @@ The preprocessing system is implemented under `src/preprocessing/` with:
 
 * **Provider Classes**: `providers/openai.ts`, `providers/passthrough.ts` implementing `PreprocessingProvider`
 * **Manager**: `manager.ts` handling provider selection and fallback logic
+* **Streaming Manager**: `streaming-manager.ts` coordinating real-time streaming with OpenAI provider
 * **Integration**: Seamlessly integrated into the reader text processing pipeline
 * **Storage Integration**: Uses extension storage for API key persistence
 ### 7.5.6 Future Extensibility
@@ -267,6 +271,82 @@ Future providers could include:
 * **Proxy Provider**: Authenticated requests through custom server
 * **Local AI Provider**: Chrome's built-in AI APIs for on-device processing
 * **Translation Services**: Google Translate, DeepL, etc.
+
+## 7.6. Real-Time Streaming Architecture
+
+The streaming system enables progressive text processing and immediate content availability, significantly improving user experience by starting playback before all preprocessing is complete.
+
+### 7.6.1 Streaming Components
+
+The streaming system consists of several coordinated modules under `src/reader/` and `src/preprocessing/`:
+
+* **StreamingTextOrchestrator** (`streaming-text.ts`): Main coordinator that manages the entire streaming pipeline
+* **StreamingTextBuffer** (`streaming-text-buffer.ts`): Buffers incoming tokens until complete sentences are formed
+* **StreamingTextProcessor** (`streaming-text-processor.ts`): Converts text chunks into RSVP word items in real-time
+* **StreamingPreprocessingManager** (`streaming-manager.ts`): Coordinates streaming with OpenAI provider
+
+### 7.6.2 Streaming Flow
+
+```mermaid
+graph LR
+    A[Raw Text] --> B[StreamingOrchestrator]
+    B --> C[OpenAI Streaming]
+    C --> D[Token Stream]
+    D --> E[StreamingTextBuffer]
+    E --> F[Complete Sentences]
+    F --> G[StreamingTextProcessor]
+    G --> H[RSVP Chunks]
+    H --> I[Reader Display]
+    H --> J[Progress Updates]
+```
+
+### 7.6.3 Progressive Processing
+
+1. **Immediate Start**: Text processing begins immediately when content is loaded
+2. **Token-Level Streaming**: OpenAI tokens are processed as they arrive from the API
+3. **Sentence Buffering**: Tokens are buffered until complete sentences are formed
+4. **Chunk Generation**: Complete sentences are immediately converted to RSVP chunks
+5. **Progressive Display**: Users can start reading while processing continues in background
+
+### 7.6.4 Feature Detection
+
+The system intelligently enables streaming based on available configuration:
+
+```typescript
+// Automatic feature detection
+const shouldUseStreaming = await shouldEnableStreaming()
+if (shouldUseStreaming) {
+  await setWordsWithStreaming(tokens)
+} else {
+  await setWords(tokens) // Traditional processing
+}
+```
+
+* **With OpenAI API Key**: Full streaming processing with real-time progress
+* **Without API Key**: Graceful fallback to traditional preprocessing
+* **Error Handling**: Automatic fallback on streaming failures
+
+#### Requirements for Streaming
+
+* Valid OpenAI API key configured in the extension settings panel
+* Active internet connection to establish streaming requests to OpenAI
+* Available API quota to prevent mid-stream interruptions
+
+### 7.6.5 UI Integration
+
+The streaming system provides enhanced visual feedback:
+
+* **Real-time Progress**: Visual progress bar shows processing percentage
+* **Status Messages**: Clear indication of streaming state ("Processing...", "Loading...")
+* **Progressive Availability**: Content becomes readable as soon as sufficient chunks are processed
+* **Smooth Transitions**: Seamless state changes between streaming and reading modes
+
+### 7.6.6 Performance Optimizations
+
+* **Non-blocking Processing**: UI remains responsive during streaming
+* **Efficient Memory Management**: Streaming buffers are cleaned up automatically
+* **Minimal DOM Updates**: Progress updates are batched to prevent UI blocking
+* **Graceful Degradation**: System falls back to traditional processing on any streaming error
 
 ## 8. Future Evolution
 

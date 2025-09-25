@@ -1,6 +1,8 @@
 import { registerControls } from './controls'
 import { registerMessageListener } from './messages'
 import { loadSelectionContent } from './selection-loader'
+import { renderCurrentWord } from './render'
+import { registerRenderCallback } from './text'
 import { state } from './state'
 import { DEFAULTS } from '../config/defaults'
 
@@ -11,6 +13,7 @@ function initializeCSSVariables(): void {
 
 document.addEventListener('DOMContentLoaded', () => {
   initializeCSSVariables()
+  registerRenderCallback(renderCurrentWord)
   loadSelectionContent().catch(console.error)
   registerControls()
   registerMessageListener()
