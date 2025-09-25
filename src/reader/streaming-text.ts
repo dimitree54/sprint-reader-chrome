@@ -98,8 +98,8 @@ class StreamingTextOrchestrator {
     renderCurrentWord()
   }
 
-  private handleProcessingError(error: Error, textChunk: string): void {
-    console.error('Streaming text processor failed on chunk:', error, textChunk)
+  private handleProcessingError(error: Error, meta: { chunkLength: number; processedChunks: number }): void {
+    console.error('Streaming text processor error:', error, meta)
   }
 
   async startStreamingText(rawText: string): Promise<void> {

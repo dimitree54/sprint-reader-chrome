@@ -17,7 +17,7 @@ export interface StreamingTextProcessorOptions {
   onWordsReady: (words: ReaderToken[]) => void
   onProgressUpdate: (progress: { processedChunks: number; estimatedTotal?: number }) => void
   onProcessingComplete: () => void
-  onProcessingError?: (error: Error, textChunk: string) => void
+  onProcessingError?: (error: Error, meta: { chunkLength: number; processedChunks: number }) => void
   fontSizeKey?: string
 }
 
@@ -39,7 +39,7 @@ export class StreamingTextProcessor {
   private readonly onWordsReady: (words: ReaderToken[]) => void
   private readonly onProgressUpdate: (progress: { processedChunks: number; estimatedTotal?: number }) => void
   private readonly onProcessingComplete: () => void
-  private readonly onProcessingError?: (error: Error, textChunk: string) => void
+  private readonly onProcessingError?: (error: Error, meta: { chunkLength: number; processedChunks: number }) => void
   private readonly fontSizeKey: string
 
   private processedChunkCount = 0
@@ -100,7 +100,10 @@ export class StreamingTextProcessor {
         chunkLength: textChunk.length,
         processedChunks: this.processedChunkCount
       })
-      this.onProcessingError?.(normalisedError, textChunk)
+      this.onProcessingError?.(normalisedError, {
+        chunkLength: textChunk.length,
+        processedChunks: this.processedChunkCount
+      })
     }
   }
 
