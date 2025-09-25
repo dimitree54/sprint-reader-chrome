@@ -61,7 +61,11 @@ export async function rebuildWordItemsWithStreaming (): Promise<void> {
 
   notifyRender()
 
+  let fallbackTriggered = false
+
   const cleanupAndFallback = async () => {
+    if (fallbackTriggered) return
+    fallbackTriggered = true
     resetStreamingState()
     streamingProcessor?.cancelStreaming()
     await rebuildWordItems()

@@ -74,7 +74,7 @@ function extractProcessableLines(buffer: string): { updatedBuffer: string; proce
       continue
     }
 
-    if (trimmed !== 'data: [DONE]' && !trimmed.endsWith('}')) {
+    if (trimmed !== 'data: [DONE]' && !/[}\]]$/.test(trimmed)) {
       // Line might be incomplete JSON; keep it in the buffer for the next chunk
       updatedBuffer = `${trimmed}\n${updatedBuffer}`.trim()
       continue

@@ -13,6 +13,7 @@ import type { WordItem } from './timing-engine'
 
 export interface StreamingTextProcessorOptions {
   onChunksReady: (chunks: WordItem[]) => void
+  onWordsReady: (words: { text: string; isBold: boolean }[]) => void
   onProgressUpdate: (progress: { processedChunks: number; estimatedTotal?: number }) => void
   onProcessingComplete: () => void
   onProcessingError?: (error: Error, textChunk: string) => void
@@ -23,6 +24,7 @@ const FONT_SIZE_UPDATE_THROTTLE = 100
 
 export class StreamingTextProcessor {
   private readonly onChunksReady: (chunks: WordItem[]) => void
+  private readonly onWordsReady: (words: { text: string; isBold: boolean }[]) => void
   private readonly onProgressUpdate: (progress: { processedChunks: number; estimatedTotal?: number }) => void
   private readonly onProcessingComplete: () => void
   private readonly onProcessingError?: (error: Error, textChunk: string) => void
@@ -32,6 +34,7 @@ export class StreamingTextProcessor {
 
   constructor(options: StreamingTextProcessorOptions) {
     this.onChunksReady = options.onChunksReady
+    this.onWordsReady = options.onWordsReady
     this.onProgressUpdate = options.onProgressUpdate
     this.onProcessingComplete = options.onProcessingComplete
     this.onProcessingError = options.onProcessingError
@@ -53,12 +56,12 @@ export class StreamingTextProcessor {
         return
       }
 
-      // Update state.words with new words (preserving bold information)
+      // Emit words via callback instead of mutating global state
       const readerTokens = preprocessedWords.map(word => ({
         text: word.text,
         isBold: word.isBold
       }))
-      state.words.push(...readerTokens)
+      this.onWordsReady(readerTokens)
 
       // Create RSVP chunks with current timing settings
       const timingSettings = getTimingSettings()
@@ -99,8 +102,8 @@ export class StreamingTextProcessor {
   reset(): void {
     this.processedChunkCount = 0
     this.isProcessingComplete = false
-    // Clear words array for new streaming session
-    state.words = []
+    // Reset font-size recompute throttle for new session
+    lastFontSizeUpdate = 0
   }
 
   /**

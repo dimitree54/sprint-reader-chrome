@@ -42,6 +42,7 @@ class StreamingTextOrchestrator {
 
     this.textProcessor = new StreamingTextProcessor({
       onChunksReady: this.handleChunksReady.bind(this),
+      onWordsReady: this.handleWordsReady.bind(this),
       onProgressUpdate: this.handleProgressUpdate.bind(this),
       onProcessingComplete: this.handleProcessingComplete.bind(this),
       onProcessingError: this.handleProcessingError.bind(this)
@@ -59,6 +60,11 @@ class StreamingTextOrchestrator {
     if (!state.playing && state.wordItems.length >= 3) {
       renderCurrentWord() // Update the display
     }
+  }
+
+  private handleWordsReady(words: { text: string; isBold: boolean }[]): void {
+    // Add words to state.words - this is now handled via callback instead of direct mutation
+    state.words.push(...words)
   }
 
   private handleProgressUpdate(progress: { processedChunks: number; estimatedTotal?: number }): void {
@@ -131,10 +137,8 @@ class StreamingTextOrchestrator {
     // Add to pending tokens
     this.pendingTokens.push(token)
 
-    // Process tokens if not already processing
-    if (!this.processingTokens) {
-      await this.processTokenQueue()
-    }
+    // Always await the queue drain (returns the in‑flight promise when active)
+    await this.processTokenQueue()
   }
 
   private async processTokenQueue(): Promise<void> {
@@ -198,6 +202,7 @@ class StreamingTextOrchestrator {
     this.pendingTokens = []
     this.textBuffer.clear()
     this.textProcessor.reset()
+    this.currentProcessingPromise = null
     resetStreamingState()
   }
 }

@@ -49,9 +49,10 @@ export class OpenAIProvider implements PreprocessingProvider {
       }
     }
 
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+    const controller = new AbortController()
     try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000)
+      timeoutId = setTimeout(() => controller.abort(), 10000)
 
       const payload = buildTranslationPromptPayload(text, config.targetLanguage, config.summarizationLevel)
 
@@ -66,7 +67,7 @@ export class OpenAIProvider implements PreprocessingProvider {
         signal: controller.signal
       })
 
-      clearTimeout(timeoutId)
+      if (timeoutId) clearTimeout(timeoutId)
 
       if (!response.ok) {
         return handleApiError(response, text)
@@ -89,6 +90,8 @@ export class OpenAIProvider implements PreprocessingProvider {
       }
     } catch (error) {
       return handleProcessingError(error, text)
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId)
     }
   }
 
@@ -116,9 +119,10 @@ export class OpenAIProvider implements PreprocessingProvider {
       }
     }
 
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+    const controller = new AbortController()
     try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000)
+      timeoutId = setTimeout(() => controller.abort(), 10000)
 
       const payload = buildTranslationPromptPayload(text, config.targetLanguage, config.summarizationLevel)
       // Enable streaming
@@ -129,13 +133,14 @@ export class OpenAIProvider implements PreprocessingProvider {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.apiKey}`
+          'Authorization': `Bearer ${config.apiKey}`,
+          'Accept': 'text/event-stream'
         },
         body: JSON.stringify(streamingPayload),
         signal: controller.signal
       })
 
-      clearTimeout(timeoutId)
+      if (timeoutId) clearTimeout(timeoutId)
 
       if (!response.ok) {
         return handleApiError(response, text)
@@ -156,6 +161,8 @@ export class OpenAIProvider implements PreprocessingProvider {
       }
     } catch (error) {
       return handleProcessingError(error, text)
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId)
     }
   }
 
@@ -177,7 +184,9 @@ export class OpenAIProvider implements PreprocessingProvider {
     try {
       while (true) {
         if (signal.aborted) {
-          throw new Error('Request aborted')
+          const err = new Error('Request aborted')
+          ;(err as Error & { name: string }).name = 'AbortError'
+          throw err
         }
 
         const { done, value } = await reader.read()
@@ -194,10 +203,12 @@ export class OpenAIProvider implements PreprocessingProvider {
       }
     } catch (error) {
       if (signal.aborted) {
-        throw new Error('Streaming request was cancelled')
+        const err = new Error('Streaming request was cancelled')
+        ;(err as Error & { name: string }).name = 'AbortError'
+        throw err
       }
 
-      if (error instanceof TypeError && error.message.toLowerCase().includes('network')) {
+      if (error instanceof TypeError && /network|failed to fetch/i.test(error.message)) {
         throw new Error('Network error during streaming')
       }
 
