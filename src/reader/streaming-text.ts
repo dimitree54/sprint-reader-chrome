@@ -169,6 +169,16 @@ class StreamingTextOrchestrator {
       } finally {
         this.processingTokens = false
         this.currentProcessingPromise = null
+
+        // If tokens arrived during the drain, immediately continue processing
+        if (this.pendingTokens.length > 0) {
+          // Recursively process any tokens that arrived during processing
+          setImmediate(() => {
+            this.processTokenQueue().catch(error => {
+              console.error('Error in recursive token processing:', error)
+            })
+          })
+        }
       }
     })()
 
