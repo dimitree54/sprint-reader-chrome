@@ -53,8 +53,8 @@ class StreamingTextOrchestrator {
     // Add new chunks to state
     appendWordItems(chunks)
 
-    // Update optimal font size based on all chunks so far
-    state.optimalFontSize = updateOptimalFontSizeForStreamedChunks(state.wordItems)
+    // Update optimal font size based on all words so far
+    state.optimalFontSize = updateOptimalFontSizeForStreamedChunks(state.words)
 
     // If not playing yet and we have enough chunks, allow user to start
     if (!state.playing && state.wordItems.length >= 3) {
@@ -148,7 +148,7 @@ class StreamingTextOrchestrator {
     }
 
     if (this.pendingTokens.length === 0) {
-      return this.currentProcessingPromise ?? Promise.resolve()
+      return Promise.resolve()
     }
 
     this.processingTokens = true

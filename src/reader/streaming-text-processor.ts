@@ -120,11 +120,11 @@ export class StreamingTextProcessor {
 }
 
 /**
- * Compute optimal font size based on all processed chunks.
+ * Compute optimal font size based on processed word tokens.
  * This does not mutate global state; call site should apply the returned value.
- * Should be called periodically as new chunks are added.
+ * Should be called periodically as new words are added.
  */
-export function updateOptimalFontSizeForStreamedChunks(allChunks: WordItem[]): string {
+export function updateOptimalFontSizeForStreamedChunks(words: { text: string }[]): string {
   const now = (typeof performance !== 'undefined' && typeof performance.now === 'function')
     ? performance.now()
     : Date.now()
@@ -135,8 +135,11 @@ export function updateOptimalFontSizeForStreamedChunks(allChunks: WordItem[]): s
 
   lastFontSizeUpdate = now
 
-  if (allChunks.length > 0) {
-    return calculateOptimalFontSizeForText(allChunks)
+  if (words.length > 0) {
+    // Create WordItem-like objects for calculateOptimalFontSizeForText
+    // Only the text field is used for font size calculation
+    const wordItems = words.map(word => ({ text: word.text })) as WordItem[]
+    return calculateOptimalFontSizeForText(wordItems)
   }
   return state.optimalFontSize
 }
