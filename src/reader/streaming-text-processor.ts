@@ -10,12 +10,11 @@ import { createChunks } from './timing-engine'
 import { calculateOptimalFontSizeForText } from './visual-effects'
 import { getTimingSettings, state } from './state'
 import type { WordItem } from './timing-engine'
-
-export type StreamWord = { text: string; isBold: boolean }
+import type { ReaderToken } from './text-types'
 
 export interface StreamingTextProcessorOptions {
   onChunksReady: (chunks: WordItem[]) => void
-  onWordsReady: (words: StreamWord[]) => void
+  onWordsReady: (words: ReaderToken[]) => void
   onProgressUpdate: (progress: { processedChunks: number; estimatedTotal?: number }) => void
   onProcessingComplete: () => void
   onProcessingError?: (error: Error, textChunk: string) => void
@@ -23,10 +22,12 @@ export interface StreamingTextProcessorOptions {
 
 let lastFontSizeUpdate = 0
 const FONT_SIZE_UPDATE_THROTTLE = 100
+// Cache last computed size to avoid regressions during throttle windows
+let lastComputedFontSize = state.optimalFontSize
 
 export class StreamingTextProcessor {
   private readonly onChunksReady: (chunks: WordItem[]) => void
-  private readonly onWordsReady: (words: StreamWord[]) => void
+  private readonly onWordsReady: (words: ReaderToken[]) => void
   private readonly onProgressUpdate: (progress: { processedChunks: number; estimatedTotal?: number }) => void
   private readonly onProcessingComplete: () => void
   private readonly onProcessingError?: (error: Error, textChunk: string) => void
@@ -106,6 +107,7 @@ export class StreamingTextProcessor {
     this.isProcessingComplete = false
     // Reset font-size recompute throttle for new session
     lastFontSizeUpdate = 0
+    lastComputedFontSize = state.optimalFontSize
   }
 
   /**
@@ -130,13 +132,14 @@ export function updateOptimalFontSizeForStreamedChunks(words: { text: string }[]
     : Date.now()
 
   if (now - lastFontSizeUpdate < FONT_SIZE_UPDATE_THROTTLE) {
-    return state.optimalFontSize
+    return lastComputedFontSize
   }
 
   lastFontSizeUpdate = now
 
   if (words.length > 0) {
-    return calculateOptimalFontSizeForText(words)
+    lastComputedFontSize = calculateOptimalFontSizeForText(words)
+    return lastComputedFontSize
   }
-  return state.optimalFontSize
+  return lastComputedFontSize
 }
