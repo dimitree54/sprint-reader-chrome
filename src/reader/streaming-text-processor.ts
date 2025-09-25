@@ -11,9 +11,11 @@ import { calculateOptimalFontSizeForText } from './visual-effects'
 import { getTimingSettings, state } from './state'
 import type { WordItem } from './timing-engine'
 
+export type StreamWord = { text: string; isBold: boolean }
+
 export interface StreamingTextProcessorOptions {
   onChunksReady: (chunks: WordItem[]) => void
-  onWordsReady: (words: { text: string; isBold: boolean }[]) => void
+  onWordsReady: (words: StreamWord[]) => void
   onProgressUpdate: (progress: { processedChunks: number; estimatedTotal?: number }) => void
   onProcessingComplete: () => void
   onProcessingError?: (error: Error, textChunk: string) => void
@@ -24,7 +26,7 @@ const FONT_SIZE_UPDATE_THROTTLE = 100
 
 export class StreamingTextProcessor {
   private readonly onChunksReady: (chunks: WordItem[]) => void
-  private readonly onWordsReady: (words: { text: string; isBold: boolean }[]) => void
+  private readonly onWordsReady: (words: StreamWord[]) => void
   private readonly onProgressUpdate: (progress: { processedChunks: number; estimatedTotal?: number }) => void
   private readonly onProcessingComplete: () => void
   private readonly onProcessingError?: (error: Error, textChunk: string) => void
@@ -118,11 +120,12 @@ export class StreamingTextProcessor {
 }
 
 /**
- * Update optimal font size based on all processed chunks
- * This should be called periodically as new chunks are added
+ * Compute optimal font size based on all processed chunks.
+ * This does not mutate global state; call site should apply the returned value.
+ * Should be called periodically as new chunks are added.
  */
 export function updateOptimalFontSizeForStreamedChunks(allChunks: WordItem[]): string {
-  const now = Date.now()
+  const now = performance.now()
 
   if (now - lastFontSizeUpdate < FONT_SIZE_UPDATE_THROTTLE) {
     return state.optimalFontSize
