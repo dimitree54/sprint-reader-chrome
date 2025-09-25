@@ -137,37 +137,26 @@ export class StreamingTextProcessor {
   /**
    * Update optimal font size for the current processor session.
    * Uses instance-scoped caching to prevent cross-session bleed.
+   *
+   * @param words - Array of word-like objects with text property for font size calculation
+   * @returns Computed font size as CSS string (e.g., "24px")
    */
   updateOptimalFontSize(words: { text: string }[]): string {
-    return updateOptimalFontSizeForStreamedChunks(words, this.fontSizeKey)
-  }
-}
+    const cache = getFontSizeCache(this.fontSizeKey)
+    const now = (typeof performance !== 'undefined' && typeof performance.now === 'function')
+      ? performance.now()
+      : Date.now()
 
-/**
- * Compute optimal font size based on processed word tokens.
- * This does not mutate global state; call site should apply the returned value.
- * Should be called periodically as new words are added.
- *
- * @param words - Array of word-like objects with text property for font size calculation
- * @param key - Session/container key for cache isolation. Prevents cross-session cache bleed
- *   when multiple processors or readers run concurrently. Defaults to 'default' for backward compatibility.
- * @returns Computed font size as CSS string (e.g., "24px")
- */
-export function updateOptimalFontSizeForStreamedChunks(words: { text: string }[], key = 'default'): string {
-  const cache = getFontSizeCache(key)
-  const now = (typeof performance !== 'undefined' && typeof performance.now === 'function')
-    ? performance.now()
-    : Date.now()
+    if (now - cache.lastUpdate < FONT_SIZE_UPDATE_THROTTLE) {
+      return cache.lastSize
+    }
 
-  if (now - cache.lastUpdate < FONT_SIZE_UPDATE_THROTTLE) {
+    cache.lastUpdate = now
+
+    if (words.length > 0) {
+      cache.lastSize = calculateOptimalFontSizeForText(words)
+      return cache.lastSize
+    }
     return cache.lastSize
   }
-
-  cache.lastUpdate = now
-
-  if (words.length > 0) {
-    cache.lastSize = calculateOptimalFontSizeForText(words)
-    return cache.lastSize
-  }
-  return cache.lastSize
 }
