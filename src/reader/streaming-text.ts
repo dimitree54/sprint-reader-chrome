@@ -105,10 +105,11 @@ class StreamingTextOrchestrator {
   async startStreamingText(rawText: string): Promise<void> {
     // Reset state
     resetStreamingState()
+    state.words = []
     state.wordItems = []
     state.index = 0
 
-    // Reset text processor (this will clear state.words)
+    // Reset text processor
     this.textProcessor.reset()
 
     // Start streaming mode
