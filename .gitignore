@@ -237,3 +237,5 @@ test-results/
 
 web-ext-profile/*
 lib
+.env
+full_agents_log.txt
