@@ -136,10 +136,7 @@ export function updateOptimalFontSizeForStreamedChunks(words: { text: string }[]
   lastFontSizeUpdate = now
 
   if (words.length > 0) {
-    // Create WordItem-like objects for calculateOptimalFontSizeForText
-    // Only the text field is used for font size calculation
-    const wordItems = words.map(word => ({ text: word.text })) as WordItem[]
-    return calculateOptimalFontSizeForText(wordItems)
+    return calculateOptimalFontSizeForText(words)
   }
   return state.optimalFontSize
 }
