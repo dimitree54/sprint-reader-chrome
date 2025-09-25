@@ -20,10 +20,18 @@ export interface StreamingTextProcessorOptions {
   onProcessingError?: (error: Error, textChunk: string) => void
 }
 
-let lastFontSizeUpdate = 0
 const FONT_SIZE_UPDATE_THROTTLE = 100
-// Cache last computed size to avoid regressions during throttle windows
-let lastComputedFontSize = state.optimalFontSize
+type FontSizeCache = { lastUpdate: number; lastSize: string }
+const fontSizeCache = new Map<string, FontSizeCache>()
+
+function getFontSizeCache(key: string): FontSizeCache {
+  let cache = fontSizeCache.get(key)
+  if (!cache) {
+    cache = { lastUpdate: 0, lastSize: state.optimalFontSize }
+    fontSizeCache.set(key, cache)
+  }
+  return cache
+}
 
 export class StreamingTextProcessor {
   private readonly onChunksReady: (chunks: WordItem[]) => void
@@ -79,12 +87,17 @@ export class StreamingTextProcessor {
 
         // Update progress
         this.onProgressUpdate({
-          processedChunks: this.processedChunkCount
+          processedChunks: this.processedChunkCount,
+          estimatedTotal: state.estimatedTotalChunks
         })
       }
     } catch (error) {
       const normalisedError = error instanceof Error ? error : new Error(String(error))
-      console.error('Error processing text chunk:', normalisedError)
+      console.error(`[StreamingTextProcessor] Error processing chunk (${textChunk.length} chars):`, normalisedError, {
+        chunkLength: textChunk.length,
+        processedChunks: this.processedChunkCount,
+        chunkPreview: textChunk.slice(0, 100)
+      })
       this.onProcessingError?.(normalisedError, textChunk)
     }
   }
@@ -105,9 +118,8 @@ export class StreamingTextProcessor {
   reset(): void {
     this.processedChunkCount = 0
     this.isProcessingComplete = false
-    // Reset font-size recompute throttle for new session
-    lastFontSizeUpdate = 0
-    lastComputedFontSize = state.optimalFontSize
+    // Clear font-size cache for new session to prevent cross-session bleed
+    fontSizeCache.clear()
   }
 
   /**
@@ -126,20 +138,21 @@ export class StreamingTextProcessor {
  * This does not mutate global state; call site should apply the returned value.
  * Should be called periodically as new words are added.
  */
-export function updateOptimalFontSizeForStreamedChunks(words: { text: string }[]): string {
+export function updateOptimalFontSizeForStreamedChunks(words: { text: string }[], key = 'default'): string {
+  const cache = getFontSizeCache(key)
   const now = (typeof performance !== 'undefined' && typeof performance.now === 'function')
     ? performance.now()
     : Date.now()
 
-  if (now - lastFontSizeUpdate < FONT_SIZE_UPDATE_THROTTLE) {
-    return lastComputedFontSize
+  if (now - cache.lastUpdate < FONT_SIZE_UPDATE_THROTTLE) {
+    return cache.lastSize
   }
 
-  lastFontSizeUpdate = now
+  cache.lastUpdate = now
 
   if (words.length > 0) {
-    lastComputedFontSize = calculateOptimalFontSizeForText(words)
-    return lastComputedFontSize
+    cache.lastSize = calculateOptimalFontSizeForText(words)
+    return cache.lastSize
   }
-  return lastComputedFontSize
+  return cache.lastSize
 }
