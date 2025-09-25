@@ -7,7 +7,7 @@
 
 import { preprocessTextForReader } from '../preprocessing/index'
 import { StreamingTextBuffer } from './streaming-text-buffer'
-import { StreamingTextProcessor, updateOptimalFontSizeForStreamedChunks } from './streaming-text-processor'
+import { StreamingTextProcessor } from './streaming-text-processor'
 import {
   state,
   startStreaming,
@@ -54,7 +54,7 @@ class StreamingTextOrchestrator {
     appendWordItems(chunks)
 
     // Update optimal font size based on all words so far
-    state.optimalFontSize = updateOptimalFontSizeForStreamedChunks(state.words)
+    state.optimalFontSize = this.textProcessor.updateOptimalFontSize(state.words)
 
     // If not playing yet and we have enough chunks, allow user to start
     if (!state.playing && state.wordItems.length >= 3) {

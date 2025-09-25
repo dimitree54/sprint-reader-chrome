@@ -18,6 +18,7 @@ export interface StreamingTextProcessorOptions {
   onProgressUpdate: (progress: { processedChunks: number; estimatedTotal?: number }) => void
   onProcessingComplete: () => void
   onProcessingError?: (error: Error, textChunk: string) => void
+  fontSizeKey?: string
 }
 
 const FONT_SIZE_UPDATE_THROTTLE = 100
@@ -39,6 +40,7 @@ export class StreamingTextProcessor {
   private readonly onProgressUpdate: (progress: { processedChunks: number; estimatedTotal?: number }) => void
   private readonly onProcessingComplete: () => void
   private readonly onProcessingError?: (error: Error, textChunk: string) => void
+  private readonly fontSizeKey: string
 
   private processedChunkCount = 0
   private isProcessingComplete = false
@@ -49,12 +51,13 @@ export class StreamingTextProcessor {
     this.onProgressUpdate = options.onProgressUpdate
     this.onProcessingComplete = options.onProcessingComplete
     this.onProcessingError = options.onProcessingError
+    this.fontSizeKey = options.fontSizeKey || `processor-${Date.now()}-${Math.random()}`
   }
 
   /**
    * Process a text chunk into RSVP chunks and notify when ready
    */
-  async processTextChunk(textChunk: string): Promise<void> {
+  processTextChunk(textChunk: string): void {
     if (this.isProcessingComplete) {
       return
     }
@@ -95,8 +98,7 @@ export class StreamingTextProcessor {
       const normalisedError = error instanceof Error ? error : new Error(String(error))
       console.error(`[StreamingTextProcessor] Error processing chunk (${textChunk.length} chars):`, normalisedError, {
         chunkLength: textChunk.length,
-        processedChunks: this.processedChunkCount,
-        chunkPreview: textChunk.slice(0, 100)
+        processedChunks: this.processedChunkCount
       })
       this.onProcessingError?.(normalisedError, textChunk)
     }
@@ -118,8 +120,8 @@ export class StreamingTextProcessor {
   reset(): void {
     this.processedChunkCount = 0
     this.isProcessingComplete = false
-    // Clear font-size cache for new session to prevent cross-session bleed
-    fontSizeCache.clear()
+    // Clear font-size cache for this processor instance only
+    fontSizeCache.delete(this.fontSizeKey)
   }
 
   /**
@@ -131,12 +133,25 @@ export class StreamingTextProcessor {
       isComplete: this.isProcessingComplete
     }
   }
+
+  /**
+   * Update optimal font size for the current processor session.
+   * Uses instance-scoped caching to prevent cross-session bleed.
+   */
+  updateOptimalFontSize(words: { text: string }[]): string {
+    return updateOptimalFontSizeForStreamedChunks(words, this.fontSizeKey)
+  }
 }
 
 /**
  * Compute optimal font size based on processed word tokens.
  * This does not mutate global state; call site should apply the returned value.
  * Should be called periodically as new words are added.
+ *
+ * @param words - Array of word-like objects with text property for font size calculation
+ * @param key - Session/container key for cache isolation. Prevents cross-session cache bleed
+ *   when multiple processors or readers run concurrently. Defaults to 'default' for backward compatibility.
+ * @returns Computed font size as CSS string (e.g., "24px")
  */
 export function updateOptimalFontSizeForStreamedChunks(words: { text: string }[], key = 'default'): string {
   const cache = getFontSizeCache(key)
