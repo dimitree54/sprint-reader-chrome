@@ -79,6 +79,13 @@ config/
 scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 ```
 
+Note: As part of the ongoing refactor toward the target architecture, scaffolding directories have been created to stage future migrations without changing runtime behavior:
+
+- `src/core/` — core services (BrowserApiService, StorageService)
+- `src/reader/playback/`, `src/reader/state/`, `src/reader/timing/`, `src/reader/ui/` — reader domain modules split by responsibility
+
+These are currently placeholders; code moves will happen incrementally per story with tests kept green after each step.
+
 ## 3. Execution Contexts
 
 ### 3.1 Background Service Worker (`src/background/index.ts`)

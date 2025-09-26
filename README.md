@@ -164,6 +164,18 @@ See `docs/architecture.md` for detailed technical documentation covering:
 - `npm run typecheck` and `npm test` guard TypeScript types and Playwright scenarios respectively before submitting changes.
 - A Husky `pre-push` hook runs `npm run lint` and `npm run typecheck` automatically; if hooks are missing (e.g., after cloning), run `npm run prepare` to re-install them.
 
+## Refactoring Status
+
+We are migrating to a service-oriented architecture (see `docs/refactoring/new_architecture.md`). As part of Story 1.3, scaffolding directories have been created to stage the migration without changing behavior:
+
+- `src/core/` (core services such as BrowserApiService, StorageService)
+- `src/reader/playback/`
+- `src/reader/state/`
+- `src/reader/timing/` (pre-existing)
+- `src/reader/ui/`
+
+These directories are currently placeholders; code will be moved incrementally in subsequent stories with full test coverage at each step.
+
 ## <a name="license"></a>License
 
 Copyright (c) 2013-2025, Anthony Nosek
