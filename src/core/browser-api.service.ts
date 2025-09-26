@@ -31,6 +31,10 @@ export class BrowserApiService {
   }
 
   // runtime
+  public get runtime () {
+    return this.getBrowser().runtime
+  }
+
   public async sendMessage (message: unknown, options?: chrome.runtime.MessageOptions): Promise<unknown>
   public async sendMessage (extensionId: string, message: unknown, options?: chrome.runtime.MessageOptions): Promise<unknown>
   public async sendMessage (

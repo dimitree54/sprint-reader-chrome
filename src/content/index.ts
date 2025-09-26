@@ -1,8 +1,7 @@
-import { getBrowser } from '../platform/browser'
+import { browserApi } from '../core/browser-api.service'
 import type { BackgroundMessage } from '../common/messages'
 import { DEFAULTS } from '../config/defaults'
 
-const browser = getBrowser()
 
 let selectionTimeout: ReturnType<typeof setTimeout> | undefined
 
@@ -30,7 +29,7 @@ function captureSelection () {
     dirRTL
   }
 
-  ;(browser.runtime.sendMessage(message) as Promise<unknown>).catch(() => {
+  browserApi.sendMessage(message).catch(() => {
     // Ignore failures when the background context is not available.
   })
 
@@ -52,5 +51,4 @@ document.addEventListener('keyup', (event) => {
   }
 })
 document.addEventListener('selectionchange', scheduleSelectionCapture)
-
 

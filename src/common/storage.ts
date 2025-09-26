@@ -1,4 +1,4 @@
-import { getBrowser } from '../platform/browser'
+import { browserApi } from '../core/browser-api.service'
 import { getDefaultReaderPreferences, DEFAULTS } from '../config/defaults'
 import {
   DEFAULT_TRANSLATION_LANGUAGE,
@@ -26,43 +26,14 @@ export type ReaderPreferences = {
   theme: ReaderTheme;
 };
 
-const browser = getBrowser()
 
-function promisify<T> (fn: (callback: (value: T) => void, reject: (error: unknown) => void) => void): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    fn(resolve, reject)
-  })
-}
 
 export async function getFromStorage<T> (keys: string[]): Promise<Partial<Record<string, T>>> {
-  if ('storage' in browser && 'local' in browser.storage && 'get' in browser.storage.local) {
-    return promisify((resolve, reject) => {
-      browser.storage.local.get(keys, (items: Record<string, T>) => {
-        const error = (browser.runtime as typeof browser.runtime & { lastError?: { message?: string } }).lastError
-        if (error) {
-          reject(new Error(error.message ?? 'Unknown runtime error'))
-        } else {
-          resolve(items)
-        }
-      })
-    })
-  }
-  return {}
+  return browserApi.getStorage<T>(keys)
 }
 
 export async function setInStorage (items: Record<string, unknown>): Promise<void> {
-  if ('storage' in browser && 'local' in browser.storage && 'set' in browser.storage.local) {
-    await promisify<void>((resolve, reject) => {
-      browser.storage.local.set(items, () => {
-        const error = (browser.runtime as typeof browser.runtime & { lastError?: { message?: string } }).lastError
-        if (error) {
-          reject(new Error(error.message ?? 'Unknown runtime error'))
-        } else {
-          resolve()
-        }
-      })
-    })
-  }
+  await browserApi.setStorage(items)
 }
 
 export const STORAGE_KEYS = {

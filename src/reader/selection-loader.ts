@@ -3,9 +3,9 @@ import { state } from './state'
 import { wordsToTokens } from './text-types'
 import { decodeHtml, setWords, setWordsWithStreaming } from './text'
 import { renderCurrentWord } from './render'
-import { browser } from '../platform/browser'
+import { browserApi } from '../core/browser-api.service'
 import { DEFAULTS } from '../config/defaults'
-import type { BackgroundMessage } from '../common/messages'
+import type { BackgroundMessage, BackgroundResponse } from '../common/messages'
 
 function normaliseText (rawText: string): string {
   return rawText.replace(/\s+/g, ' ').trim()
@@ -30,11 +30,14 @@ function syncControls (): void {
 
 async function getCurrentSelectionFromBackground() {
   try {
-    const response = await (browser.runtime.sendMessage as (message: BackgroundMessage) => Promise<{ selection: { text: string; hasSelection: boolean; isRTL: boolean; timestamp: number } }>)({
+    const response = await browserApi.sendMessage({
       target: 'background',
       type: 'getCurrentSelection'
-    } satisfies BackgroundMessage)
-    return response?.selection
+    } satisfies BackgroundMessage) as BackgroundResponse
+    if (response && 'selection' in response) {
+      return response.selection
+    }
+    return null
   } catch (error) {
     console.warn('Failed to get current selection from background:', error)
     return null

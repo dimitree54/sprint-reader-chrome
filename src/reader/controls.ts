@@ -4,7 +4,7 @@ import { renderCurrentWord } from './render'
 import { state } from './state'
 import { updateOptimalFontSize, recalculateTimingOnly } from './text'
 import { DEFAULTS } from '../config/defaults'
-import { browser } from '../platform/browser'
+import { browserApi } from '../core/browser-api.service'
 
 function updateWpmDisplay (value: number): void {
   const wpmValue = document.getElementById('wpmValue')
@@ -112,8 +112,8 @@ function attachSettingsButton (): void {
 }
 
 async function openSettingsPage (): Promise<void> {
-  const url = browser.runtime.getURL('pages/settings.html')
-  await browser.tabs.create({ url })
+  const url = browserApi.runtime.getURL('pages/settings.html')
+  await browserApi.createTab({ url })
 }
 
 export function updateControlsState (): void {
