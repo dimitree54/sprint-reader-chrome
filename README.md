@@ -164,13 +164,13 @@ See `docs/architecture.md` for detailed technical documentation covering:
 - `npm run typecheck` and `npm test` guard TypeScript types and Playwright scenarios respectively before submitting changes.
 - A Husky `pre-push` hook runs `npm run lint` and `npm run typecheck` automatically; if hooks are missing (e.g., after cloning), run `npm run prepare` to re-install them.
 
-## Refactoring Status
+## Architecture Summary
 
-The migration to a service‑oriented architecture is complete (see `docs/refactoring/new_architecture.md`). The current active structure:
+The extension uses a clean service‑oriented, store‑driven architecture (see `docs/architecture.md`).
 
-- Core services: `BrowserApiService`, `StorageService`, `TimingService`, `AIPreprocessingService`, `PlaybackService` (now fully owns the scheduling loop; legacy playback removed).
-- State: Centralized Zustand store at `src/reader/state/reader.store.ts` (single source of truth).
-- UI: Store‑driven renderer `src/reader/ui/renderer.ts` and `src/reader/ui/store-controls.ts`. The renderer fully owns DOM updates; legacy `render.ts` has been removed.
+- Core services: `BrowserApiService`, `StorageService`, `TimingService`, `AIPreprocessingService`, `PlaybackService` (owns the scheduling loop).
+- State: Centralized Zustand store `src/reader/state/reader.store.ts` (single source of truth).
+- UI: Store‑driven renderer `src/reader/ui/renderer.ts` as the only DOM writer; modern control bindings in `src/reader/ui/controls.ts` wired to store and PlaybackService.
 
 Quality gates: lint + typecheck + unit + end‑to‑end tests are green with a real `OPENAI_API_KEY`.
 

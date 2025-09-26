@@ -8,13 +8,7 @@
 import { preprocessTextForReader } from '../preprocessing/index'
 import { StreamingTextBuffer } from './streaming-text-buffer'
 import { StreamingTextProcessor } from './streaming-text-processor'
-import {
-  startStreaming,
-  completeStreaming,
-  appendWordItems,
-  updateStreamingProgress,
-  resetStreamingState
-} from './state/legacy-state-helpers'
+// legacy-state-helpers removed; use store directly
 import { useReaderStore } from './state/reader.store'
 import type { WordItem } from './timing-engine'
 
@@ -50,7 +44,7 @@ class StreamingTextOrchestrator {
 
   private handleChunksReady(chunks: WordItem[]): void {
     // Add new chunks to state
-    appendWordItems(chunks)
+    useReaderStore.getState().appendWordItems(chunks)
 
     // Update optimal font size based on all words so far
     const store = useReaderStore.getState()
@@ -72,12 +66,15 @@ class StreamingTextOrchestrator {
   }
 
   private handleProgressUpdate(progress: { processedChunks: number; estimatedTotal?: number }): void {
-    updateStreamingProgress(progress.processedChunks, progress.estimatedTotal)
+    useReaderStore.setState({
+      processedChunkCount: progress.processedChunks,
+      estimatedTotalChunks: progress.estimatedTotal
+    })
     // Renderer will react to store changes automatically
   }
 
   private handleProcessingComplete(): void {
-    completeStreaming()
+    useReaderStore.setState({ isStreaming: false, streamingComplete: true })
     // Ensure preprocessing flag is cleared
     const store = useReaderStore.getState()
     if (store.isPreprocessing) {
@@ -92,7 +89,12 @@ class StreamingTextOrchestrator {
 
   async startStreamingText(rawText: string): Promise<void> {
     // Reset state
-    resetStreamingState()
+    useReaderStore.setState({
+      isStreaming: false,
+      streamingComplete: false,
+      processedChunkCount: 0,
+      estimatedTotalChunks: undefined
+    })
     useReaderStore.setState({
       tokens: [],
       wordItems: [],
@@ -103,7 +105,12 @@ class StreamingTextOrchestrator {
     this.textProcessor.reset()
 
     // Start streaming mode
-    startStreaming()
+    useReaderStore.setState({
+      isStreaming: true,
+      streamingComplete: false,
+      processedChunkCount: 0,
+      estimatedTotalChunks: undefined
+    })
 
     // Do initial preprocessing if we have text
     if (rawText.trim()) {
@@ -204,7 +211,12 @@ class StreamingTextOrchestrator {
     this.textBuffer.clear()
     this.textProcessor.reset()
     this.currentProcessingPromise = null
-    resetStreamingState()
+    useReaderStore.setState({
+      isStreaming: false,
+      streamingComplete: false,
+      processedChunkCount: 0,
+      estimatedTotalChunks: undefined
+    })
   }
 }
 

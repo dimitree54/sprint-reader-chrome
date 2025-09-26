@@ -1,11 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { computeProgress, computeStatus } from './renderer'
 
-// Mock the legacy state helpers
-vi.mock('../state/legacy-state-helpers', () => ({
-  getTimingSettings: vi.fn(() => ({ wordsPerMinute: 300 }))
-}))
-
 // Mock the time calculator
 vi.mock('../time-calculator', () => ({
   getTimeProgress: vi.fn(() => ({

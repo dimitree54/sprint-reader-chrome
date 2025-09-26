@@ -1,7 +1,5 @@
 import { useReaderStore } from '../state/reader.store'
 import { wrapLettersInSpans, highlightOptimalLetter, setOptimalWordPositioning, applyFlickerEffect } from '../visual-effects'
-import { getVisualSettings, getTimingSettings } from '../state/legacy-state-helpers'
-import { updateControlsState } from '../controls'
 import { getTimeProgress, formatTimeRemaining, formatProgressPercent } from '../time-calculator'
 
 interface RenderElements {
@@ -52,7 +50,13 @@ export function computeProgress(state: ReturnType<typeof useReaderStore.getState
       ariaNow: Math.round(progressPercent)
     }
   } else {
-    const timingSettings = getTimingSettings()
+    const timingSettings = {
+      wordsPerMinute: state.wordsPerMinute,
+      pauseAfterComma: state.pauseAfterComma,
+      pauseAfterPeriod: state.pauseAfterPeriod,
+      pauseAfterParagraph: state.pauseAfterParagraph,
+      chunkSize: state.chunkSize
+    }
     const timeProgress = getTimeProgress(state.wordItems, state.index, timingSettings)
     const percentDisplay = formatProgressPercent(timeProgress.progressPercent)
     const timeDisplay = formatTimeRemaining(timeProgress.remainingMs)
@@ -124,7 +128,12 @@ function renderWordContent(wordElement: HTMLElement, state: ReturnType<typeof us
     const wrappedText = wrapLettersInSpans(currentWordItem.text)
     wordElement.innerHTML = wrappedText
 
-    const visualSettings = getVisualSettings()
+    const visualSettings = {
+      highlightOptimalLetter: state.highlightOptimalLetter,
+      highlightOptimalLetterColor: state.highlightOptimalLetterColor,
+      wordFlicker: state.wordFlicker,
+      wordFlickerPercent: state.wordFlickerPercent
+    }
     highlightOptimalLetter(wordElement, currentWordItem, visualSettings)
     setOptimalWordPositioning(wordElement, currentWordItem)
 
@@ -161,8 +170,21 @@ function updateDOM(elements: RenderElements, state: ReturnType<typeof useReaderS
     elements.playButton.textContent = state.status === 'playing' ? 'Pause' : 'Play'
   }
 
-  // Update controls state
-  updateControlsState()
+  // Update control disabled states and WPM value display
+  const isDisabled = state.isPreprocessing
+  const playButton = document.getElementById('btnPlay') as HTMLButtonElement | null
+  const restartButton = document.getElementById('btnRestart') as HTMLButtonElement | null
+  const wpmSlider = document.getElementById('sliderWpm') as HTMLInputElement | null
+  const themeToggle = document.getElementById('toggleTheme') as HTMLInputElement | null
+  const settingsButton = document.getElementById('openReaderSettings') as HTMLButtonElement | null
+  if (playButton) playButton.disabled = isDisabled
+  if (restartButton) restartButton.disabled = isDisabled
+  if (wpmSlider) wpmSlider.disabled = isDisabled
+  if (themeToggle) themeToggle.disabled = isDisabled
+  if (settingsButton) settingsButton.disabled = isDisabled
+
+  const wpmValue = document.getElementById('wpmValue')
+  if (wpmValue) wpmValue.textContent = String(state.wordsPerMinute)
 }
 
 export function initRenderer (): () => void {

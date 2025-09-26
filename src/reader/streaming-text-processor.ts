@@ -8,7 +8,6 @@
 import { preprocessText } from './text-processor'
 import { createChunks } from './timing-engine'
 import { calculateOptimalFontSizeForText } from './visual-effects'
-import { getTimingSettings } from './state/legacy-state-helpers'
 import { useReaderStore } from './state/reader.store'
 import type { WordItem } from './timing-engine'
 import type { ReaderToken } from './text-types'
@@ -79,7 +78,14 @@ export class StreamingTextProcessor {
       this.onWordsReady(readerTokens)
 
       // Create RSVP chunks with current timing settings
-      const timingSettings = getTimingSettings()
+      const s = useReaderStore.getState()
+      const timingSettings = {
+        wordsPerMinute: s.wordsPerMinute,
+        pauseAfterComma: s.pauseAfterComma,
+        pauseAfterPeriod: s.pauseAfterPeriod,
+        pauseAfterParagraph: s.pauseAfterParagraph,
+        chunkSize: s.chunkSize
+      }
       const chunks = createChunks(preprocessedWords, timingSettings)
 
       if (chunks.length > 0) {

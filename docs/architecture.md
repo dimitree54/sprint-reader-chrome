@@ -55,14 +55,13 @@ src/
   settings/        → Dedicated settings surface for advanced preferences (API providers).
   reader/          → RSVP player UI assembled from focused modules:
     index.ts            → Entrypoint that wires selection loading, controls, messaging.
-    state/              → New Zustand-based state management:
+    state/              → Zustand-based state management:
       reader.store.ts      → Centralized Zustand store for all reader state
-      legacy-state-helpers.ts → Compatibility helpers for legacy function interfaces
     selection-loader.ts → Loads current selection/preferences and syncs UI controls.
-    controls.ts         → DOM event bindings (playback, WPM slider, theme toggle, resize).
     playback/           → Service-oriented playback management:
       playback.service.ts  → Owns timer scheduling and playback progression.
     ui/renderer.ts      → Store-driven word rendering, progress display, play/pause visuals.
+    ui/controls.ts      → Modern control bindings wired to store and PlaybackService.
     text.ts             → Word preprocessing glue and chunk/font recalculation.
     streaming-text.ts   → Main streaming orchestrator for real-time text processing.
     streaming-text-buffer.ts → Token buffering for sentence-based chunk delivery.
@@ -72,11 +71,9 @@ src/
     text-processor.ts   → Advanced text preprocessing (acronyms, numbers, hyphenation).
     visual-effects.ts   → Letter highlighting, positioning, flicker effects.
     openai-prompt.ts    → Builds chat completion payloads for OpenAI translation and summarisation requests.
-    playback/           → Service-oriented playback management:
-      playback.service.ts  → Centralized playback logic with unit tests
     ui/                 → UI layer components:
       renderer.ts          → Store-driven DOM updates
-      store-controls.ts    → Store-bound control event handlers
+      controls.ts          → Control event bindings
 static/
   assets/          → Icons and imagery shared across contexts.
   pages/           → HTML documents for popup, reader, settings, welcome, updated pages.
@@ -87,15 +84,15 @@ config/
 scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 ```
 
-Note: The refactor toward service-oriented architecture is largely complete, with the following new structure implemented:
+The service-oriented architecture is fully implemented with the following structure:
 
-- `src/core/` — core services (BrowserApiService, StorageService) - **ACTIVE**
-- `src/reader/state/` — Zustand store and state management - **ACTIVE**
-- `src/reader/playback/` — PlaybackService with unit tests - **ACTIVE**
-- `src/reader/timing/` — TimingService wrapper - **ACTIVE**
-- `src/reader/ui/` — Store-driven UI components - **ACTIVE**
+- `src/core/` — core services (BrowserApiService, StorageService)
+- `src/reader/state/` — Zustand store for centralized state management
+- `src/reader/playback/` — PlaybackService managing timer scheduling and progression
+- `src/reader/timing/` — TimingService wrapper for word timing calculations
+- `src/reader/ui/` — Store-driven UI components (renderer, controls)
 
-The new architecture operates alongside legacy components for backward compatibility.
+The codebase is fully service‑oriented and store‑driven.
 
 ## 3. Execution Contexts
 
@@ -135,12 +132,12 @@ The reader implementation follows a modular architecture with clear separation o
 * `selection-loader.ts` fetches current preferences/selection, normalises HTML, rebuilds timing chunks, and synchronises slider/theme UI.
 * `messages.ts` listens for `refreshReader` runtime events and reuses the loader to refresh the view on demand.
 
-#### 3.4.2 State & Playback (`src/reader/state.ts`, `playback.ts`, `controls.ts`, `text.ts`, `ui/renderer.ts`)
-* `state.ts` centralises the reader's playback state and surfaces helpers for timing/visual configuration.
+#### 3.4.2 State & Playback (`src/reader/state/reader.store.ts`, `playback/playback.service.ts`, `ui/controls.ts`, `text.ts`, `ui/renderer.ts`)
+* `state/reader.store.ts` centralises the reader's playback state and surfaces helpers for timing/visual configuration.
 * `text.ts` bridges preprocessing, chunk generation, and optimal font sizing whenever the active text or WPM changes.
 * `ui/renderer.ts` is the sole DOM writer: it updates the current word, status, and progress while delegating highlighting/flicker to `visual-effects.ts`.
-* `playback.ts` manages timers, scheduling, and play/pause transitions, keeping state mutations predictable.
-* `controls.ts` binds UI events (play/pause/restart, WPM slider, theme toggle, resize) to the playback/state modules and persists preference changes.
+* `playback/playback.service.ts` manages timers, scheduling, and play/pause transitions, keeping state mutations predictable.
+* `ui/controls.ts` binds UI events (play/pause/restart, WPM slider, theme toggle, resize) to the PlaybackService and store, and persists preference changes.
 
 #### 3.4.3 Timing Engine (`src/reader/timing/…`, `timing-engine.ts`)
 * `timing/word-analysis.ts` stores the word-frequency corpus, entropy calculation, punctuation heuristics, and optimal letter selection.

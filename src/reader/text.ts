@@ -7,7 +7,6 @@ import { StreamingPreprocessingManager } from '../preprocessing/streaming-manage
 import { createChunks } from './timing-engine'
 import { timingService } from './timing/timing.service'
 import { calculateOptimalFontSizeForText } from './visual-effects'
-import { getTimingSettings, resetStreamingState } from './state/legacy-state-helpers'
 import { useReaderStore } from './state/reader.store'
 import type { ReaderToken } from './text-types'
 
@@ -28,7 +27,14 @@ export async function rebuildWordItems (): Promise<void> {
   const rawText = store.tokens.map(w => w.text).join(' ')
   const preprocessingResult = await aiPreprocessingService.translateText(rawText)
   // Let the timing service compute the final word items from text
-  const wordItems = timingService.calculateWordTimingFromText(preprocessingResult.text, getTimingSettings())
+  const prefs = useReaderStore.getState()
+  const wordItems = timingService.calculateWordTimingFromText(preprocessingResult.text, {
+    wordsPerMinute: prefs.wordsPerMinute,
+    pauseAfterComma: prefs.pauseAfterComma,
+    pauseAfterPeriod: prefs.pauseAfterPeriod,
+    pauseAfterParagraph: prefs.pauseAfterParagraph,
+    chunkSize: prefs.chunkSize
+  })
   // Update words (with bold info) to match processed text
   const preprocessedWords = preprocessText(preprocessingResult.text)
   const tokens = preprocessedWords.map(word => ({ text: word.text, isBold: word.isBold }))
@@ -49,7 +55,12 @@ export async function rebuildWordItemsWithStreaming (): Promise<void> {
   const originalRawText = store.tokens.map(w => w.text).join(' ')
 
   // Clear any existing streaming state
-  resetStreamingState()
+  useReaderStore.setState({
+    isStreaming: false,
+    streamingComplete: false,
+    processedChunkCount: 0,
+    estimatedTotalChunks: undefined
+  })
 
   // Initialize streaming
   let streamingProcessor: StreamingTextProcessorInstance | null = null
@@ -57,7 +68,12 @@ export async function rebuildWordItemsWithStreaming (): Promise<void> {
     streamingProcessor = await initializeStreamingText(originalRawText)
   } catch (error) {
     console.error('Failed to initialize streaming:', error)
-    resetStreamingState()
+    useReaderStore.setState({
+      isStreaming: false,
+      streamingComplete: false,
+      processedChunkCount: 0,
+      estimatedTotalChunks: undefined
+    })
     streamingProcessor?.cancelStreaming()
     await rebuildWordItems()
     notifyRender()
@@ -72,7 +88,12 @@ export async function rebuildWordItemsWithStreaming (): Promise<void> {
   const cleanupAndFallback = async () => {
     if (fallbackTriggered) return
     fallbackTriggered = true
-    resetStreamingState()
+    useReaderStore.setState({
+      isStreaming: false,
+      streamingComplete: false,
+      processedChunkCount: 0,
+      estimatedTotalChunks: undefined
+    })
     streamingProcessor?.cancelStreaming()
     await rebuildWordItems()
     notifyRender()
@@ -134,7 +155,13 @@ export function recalculateTimingOnly (): void {
     isBold: store.tokens[index]?.isBold || word.isBold
   }))
 
-  const timingSettings = getTimingSettings()
+  const timingSettings = {
+    wordsPerMinute: store.wordsPerMinute,
+    pauseAfterComma: store.pauseAfterComma,
+    pauseAfterPeriod: store.pauseAfterPeriod,
+    pauseAfterParagraph: store.pauseAfterParagraph,
+    chunkSize: store.chunkSize
+  }
   const wordItems = createChunks(wordsWithBoldInfo, timingSettings)
 
   const optimalFontSize = calculateOptimalFontSizeForText(wordItems)

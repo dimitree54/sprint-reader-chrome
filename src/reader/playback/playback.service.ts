@@ -1,6 +1,5 @@
 import { useReaderStore } from '../state/reader.store'
 import { timingService } from '../timing/timing.service'
-import { getTimingSettings } from '../state/legacy-state-helpers'
 import { DEFAULTS } from '../../config/defaults'
 
 export class PlaybackService {
@@ -54,7 +53,13 @@ export class PlaybackService {
     const current = wordItems[index]
     if (current) {
       // Recalculate duration using current timing preferences
-      const prefs = getTimingSettings()
+      const prefs = {
+        wordsPerMinute: useReaderStore.getState().wordsPerMinute,
+        pauseAfterComma: useReaderStore.getState().pauseAfterComma,
+        pauseAfterPeriod: useReaderStore.getState().pauseAfterPeriod,
+        pauseAfterParagraph: useReaderStore.getState().pauseAfterParagraph,
+        chunkSize: useReaderStore.getState().chunkSize
+      }
       const [withTiming] = timingService.calculateChunkDurations([current], prefs)
       const duration = (withTiming.duration ?? 0) + (withTiming.postdelay ?? 0)
       return Math.max(duration, DEFAULTS.TIMING.minimumDelayMs)

@@ -1,10 +1,9 @@
-import { registerControls } from './controls'
+import { bindControls } from './ui/controls'
 import { registerMessageListener } from './messages'
 import { loadSelectionContent } from './selection-loader'
 import { useReaderStore } from './state/reader.store'
 import { DEFAULTS } from '../config/defaults'
 import { initRenderer } from './ui/renderer'
-import { initStoreBoundControls } from './ui/store-controls'
 
 function initializeCSSVariables(): void {
   const root = document.documentElement
@@ -14,11 +13,10 @@ function initializeCSSVariables(): void {
 document.addEventListener('DOMContentLoaded', () => {
   initializeCSSVariables()
   loadSelectionContent().catch(console.error)
-  registerControls()
+  bindControls()
   registerMessageListener()
   // Initialize store-driven renderer and controls
   initRenderer()
-  initStoreBoundControls()
 })
 
 if (typeof globalThis !== 'undefined') {
