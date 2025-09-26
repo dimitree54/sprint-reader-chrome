@@ -100,6 +100,20 @@ Each browser target produces an optimized distribution in `dist/<browser>/`.
 
 ## <a name="automated-testing"></a>Automated Testing
 
+The project includes both unit tests and end-to-end tests to ensure code quality and functionality.
+
+### Unit Tests
+
+Unit tests are implemented with [Vitest](https://vitest.dev/) and provide fast, isolated testing of individual functions and modules.
+
+```bash
+npm run test:unit
+```
+
+Unit tests are co-located with source files using the `.spec.ts` extension and provide comprehensive coverage of core utilities and algorithms.
+
+### End-to-End Tests
+
 End-to-end regression tests run on Chromium via [Playwright](https://playwright.dev/).
 
 ```bash

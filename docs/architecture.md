@@ -184,6 +184,18 @@ Each command prepares a fully self-contained directory that can be zipped for st
 
 ## 7. Testing Strategy
 
+The testing strategy combines unit tests for isolated component testing with end-to-end tests for full user workflows.
+
+### 7.1 Unit Tests
+
+* Unit tests are implemented with [Vitest](https://vitest.dev/) and located co-located with source files using `.spec.ts` extension.
+* Tests provide fast, isolated testing of individual functions and modules without requiring browser contexts.
+* Current coverage includes core utilities like HTML encoding/decoding functions in `src/common/html.spec.ts`.
+* The modular reader architecture (`timing-engine.ts`, `text-processor.ts`, `visual-effects.ts`) enables comprehensive unit testing of individual algorithms.
+* Unit tests can directly import modules under `src/common`, `src/platform`, and `src/reader` for isolated testing.
+
+### 7.2 End-to-End Tests
+
 * Playwright tests are executed against the built Chrome bundle (`dist/chrome`). The `npm test` script automatically runs the build before launching the browser.
 * Tests exercise the background worker APIs directly (`openReaderWindowSetup`), wait for the reader window, and verify playbook behaviour by asserting that words progress after toggling play.
 * Comprehensive coverage includes:
@@ -192,8 +204,6 @@ Each command prepares a fully self-contained directory that can be zipped for st
   * Advanced timing algorithm validation with word frequency differences
   * Text preprocessing capabilities (acronym consolidation, number preservation, hyphen preservation)
   * Chunking logic for short word grouping
-* The modular reader architecture (`timing-engine.ts`, `text-processor.ts`, `visual-effects.ts`) enables isolated unit testing of individual algorithms.
-* Future unit-test coverage can directly import modules under `src/common`, `src/platform`, and `src/reader` for Jest/Vitest testing.
 * OpenAI integration test requires a real API key. Set `OPENAI_API_KEY` in the environment before running the suite to validate live provider behavior (no mocks or fallbacks).
 
 ## 7.5. Text Preprocessing Architecture
