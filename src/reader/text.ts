@@ -7,6 +7,7 @@ import { StreamingPreprocessingManager } from '../preprocessing/streaming-manage
 import { createChunks } from './timing-engine'
 import { calculateOptimalFontSizeForText } from './visual-effects'
 import { getTimingSettings, state, resetStreamingState } from './state'
+import { useReaderStore } from './state/reader.store'
 import type { ReaderToken } from './text-types'
 
 type RenderCallback = () => void
@@ -34,6 +35,7 @@ export async function rebuildWordItems (): Promise<void> {
   state.wordItems = createChunks(preprocessedWords, timingSettings)
 
   state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems)
+  useReaderStore.setState({ wordItems: state.wordItems })
 }
 
 /**
@@ -96,8 +98,10 @@ export async function rebuildWordItemsWithStreaming (): Promise<void> {
 
 export async function setWords (words: ReaderToken[]): Promise<void> {
   state.words = words
+  useReaderStore.setState({ tokens: words, index: 0 })
   await rebuildWordItems()
   state.index = 0
+  useReaderStore.setState({ index: 0 })
 }
 
 /**
@@ -105,8 +109,10 @@ export async function setWords (words: ReaderToken[]): Promise<void> {
  */
 export async function setWordsWithStreaming (words: ReaderToken[]): Promise<void> {
   state.words = words
+  useReaderStore.setState({ tokens: words, index: 0, isPreprocessing: true, isStreaming: true })
   await rebuildWordItemsWithStreaming()
   state.index = 0
+  useReaderStore.setState({ index: 0 })
 }
 
 export function updateOptimalFontSize (): void {
@@ -129,4 +135,5 @@ export function recalculateTimingOnly (): void {
   state.wordItems = createChunks(wordsWithBoldInfo, timingSettings)
 
   state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems)
+  useReaderStore.setState({ wordItems: state.wordItems })
 }

@@ -5,6 +5,7 @@ import {
 import { state } from './state'
 import { applyThemeToElement } from '../common/theme'
 import { DEFAULTS } from '../config/defaults'
+import { useReaderStore } from './state/reader.store'
 
 const THEME_OPTIONS = {
   lightClass: 'reader--light',
@@ -21,6 +22,12 @@ export async function loadPreferences (): Promise<void> {
   state.wordFlicker = prefs.wordFlicker
   state.wordFlickerPercent = prefs.wordFlickerPercent
   state.theme = prefs.theme
+  useReaderStore.setState({
+    wordsPerMinute: state.wordsPerMinute,
+    theme: state.theme,
+    wordFlicker: state.wordFlicker,
+    wordFlickerPercent: state.wordFlickerPercent
+  })
 
   applyThemeToElement(document.body, state.theme, THEME_OPTIONS)
 }
@@ -41,4 +48,5 @@ export function persistPreferences (): void {
 export function syncThemeToggle (checked: boolean): void {
   state.theme = checked ? DEFAULTS.THEMES.light : DEFAULTS.THEMES.dark
   applyThemeToElement(document.body, state.theme, THEME_OPTIONS)
+  useReaderStore.setState({ theme: state.theme })
 }

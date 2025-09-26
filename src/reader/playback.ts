@@ -1,5 +1,6 @@
 import { renderCurrentWord } from './render'
 import { setTimer, state, stopTimer } from './state'
+import { useReaderStore } from './state/reader.store'
 import { DEFAULTS } from '../config/defaults'
 
 function calculateDelay (): number {
@@ -18,23 +19,27 @@ function scheduleNextWord (): void {
 
   if (state.index >= state.wordItems.length - 1) {
     state.playing = false
+    useReaderStore.setState({ status: 'paused' })
     renderCurrentWord()
     return
   }
 
   state.index++
+  useReaderStore.getState().setPlaybackIndex(state.index)
   setTimer(setTimeout(scheduleNextWord, calculateDelay()))
   renderCurrentWord()
 }
 
 export function stopPlayback (): void {
   state.playing = false
+  useReaderStore.setState({ status: 'paused' })
   stopTimer()
 }
 
 export function startPlayback (): void {
   stopPlayback()
   state.playing = true
+  useReaderStore.setState({ status: 'playing' })
   setTimer(setTimeout(scheduleNextWord, calculateDelay()))
   renderCurrentWord()
 }

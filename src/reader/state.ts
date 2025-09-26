@@ -3,6 +3,7 @@ import { DEFAULTS } from '../config/defaults'
 import type { TimingSettings, WordItem } from './timing-engine'
 import type { ReaderToken } from './text-types'
 import type { VisualSettings } from './visual-effects'
+import { useReaderStore } from './state/reader.store'
 
 type PlaybackTimer = ReturnType<typeof setTimeout> | undefined
 
@@ -95,16 +96,30 @@ export function startStreaming (): void {
   state.streamingComplete = false
   state.processedChunkCount = 0
   state.estimatedTotalChunks = undefined
+  useReaderStore.setState({
+    isStreaming: true,
+    streamingComplete: false,
+    processedChunkCount: 0,
+    estimatedTotalChunks: undefined
+  })
 }
 
 export function completeStreaming (): void {
   state.isStreaming = false
   state.streamingComplete = true
+  useReaderStore.setState({
+    isStreaming: false,
+    streamingComplete: true
+  })
 }
 
 export function appendWordItems (newWordItems: WordItem[]): void {
   state.wordItems.push(...newWordItems)
   state.processedChunkCount += newWordItems.length
+  useReaderStore.setState((s) => ({
+    wordItems: s.wordItems.concat(newWordItems),
+    processedChunkCount: state.processedChunkCount
+  }))
 }
 
 export function updateStreamingProgress (processedChunks: number, estimatedTotal?: number): void {
@@ -112,6 +127,10 @@ export function updateStreamingProgress (processedChunks: number, estimatedTotal
   if (estimatedTotal !== undefined) {
     state.estimatedTotalChunks = estimatedTotal
   }
+  useReaderStore.setState({
+    processedChunkCount: state.processedChunkCount,
+    estimatedTotalChunks: state.estimatedTotalChunks
+  })
 }
 
 export function resetStreamingState (): void {
@@ -119,4 +138,10 @@ export function resetStreamingState (): void {
   state.streamingComplete = false
   state.processedChunkCount = 0
   state.estimatedTotalChunks = undefined
+  useReaderStore.setState({
+    isStreaming: false,
+    streamingComplete: false,
+    processedChunkCount: 0,
+    estimatedTotalChunks: undefined
+  })
 }
