@@ -1,28 +1,11 @@
-import { wrapChromeToBrowserLike } from './wrap-chrome'
-import type { BrowserContext, BrowserLike, ChromeAPI } from './types'
+import type { BrowserContext, BrowserLike } from './types'
+import { browserApi } from '../core/browser-api.service'
 
-function resolveBrowser (): BrowserLike {
-  if (typeof globalThis !== 'undefined') {
-    const scope = globalThis as typeof globalThis & { browser?: BrowserLike, chrome?: ChromeAPI }
-    if (typeof scope.browser !== 'undefined') {
-      return scope.browser as BrowserLike
-    }
-    if (typeof scope.chrome !== 'undefined') {
-      return wrapChromeToBrowserLike(scope.chrome)
-    }
-  }
-  throw new Error('WebExtension runtime is not available in this context.')
-}
-
-let cachedBrowser: BrowserLike | undefined
-
+// Backwards-compatible surface that now delegates to BrowserApiService
 export function getBrowser (): BrowserLike {
-  if (!cachedBrowser) {
-    cachedBrowser = resolveBrowser()
-  }
-  return cachedBrowser
+  return browserApi.getBrowser() as BrowserLike
 }
 
-export const browser: BrowserContext = getBrowser()
+export const browser: BrowserContext = browserApi.getBrowserContext()
 
 export type { BrowserContext }

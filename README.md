@@ -176,6 +176,8 @@ We are migrating to a service-oriented architecture (see `docs/refactoring/new_a
 
 These directories are currently placeholders; code will be moved incrementally in subsequent stories with full test coverage at each step.
 
+Latest: Story 1.4 created `BrowserApiService` and refactored platform wrappers to delegate to it, preserving backward compatibility and keeping tests green.
+
 ## <a name="license"></a>License
 
 Copyright (c) 2013-2025, Anthony Nosek
