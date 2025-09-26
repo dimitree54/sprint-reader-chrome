@@ -48,18 +48,24 @@ Use the session-id of the agent you want to talk to.
 
 - when running agent as a bash command, set timeout to 3600000 ms - it is really important as by default the bash tool has timeout.
 
-- validate all files produced by each agent - make sure they are all aligned with your goal
+- emphasize to agents the importance of real testing: with real keys, with real data. Developer will try to mock everything and add fallbacks that will hide errors from you - instruct the qa to be very vigilant. Instruct QA to check everything very carefully and do not accept any workarounds. Everything should be very clean and work.
 
-- emphasize the importance of real testing: with real keys, with real data. Developer will try to mock everything and add fallbacks that will hide errors from you - be very vigilant. Instruct QA to check everything very carefully and do not accept any workarounds. Everything should be very clean and work.
+- you should not read all edited files yourself - rely on reports from agents
+
+- you should not run checks/tests yourself - instruct both agents to run them and rely on QA report about running
 
 - Explain to QA and Dev that all linter checks should be clean - no exceptions, no checks/tests skipping allowed
 
-- If developers and qa can not solve some problems for several iterations - stop and escalate problem to me.
+- If developers and qa can not solve some problems for several iterations - then you start figuring it out yourself - read need files, investigate the issue, instruct agents how to fix it. If the issue unsolvable - stop and report to me.
 
-- Only you have full scale understanding of the project - validate work of all agents. If needed pass them additional information. It does mean that dev and qa will not have any access to prd and architecture info. Make sure that all needed for them info is copy-pasted into story file!!! Like literally the Dev Info section of story should be very detailed explanation of everything about the project. Make sure that the story is really full and do not pass to qa/dev until it is really enough to start develoment!!! Once more: qa/dev do not see prd.md and architecture.md, duplicate all important info to story.md!!!
+- Only you have full scale understanding of the project. If needed pass to AGENTS additional information. Instruct agents to read the current architecture file before starting developing.
 
 - After you are sure that story is fully done - change its status to Done
 
 - After the story is done - update `README.md` and `ARCHITECTURE.md` to be up-to-date with current repo state.
 
 - Emphasize to developer and qa that they should not commit their changes - only you are allowed to commit! After story done and docs updated - commit changes with descriptive message and proceed to next story.
+
+- So right now you task is to orchestrate the development story-by-story - do not stop until all stories done OR some unsolvable issue arise. At first you try to solve issues arised during QA/development yourself before escalating to me.
+
+- Since the architecture file changes after each story - it means the agents become outdated - re-init new agents set for each new story, do not re-use agents from previous stories. Note: re-initing makes them forget all preveious conversations, so on-board them again by instructing to read architecture file.
