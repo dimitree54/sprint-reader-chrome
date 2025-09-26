@@ -1,7 +1,7 @@
 import { startPlayback, stopPlayback } from './playback'
 import { persistPreferences, syncThemeToggle } from './preferences'
 import { renderCurrentWord } from './render'
-import { state } from './state'
+import { useReaderStore } from './state/reader.store'
 import { updateOptimalFontSize, recalculateTimingOnly } from './text'
 import { DEFAULTS } from '../config/defaults'
 import { browserApi } from '../core/browser-api.service'
@@ -14,11 +14,12 @@ function updateWpmDisplay (value: number): void {
 }
 
 function togglePlayback (): void {
-  if (state.isPreprocessing) {
+  const store = useReaderStore.getState()
+  if (store.isPreprocessing) {
     return // Block playback during preprocessing
   }
 
-  if (state.playing) {
+  if (store.status === 'playing') {
     stopPlayback()
   } else {
     startPlayback()
@@ -34,11 +35,12 @@ function attachPlaybackControls (): void {
 
   const restartButton = document.getElementById('btnRestart')
   restartButton?.addEventListener('click', () => {
-    if (state.isPreprocessing) {
+    const store = useReaderStore.getState()
+    if (store.isPreprocessing) {
       return // Block restart during preprocessing
     }
     stopPlayback()
-    state.index = 0
+    store.setPlaybackIndex(0)
     renderCurrentWord()
   })
 }
@@ -56,7 +58,7 @@ function attachKeyboardControls (): void {
       return
     }
 
-    if (state.isPreprocessing) {
+    if (useReaderStore.getState().isPreprocessing) {
       event.preventDefault()
       return // Block keyboard controls during preprocessing
     }
@@ -69,12 +71,13 @@ function attachKeyboardControls (): void {
 function attachSpeedControl (): void {
   const slider = document.getElementById('sliderWpm') as HTMLInputElement | null
   slider?.addEventListener('input', () => {
-    if (state.isPreprocessing) {
+    const store = useReaderStore.getState()
+    if (store.isPreprocessing) {
       return // Block speed control during preprocessing
     }
 
     const value = Number.parseInt(slider.value, 10) || DEFAULTS.READER_PREFERENCES.wordsPerMinute
-    state.wordsPerMinute = value
+    store.setWPM(value)
     updateWpmDisplay(value)
 
     recalculateTimingOnly()
@@ -123,7 +126,7 @@ export function updateControlsState (): void {
   const themeToggle = document.getElementById('toggleTheme') as HTMLInputElement | null
   const settingsButton = document.getElementById('openReaderSettings') as HTMLButtonElement | null
 
-  const isDisabled = state.isPreprocessing
+  const isDisabled = useReaderStore.getState().isPreprocessing
 
   if (playButton) playButton.disabled = isDisabled
   if (restartButton) restartButton.disabled = isDisabled

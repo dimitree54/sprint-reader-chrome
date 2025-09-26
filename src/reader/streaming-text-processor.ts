@@ -8,7 +8,8 @@
 import { preprocessText } from './text-processor'
 import { createChunks } from './timing-engine'
 import { calculateOptimalFontSizeForText } from './visual-effects'
-import { getTimingSettings, state } from './state'
+import { getTimingSettings } from './state/legacy-state-helpers'
+import { useReaderStore } from './state/reader.store'
 import type { WordItem } from './timing-engine'
 import type { ReaderToken } from './text-types'
 
@@ -28,7 +29,7 @@ const fontSizeCache = new Map<string, FontSizeCache>()
 function getFontSizeCache(key: string): FontSizeCache {
   let cache = fontSizeCache.get(key)
   if (!cache) {
-    cache = { lastUpdate: 0, lastSize: state.optimalFontSize }
+    cache = { lastUpdate: 0, lastSize: useReaderStore.getState().optimalFontSize }
     fontSizeCache.set(key, cache)
   }
   return cache
@@ -91,7 +92,7 @@ export class StreamingTextProcessor {
         // Update progress
         this.onProgressUpdate({
           processedChunks: this.processedChunkCount,
-          estimatedTotal: state.estimatedTotalChunks
+          estimatedTotal: useReaderStore.getState().estimatedTotalChunks
         })
       }
     } catch (error) {

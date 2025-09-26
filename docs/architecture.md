@@ -55,7 +55,9 @@ src/
   settings/        → Dedicated settings surface for advanced preferences (API providers).
   reader/          → RSVP player UI assembled from focused modules:
     index.ts            → Entrypoint that wires selection loading, controls, messaging.
-    state.ts            → Central playback state container + shared helpers.
+    state/              → New Zustand-based state management:
+      reader.store.ts      → Centralized Zustand store for all reader state
+      legacy-state-helpers.ts → Compatibility helpers for legacy function interfaces
     selection-loader.ts → Loads current selection/preferences and syncs UI controls.
     controls.ts         → DOM event bindings (playback, WPM slider, theme toggle, resize).
     playback.ts         → Timer management and playback progression.
@@ -64,11 +66,16 @@ src/
     streaming-text.ts   → Main streaming orchestrator for real-time text processing.
     streaming-text-buffer.ts → Token buffering for sentence-based chunk delivery.
     streaming-text-processor.ts → Real-time RSVP chunk generation from streaming text.
-    timing/             → Split timing engine (`types.ts`, `word-analysis.ts`, `durations.ts`, `chunking.ts`).
+    timing/             → Split timing engine with `timing.service.ts` wrapper
     timing-engine.ts    → Barrel file exporting the timing helpers above.
     text-processor.ts   → Advanced text preprocessing (acronyms, numbers, hyphenation).
     visual-effects.ts   → Letter highlighting, positioning, flicker effects.
     openai-prompt.ts    → Builds chat completion payloads for OpenAI translation and summarisation requests.
+    playback/           → Service-oriented playback management:
+      playback.service.ts  → Centralized playback logic with unit tests
+    ui/                 → UI layer components:
+      renderer.ts          → Store-driven DOM updates
+      store-controls.ts    → Store-bound control event handlers
 static/
   assets/          → Icons and imagery shared across contexts.
   pages/           → HTML documents for popup, reader, settings, welcome, updated pages.
@@ -79,12 +86,15 @@ config/
 scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 ```
 
-Note: As part of the ongoing refactor toward the target architecture, scaffolding directories have been created to stage future migrations without changing runtime behavior:
+Note: The refactor toward service-oriented architecture is largely complete, with the following new structure implemented:
 
-- `src/core/` — core services (BrowserApiService, StorageService)
-- `src/reader/playback/`, `src/reader/state/`, `src/reader/timing/`, `src/reader/ui/` — reader domain modules split by responsibility
+- `src/core/` — core services (BrowserApiService, StorageService) - **ACTIVE**
+- `src/reader/state/` — Zustand store and state management - **ACTIVE**
+- `src/reader/playback/` — PlaybackService with unit tests - **ACTIVE**
+- `src/reader/timing/` — TimingService wrapper - **ACTIVE**
+- `src/reader/ui/` — Store-driven UI components - **ACTIVE**
 
-These are currently placeholders; code moves will happen incrementally per story with tests kept green after each step.
+The new architecture operates alongside legacy components for backward compatibility.
 
 ## 3. Execution Contexts
 

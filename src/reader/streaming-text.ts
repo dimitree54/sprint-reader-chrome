@@ -9,13 +9,13 @@ import { preprocessTextForReader } from '../preprocessing/index'
 import { StreamingTextBuffer } from './streaming-text-buffer'
 import { StreamingTextProcessor } from './streaming-text-processor'
 import {
-  state,
   startStreaming,
   completeStreaming,
   appendWordItems,
   updateStreamingProgress,
   resetStreamingState
-} from './state'
+} from './state/legacy-state-helpers'
+import { useReaderStore } from './state/reader.store'
 import { renderCurrentWord } from './render'
 import type { WordItem } from './timing-engine'
 
@@ -54,17 +54,20 @@ class StreamingTextOrchestrator {
     appendWordItems(chunks)
 
     // Update optimal font size based on all words so far
-    state.optimalFontSize = this.textProcessor.updateOptimalFontSize(state.words)
+    const store = useReaderStore.getState()
+    const optimalFontSize = this.textProcessor.updateOptimalFontSize(store.tokens)
+    store.setOptimalFontSize(optimalFontSize)
 
     // If not playing yet and we have enough chunks, allow user to start
-    if (!state.playing && state.wordItems.length >= 3) {
+    if (store.status !== 'playing' && store.wordItems.length >= 3) {
       renderCurrentWord() // Update the display
     }
   }
 
   private handleWordsReady(words: { text: string; isBold: boolean }[]): void {
-    // Add words to state.words - this is now handled via callback instead of direct mutation
-    state.words.push(...words)
+    // Add words to store tokens - this is now handled via callback instead of direct mutation
+    const store = useReaderStore.getState()
+    store.setTokens([...store.tokens, ...words])
   }
 
   private handleProgressUpdate(progress: { processedChunks: number; estimatedTotal?: number }): void {
@@ -72,9 +75,10 @@ class StreamingTextOrchestrator {
 
     // Update progress UI if available
     const progressElement = document.getElementById('progress')
-    if (progressElement && state.isStreaming) {
-      const percentage = state.estimatedTotalChunks
-        ? Math.min((progress.processedChunks / state.estimatedTotalChunks) * 100, 100)
+    const store = useReaderStore.getState()
+    if (progressElement && store.isStreaming) {
+      const percentage = store.estimatedTotalChunks
+        ? Math.min((progress.processedChunks / store.estimatedTotalChunks) * 100, 100)
         : undefined
 
       if (percentage !== undefined) {
@@ -91,7 +95,8 @@ class StreamingTextOrchestrator {
     // Update progress UI
     const progressElement = document.getElementById('progress')
     if (progressElement) {
-      progressElement.textContent = `Ready: ${state.wordItems.length} chunks`
+      const store = useReaderStore.getState()
+      progressElement.textContent = `Ready: ${store.wordItems.length} chunks`
     }
 
     // Final render update
@@ -105,9 +110,11 @@ class StreamingTextOrchestrator {
   async startStreamingText(rawText: string): Promise<void> {
     // Reset state
     resetStreamingState()
-    state.words = []
-    state.wordItems = []
-    state.index = 0
+    useReaderStore.setState({
+      tokens: [],
+      wordItems: [],
+      index: 0
+    })
 
     // Reset text processor
     this.textProcessor.reset()
@@ -248,7 +255,7 @@ export async function initializeStreamingText(rawText: string): Promise<Streamin
  * Check if we're currently in streaming mode
  */
 export function isCurrentlyStreaming(): boolean {
-  return state.isStreaming
+  return useReaderStore.getState().isStreaming
 }
 
 /**
@@ -259,9 +266,10 @@ export function getStreamingProgress(): {
   estimatedTotal?: number
   isComplete: boolean
 } {
+  const store = useReaderStore.getState()
   return {
-    processedChunks: state.processedChunkCount,
-    estimatedTotal: state.estimatedTotalChunks,
-    isComplete: state.streamingComplete
+    processedChunks: store.processedChunkCount,
+    estimatedTotal: store.estimatedTotalChunks,
+    isComplete: store.streamingComplete
   }
 }

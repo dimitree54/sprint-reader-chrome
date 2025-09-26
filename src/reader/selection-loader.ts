@@ -1,5 +1,5 @@
 import { loadPreferences } from './preferences'
-import { state } from './state'
+import { useReaderStore } from './state/reader.store'
 import { wordsToTokens } from './text-types'
 import { decodeHtml, setWords, setWordsWithStreaming } from './text'
 import { renderCurrentWord } from './render'
@@ -13,19 +13,20 @@ function normaliseText (rawText: string): string {
 }
 
 function syncControls (): void {
+  const store = useReaderStore.getState()
   const slider = document.getElementById('sliderWpm') as HTMLInputElement | null
   if (slider) {
-    slider.value = String(state.wordsPerMinute)
+    slider.value = String(store.wordsPerMinute)
   }
 
   const wpmValue = document.getElementById('wpmValue')
   if (wpmValue) {
-    wpmValue.textContent = String(state.wordsPerMinute)
+    wpmValue.textContent = String(store.wordsPerMinute)
   }
 
   const themeToggle = document.getElementById('toggleTheme') as HTMLInputElement | null
   if (themeToggle) {
-    themeToggle.checked = state.theme === DEFAULTS.THEMES.light
+    themeToggle.checked = store.theme === DEFAULTS.THEMES.light
   }
 }
 

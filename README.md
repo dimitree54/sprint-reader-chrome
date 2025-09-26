@@ -176,7 +176,10 @@ We are migrating to a service-oriented architecture (see `docs/refactoring/new_a
 
 These directories are currently placeholders; code will be moved incrementally in subsequent stories with full test coverage at each step.
 
-Latest: Stories 1.4–1.5 centralized browser API access via `BrowserApiService` and migrated app code to use it, with platform wrappers delegating to the service. All tests remain green.
+Latest: Implemented Stories 1.4–1.16.
+- Core services: `BrowserApiService`, `StorageService`, `TimingService`, `AIPreprocessingService`, and `PlaybackService` (bridged to legacy).
+- Delegated reader logic to services; added store-driven `renderer` and `store-controls` while keeping legacy behavior intact.
+- All checks green (lint/typecheck/build) and full Playwright tests passing with real OpenAI API key.
 
 ## <a name="license"></a>License
 

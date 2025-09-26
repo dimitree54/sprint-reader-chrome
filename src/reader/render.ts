@@ -1,5 +1,6 @@
 import { wrapLettersInSpans, highlightOptimalLetter, setOptimalWordPositioning, applyFlickerEffect } from './visual-effects'
-import { getVisualSettings, state, getTimingSettings } from './state'
+import { getVisualSettings, getTimingSettings } from './state/legacy-state-helpers'
+import { useReaderStore } from './state/reader.store'
 import { updateControlsState } from './controls'
 import { getTimeProgress, formatTimeRemaining, formatProgressPercent } from './time-calculator'
 
@@ -31,6 +32,7 @@ function getRequiredElements(): RenderElements | null {
 }
 
 function handlePreprocessingState(elements: RenderElements): boolean {
+  const state = useReaderStore.getState()
   if (!state.isPreprocessing) return false
 
   elements.wordElement.textContent = 'Processing text...'
@@ -43,6 +45,7 @@ function handlePreprocessingState(elements: RenderElements): boolean {
 }
 
 function handleStreamingState(elements: RenderElements): boolean {
+  const state = useReaderStore.getState()
   if (!state.isStreaming) return false
 
   if (state.wordItems.length === 0) {
@@ -55,11 +58,12 @@ function handleStreamingState(elements: RenderElements): boolean {
     return true
   }
 
-  elements.statusElement.textContent = state.playing ? 'Playing (streaming)' : 'Loading...'
+  elements.statusElement.textContent = state.status === 'playing' ? 'Playing (streaming)' : 'Loading...'
   return false
 }
 
 function renderWordContent(wordElement: HTMLElement): void {
+  const state = useReaderStore.getState()
   const currentWordItem = state.wordItems[state.index]
 
   if (currentWordItem) {
@@ -71,7 +75,7 @@ function renderWordContent(wordElement: HTMLElement): void {
     highlightOptimalLetter(wordElement, currentWordItem, visualSettings)
     setOptimalWordPositioning(wordElement, currentWordItem)
 
-    if (state.playing) {
+    if (state.status === 'playing') {
       applyFlickerEffect(wordElement, currentWordItem, visualSettings)
     }
   } else {
@@ -80,6 +84,7 @@ function renderWordContent(wordElement: HTMLElement): void {
 }
 
 function updateStreamingProgress(elements: RenderElements): void {
+  const state = useReaderStore.getState()
   const shown = Math.min(state.index + 1, state.wordItems.length)
   const available = state.wordItems.length
 
@@ -102,6 +107,7 @@ function updateStreamingProgress(elements: RenderElements): void {
 }
 
 function updateRegularProgress(elements: RenderElements): void {
+  const state = useReaderStore.getState()
   const timingSettings = getTimingSettings()
   const timeProgress = getTimeProgress(state.wordItems, state.index, timingSettings)
 
@@ -114,6 +120,7 @@ function updateRegularProgress(elements: RenderElements): void {
 }
 
 function updateProgress(elements: RenderElements): void {
+  const state = useReaderStore.getState()
   if (state.wordItems.length > 0) {
     if (state.isStreaming) {
       updateStreamingProgress(elements)
@@ -136,15 +143,16 @@ export function renderCurrentWord (): void {
 
   renderWordContent(elements.wordElement)
 
+  const state = useReaderStore.getState()
   if (!state.isStreaming) {
-    elements.statusElement.textContent = state.playing ? 'Playing' : 'Paused'
+    elements.statusElement.textContent = state.status === 'playing' ? 'Playing' : 'Paused'
   }
 
   updateProgress(elements)
 
   const playButton = document.getElementById('btnPlay')
   if (playButton) {
-    playButton.textContent = state.playing ? 'Pause' : 'Play'
+    playButton.textContent = state.status === 'playing' ? 'Pause' : 'Play'
   }
 
   updateControlsState()

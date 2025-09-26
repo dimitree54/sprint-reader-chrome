@@ -22,6 +22,11 @@ export type ReaderStoreState = {
   highlightOptimalLetterColor: string
   wordFlicker: boolean
   wordFlickerPercent: number
+  pauseAfterComma: boolean
+  pauseAfterPeriod: boolean
+  pauseAfterParagraph: boolean
+  chunkSize: number
+  optimalFontSize: string
 
   // Streaming / UI
   isPreprocessing: boolean
@@ -36,9 +41,14 @@ export type ReaderStoreState = {
   setWPM: (wpm: number) => void
   setTheme: (theme: ReaderTheme) => void
   setTokens: (tokens: ReaderToken[]) => void
+  setWordItems: (items: WordItem[]) => void
   appendWordItems: (items: WordItem[]) => void
   setProgress: (processed: number, estimated?: number) => void
   setStatus: (status: ReaderStatus) => void
+  setIsPreprocessing: (isPreprocessing: boolean) => void
+  setStreamingState: (isStreaming: boolean, streamingComplete?: boolean) => void
+  setOptimalFontSize: (fontSize: string) => void
+  updatePreferences: (prefs: Partial<Pick<ReaderStoreState, 'highlightOptimalLetter' | 'highlightOptimalLetterColor' | 'wordFlicker' | 'wordFlickerPercent' | 'pauseAfterComma' | 'pauseAfterPeriod' | 'pauseAfterParagraph' | 'chunkSize'>>) => void
   reset: () => void
 }
 
@@ -55,6 +65,11 @@ export const useReaderStore = create<ReaderStoreState>()((set) => ({
   highlightOptimalLetterColor: DEFAULTS.UI.highlightOptimalLetterColor,
   wordFlicker: DEFAULTS.READER_PREFERENCES.wordFlicker,
   wordFlickerPercent: DEFAULTS.READER_PREFERENCES.wordFlickerPercent,
+  pauseAfterComma: DEFAULTS.READER_PREFERENCES.pauseAfterComma,
+  pauseAfterPeriod: DEFAULTS.READER_PREFERENCES.pauseAfterPeriod,
+  pauseAfterParagraph: DEFAULTS.READER_PREFERENCES.pauseAfterParagraph,
+  chunkSize: DEFAULTS.READER_PREFERENCES.chunkSize,
+  optimalFontSize: DEFAULTS.UI.optimalFontSize,
 
   isPreprocessing: false,
   isStreaming: false,
@@ -67,12 +82,20 @@ export const useReaderStore = create<ReaderStoreState>()((set) => ({
   setWPM: (wpm) => set({ wordsPerMinute: Math.max(1, Math.floor(wpm)) }),
   setTheme: (theme) => set({ theme }),
   setTokens: (tokens) => set({ tokens }),
+  setWordItems: (items) => set({ wordItems: items }),
   appendWordItems: (items) => set((s) => ({
     wordItems: s.wordItems.concat(items),
     processedChunkCount: s.processedChunkCount + items.length
   })),
   setProgress: (processed, estimated) => set({ processedChunkCount: processed, estimatedTotalChunks: estimated }),
   setStatus: (status) => set({ status }),
+  setIsPreprocessing: (isPreprocessing) => set({ isPreprocessing }),
+  setStreamingState: (isStreaming, streamingComplete) => set({
+    isStreaming,
+    streamingComplete: streamingComplete ?? false
+  }),
+  setOptimalFontSize: (fontSize) => set({ optimalFontSize: fontSize }),
+  updatePreferences: (prefs) => set((s) => ({ ...s, ...prefs })),
   reset: () => set(() => ({
     status: 'idle',
     index: 0,
@@ -91,4 +114,3 @@ export const useReaderStore = create<ReaderStoreState>()((set) => ({
     estimatedTotalChunks: undefined
   }))
 }))
-

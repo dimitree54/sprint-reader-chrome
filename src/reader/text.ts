@@ -7,7 +7,7 @@ import { StreamingPreprocessingManager } from '../preprocessing/streaming-manage
 import { createChunks } from './timing-engine'
 import { timingService } from './timing/timing.service'
 import { calculateOptimalFontSizeForText } from './visual-effects'
-import { getTimingSettings, state, resetStreamingState } from './state'
+import { getTimingSettings, resetStreamingState } from './state/legacy-state-helpers'
 import { useReaderStore } from './state/reader.store'
 import type { ReaderToken } from './text-types'
 
@@ -24,23 +24,29 @@ function notifyRender(): void {
 }
 
 export async function rebuildWordItems (): Promise<void> {
-  const rawText = state.words.map(w => w.text).join(' ')
+  const store = useReaderStore.getState()
+  const rawText = store.tokens.map(w => w.text).join(' ')
   const preprocessingResult = await aiPreprocessingService.translateText(rawText)
   // Let the timing service compute the final word items from text
-  state.wordItems = timingService.calculateWordTimingFromText(preprocessingResult.text, getTimingSettings())
+  const wordItems = timingService.calculateWordTimingFromText(preprocessingResult.text, getTimingSettings())
   // Update words (with bold info) to match processed text
   const preprocessedWords = preprocessText(preprocessingResult.text)
-  state.words = preprocessedWords.map(word => ({ text: word.text, isBold: word.isBold }))
+  const tokens = preprocessedWords.map(word => ({ text: word.text, isBold: word.isBold }))
 
-  state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems)
-  useReaderStore.setState({ wordItems: state.wordItems })
+  const optimalFontSize = calculateOptimalFontSizeForText(wordItems)
+  useReaderStore.setState({
+    wordItems,
+    tokens,
+    optimalFontSize
+  })
 }
 
 /**
  * Rebuild word items with streaming preprocessing
  */
 export async function rebuildWordItemsWithStreaming (): Promise<void> {
-  const originalRawText = state.words.map(w => w.text).join(' ')
+  const store = useReaderStore.getState()
+  const originalRawText = store.tokens.map(w => w.text).join(' ')
 
   // Clear any existing streaming state
   resetStreamingState()
@@ -95,10 +101,8 @@ export async function rebuildWordItemsWithStreaming (): Promise<void> {
 }
 
 export async function setWords (words: ReaderToken[]): Promise<void> {
-  state.words = words
   useReaderStore.setState({ tokens: words, index: 0 })
   await rebuildWordItems()
-  state.index = 0
   useReaderStore.setState({ index: 0 })
 }
 
@@ -106,32 +110,33 @@ export async function setWords (words: ReaderToken[]): Promise<void> {
  * Set words with streaming processing - processes text chunks as they arrive
  */
 export async function setWordsWithStreaming (words: ReaderToken[]): Promise<void> {
-  state.words = words
   useReaderStore.setState({ tokens: words, index: 0, isPreprocessing: true, isStreaming: true })
   await rebuildWordItemsWithStreaming()
-  state.index = 0
   useReaderStore.setState({ index: 0 })
 }
 
 export function updateOptimalFontSize (): void {
-  if (state.wordItems.length > 0) {
-    state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems)
+  const store = useReaderStore.getState()
+  if (store.wordItems.length > 0) {
+    const optimalFontSize = calculateOptimalFontSizeForText(store.wordItems)
+    store.setOptimalFontSize(optimalFontSize)
   }
 }
 
 export function recalculateTimingOnly (): void {
   // Only recalculate timing without preprocessing - use existing words
-  const preprocessedWords = preprocessText(state.words.map(w => w.text).join(' '))
+  const store = useReaderStore.getState()
+  const preprocessedWords = preprocessText(store.tokens.map(w => w.text).join(' '))
 
-  // Preserve the isBold information from existing state.words
+  // Preserve the isBold information from existing tokens
   const wordsWithBoldInfo = preprocessedWords.map((word, index) => ({
     text: word.text,
-    isBold: state.words[index]?.isBold || word.isBold
+    isBold: store.tokens[index]?.isBold || word.isBold
   }))
 
   const timingSettings = getTimingSettings()
-  state.wordItems = createChunks(wordsWithBoldInfo, timingSettings)
+  const wordItems = createChunks(wordsWithBoldInfo, timingSettings)
 
-  state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems)
-  useReaderStore.setState({ wordItems: state.wordItems })
+  const optimalFontSize = calculateOptimalFontSizeForText(wordItems)
+  useReaderStore.setState({ wordItems, optimalFontSize })
 }
