@@ -60,7 +60,8 @@ src/
       legacy-state-helpers.ts → Compatibility helpers for legacy function interfaces
     selection-loader.ts → Loads current selection/preferences and syncs UI controls.
     controls.ts         → DOM event bindings (playback, WPM slider, theme toggle, resize).
-    playback.ts         → Timer management and playback progression.
+    playback/           → Service-oriented playback management:
+      playback.service.ts  → Owns timer scheduling and playback progression.
     ui/renderer.ts      → Store-driven word rendering, progress display, play/pause visuals.
     text.ts             → Word preprocessing glue and chunk/font recalculation.
     streaming-text.ts   → Main streaming orchestrator for real-time text processing.

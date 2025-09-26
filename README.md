@@ -168,7 +168,7 @@ See `docs/architecture.md` for detailed technical documentation covering:
 
 The migration to a service‑oriented architecture is complete (see `docs/refactoring/new_architecture.md`). The current active structure:
 
-- Core services: `BrowserApiService`, `StorageService`, `TimingService`, `AIPreprocessingService`, `PlaybackService` (currently bridged to the legacy timing loop to preserve behavior).
+- Core services: `BrowserApiService`, `StorageService`, `TimingService`, `AIPreprocessingService`, `PlaybackService` (now fully owns the scheduling loop; legacy playback removed).
 - State: Centralized Zustand store at `src/reader/state/reader.store.ts` (single source of truth).
 - UI: Store‑driven renderer `src/reader/ui/renderer.ts` and `src/reader/ui/store-controls.ts`. The renderer fully owns DOM updates; legacy `render.ts` has been removed.
 

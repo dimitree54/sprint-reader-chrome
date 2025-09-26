@@ -1,4 +1,4 @@
-import { startPlayback, stopPlayback } from './playback'
+import { playbackService } from './playback/playback.service'
 import { persistPreferences, syncThemeToggle } from './preferences'
 import { useReaderStore } from './state/reader.store'
 import { updateOptimalFontSize, recalculateTimingOnly } from './text'
@@ -18,11 +18,8 @@ function togglePlayback (): void {
     return // Block playback during preprocessing
   }
 
-  if (store.status === 'playing') {
-    stopPlayback()
-  } else {
-    startPlayback()
-  }
+  if (store.status === 'playing') playbackService.pause()
+  else playbackService.play()
 }
 
 function attachPlaybackControls (): void {
@@ -37,8 +34,7 @@ function attachPlaybackControls (): void {
     if (store.isPreprocessing) {
       return // Block restart during preprocessing
     }
-    stopPlayback()
-    store.setPlaybackIndex(0)
+    playbackService.restart()
   })
 }
 
