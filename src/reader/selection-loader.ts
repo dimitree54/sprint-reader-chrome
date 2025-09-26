@@ -5,6 +5,7 @@ import { decodeHtml, setWords, setWordsWithStreaming } from './text'
 import { renderCurrentWord } from './render'
 import { browserApi } from '../core/browser-api.service'
 import { DEFAULTS } from '../config/defaults'
+import { aiPreprocessingService } from '../preprocessing/ai-preprocessing.service'
 import type { BackgroundMessage, BackgroundResponse } from '../common/messages'
 
 function normaliseText (rawText: string): string {
@@ -68,11 +69,9 @@ export async function loadSelectionContent (): Promise<void> {
 
 async function shouldEnableStreaming(): Promise<boolean> {
   try {
-    const { readOpenAIApiKey } = await import('../common/storage')
-    const apiKey = await readOpenAIApiKey()
-    return !!apiKey && apiKey.length > 0
+    return await aiPreprocessingService.isAvailable()
   } catch (error) {
-    console.debug('Could not check API key for streaming:', error)
+    console.debug('Could not check AI preprocessing availability:', error)
     return false
   }
 }

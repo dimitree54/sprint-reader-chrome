@@ -1,10 +1,11 @@
 export { decodeHtml } from '../common/html'
 import { preprocessText } from './text-processor'
-import { preprocessTextForReader } from '../preprocessing/index'
+import { aiPreprocessingService } from '../preprocessing/ai-preprocessing.service'
 import { initializeStreamingText } from './streaming-text'
 import type { StreamingTextProcessorInstance } from './streaming-text'
 import { StreamingPreprocessingManager } from '../preprocessing/streaming-manager'
 import { createChunks } from './timing-engine'
+import { timingService } from './timing/timing.service'
 import { calculateOptimalFontSizeForText } from './visual-effects'
 import { getTimingSettings, state, resetStreamingState } from './state'
 import { useReaderStore } from './state/reader.store'
@@ -24,15 +25,12 @@ function notifyRender(): void {
 
 export async function rebuildWordItems (): Promise<void> {
   const rawText = state.words.map(w => w.text).join(' ')
-
-  const preprocessingResult = await preprocessTextForReader(rawText)
+  const preprocessingResult = await aiPreprocessingService.translateText(rawText)
+  // Let the timing service compute the final word items from text
+  state.wordItems = timingService.calculateWordTimingFromText(preprocessingResult.text, getTimingSettings())
+  // Update words (with bold info) to match processed text
   const preprocessedWords = preprocessText(preprocessingResult.text)
-
-  // Update the state.words with the new preprocessed words (including bold information)
   state.words = preprocessedWords.map(word => ({ text: word.text, isBold: word.isBold }))
-
-  const timingSettings = getTimingSettings()
-  state.wordItems = createChunks(preprocessedWords, timingSettings)
 
   state.optimalFontSize = calculateOptimalFontSizeForText(state.wordItems)
   useReaderStore.setState({ wordItems: state.wordItems })
