@@ -110,6 +110,25 @@ npm test
 
 Tests exercise the complete reader flow including background worker APIs, reader window lifecycle, and RSVP playback behavior.
 
+### Testing prerequisites
+
+Some E2E scenarios validate the real OpenAI integration. To run the full suite successfully you must provide a valid API key via environment variable:
+
+```bash
+export OPENAI_API_KEY="sk-..."
+npm test
+```
+
+Alternatively, prefix the command:
+
+```bash
+OPENAI_API_KEY="sk-..." npm test
+```
+
+Without this variable, the OpenAI integration test will fail by design (no mocks or fallbacks are used).
+
+Note: The Playwright test runner auto-loads variables from a local `.env` file and will pick up `OPENAI_API_KEY` from there if present. Existing process environment variables always take precedence.
+
 ## <a name="useful-resources"></a>Useful Resources
 
 - [Chrome Extensions Official Site](https://developer.chrome.com/extensions)

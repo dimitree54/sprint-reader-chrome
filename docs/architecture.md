@@ -194,6 +194,7 @@ Each command prepares a fully self-contained directory that can be zipped for st
   * Chunking logic for short word grouping
 * The modular reader architecture (`timing-engine.ts`, `text-processor.ts`, `visual-effects.ts`) enables isolated unit testing of individual algorithms.
 * Future unit-test coverage can directly import modules under `src/common`, `src/platform`, and `src/reader` for Jest/Vitest testing.
+* OpenAI integration test requires a real API key. Set `OPENAI_API_KEY` in the environment before running the suite to validate live provider behavior (no mocks or fallbacks).
 
 ## 7.5. Text Preprocessing Architecture
 

@@ -1,4 +1,30 @@
 import { defineConfig } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
+
+// Lightweight .env loader (no external deps). Does not override existing envs.
+(() => {
+  try {
+    const envPath = path.resolve(process.cwd(), '.env');
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf8');
+      const lines = content.split(/\r?\n/);
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line || line.startsWith('#')) continue;
+        const idx = line.indexOf('=');
+        if (idx === -1) continue;
+        const key = line.slice(0, idx).trim();
+        const value = line.slice(idx + 1).trim();
+        if (key && value && !(key in process.env)) {
+          process.env[key] = value;
+        }
+      }
+    }
+  } catch {
+    // ignore env load errors; tests will surface missing envs explicitly
+  }
+})();
 
 export default defineConfig({
   testDir: './tests/playwright',
