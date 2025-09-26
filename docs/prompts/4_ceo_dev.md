@@ -56,9 +56,7 @@ Use the session-id of the agent you want to talk to.
 
 - emphasize to agents the importance of real testing: with real keys, with real data. Developer will try to mock everything and add fallbacks that will hide errors from you - instruct the qa to be very vigilant. Instruct QA to check everything very carefully and do not accept any workarounds. Everything should be very clean and work.
 
-- you should not read all edited files yourself - rely on reports from agents
-
-- you should not run checks/tests yourself - instruct both agents to run them and rely on QA report about running
+- read all edited files yourself - verify all changes before commiting - make sure the story is really done before marking it so
 
 - Explain to QA and Dev that all linter checks should be clean - no exceptions, no checks/tests skipping allowed
 
