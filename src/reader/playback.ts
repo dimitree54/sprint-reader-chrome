@@ -1,4 +1,3 @@
-import { renderCurrentWord } from './render'
 import { setTimer, stopTimer } from './state/legacy-state-helpers'
 import { useReaderStore } from './state/reader.store'
 import { DEFAULTS } from '../config/defaults'
@@ -21,13 +20,11 @@ function scheduleNextWord (): void {
 
   if (store.index >= store.wordItems.length - 1) {
     store.setStatus('paused')
-    renderCurrentWord()
     return
   }
 
   store.setPlaybackIndex(store.index + 1)
   setTimer(setTimeout(scheduleNextWord, calculateDelay()))
-  renderCurrentWord()
 }
 
 export function stopPlayback (): void {
@@ -39,5 +36,4 @@ export function startPlayback (): void {
   stopPlayback()
   useReaderStore.getState().setStatus('playing')
   setTimer(setTimeout(scheduleNextWord, calculateDelay()))
-  renderCurrentWord()
 }

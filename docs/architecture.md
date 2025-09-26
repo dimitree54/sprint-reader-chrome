@@ -61,7 +61,7 @@ src/
     selection-loader.ts → Loads current selection/preferences and syncs UI controls.
     controls.ts         → DOM event bindings (playback, WPM slider, theme toggle, resize).
     playback.ts         → Timer management and playback progression.
-    render.ts           → Word rendering, progress display, play/pause visuals.
+    ui/renderer.ts      → Store-driven word rendering, progress display, play/pause visuals.
     text.ts             → Word preprocessing glue and chunk/font recalculation.
     streaming-text.ts   → Main streaming orchestrator for real-time text processing.
     streaming-text-buffer.ts → Token buffering for sentence-based chunk delivery.
@@ -134,10 +134,10 @@ The reader implementation follows a modular architecture with clear separation o
 * `selection-loader.ts` fetches current preferences/selection, normalises HTML, rebuilds timing chunks, and synchronises slider/theme UI.
 * `messages.ts` listens for `refreshReader` runtime events and reuses the loader to refresh the view on demand.
 
-#### 3.4.2 State & Playback (`src/reader/state.ts`, `playback.ts`, `controls.ts`, `render.ts`, `text.ts`)
+#### 3.4.2 State & Playback (`src/reader/state.ts`, `playback.ts`, `controls.ts`, `text.ts`, `ui/renderer.ts`)
 * `state.ts` centralises the reader's playback state and surfaces helpers for timing/visual configuration.
 * `text.ts` bridges preprocessing, chunk generation, and optimal font sizing whenever the active text or WPM changes.
-* `render.ts` updates the DOM with the current word, status, and progress while delegating highlighting/flicker to `visual-effects.ts`.
+* `ui/renderer.ts` is the sole DOM writer: it updates the current word, status, and progress while delegating highlighting/flicker to `visual-effects.ts`.
 * `playback.ts` manages timers, scheduling, and play/pause transitions, keeping state mutations predictable.
 * `controls.ts` binds UI events (play/pause/restart, WPM slider, theme toggle, resize) to the playback/state modules and persists preference changes.
 

@@ -2,7 +2,6 @@ import { loadPreferences } from './preferences'
 import { useReaderStore } from './state/reader.store'
 import { wordsToTokens } from './text-types'
 import { decodeHtml, setWords, setWordsWithStreaming } from './text'
-import { renderCurrentWord } from './render'
 import { browserApi } from '../core/browser-api.service'
 import { DEFAULTS } from '../config/defaults'
 import { aiPreprocessingService } from '../preprocessing/ai-preprocessing.service'
@@ -63,9 +62,6 @@ export async function loadSelectionContent (): Promise<void> {
   const setWordsFunction = shouldUseStreaming ? setWordsWithStreaming : setWords
 
   await setWordsFunction(tokens)
-
-  // Update UI after text processing
-  renderCurrentWord()
 }
 
 async function shouldEnableStreaming(): Promise<boolean> {

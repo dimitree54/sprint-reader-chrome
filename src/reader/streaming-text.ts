@@ -16,7 +16,6 @@ import {
   resetStreamingState
 } from './state/legacy-state-helpers'
 import { useReaderStore } from './state/reader.store'
-import { renderCurrentWord } from './render'
 import type { WordItem } from './timing-engine'
 
 export interface StreamingTextProcessorInstance {
@@ -59,8 +58,10 @@ class StreamingTextOrchestrator {
     store.setOptimalFontSize(optimalFontSize)
 
     // If not playing yet and we have enough chunks, allow user to start
-    if (store.status !== 'playing' && store.wordItems.length >= 3) {
-      renderCurrentWord() // Update the display
+    // Renderer will react to wordItems.length change automatically
+    // Once we have any chunks, preprocessing is no longer blocking UI
+    if (store.isPreprocessing && store.wordItems.length > 0) {
+      store.setIsPreprocessing(false)
     }
   }
 
@@ -72,35 +73,17 @@ class StreamingTextOrchestrator {
 
   private handleProgressUpdate(progress: { processedChunks: number; estimatedTotal?: number }): void {
     updateStreamingProgress(progress.processedChunks, progress.estimatedTotal)
-
-    // Update progress UI if available
-    const progressElement = document.getElementById('progress')
-    const store = useReaderStore.getState()
-    if (progressElement && store.isStreaming) {
-      const percentage = store.estimatedTotalChunks
-        ? Math.min((progress.processedChunks / store.estimatedTotalChunks) * 100, 100)
-        : undefined
-
-      if (percentage !== undefined) {
-        progressElement.textContent = `Processing... ${Math.round(percentage)}%`
-      } else {
-        progressElement.textContent = `Processing... ${progress.processedChunks} chunks ready`
-      }
-    }
+    // Renderer will react to store changes automatically
   }
 
   private handleProcessingComplete(): void {
     completeStreaming()
-
-    // Update progress UI
-    const progressElement = document.getElementById('progress')
-    if (progressElement) {
-      const store = useReaderStore.getState()
-      progressElement.textContent = `Ready: ${store.wordItems.length} chunks`
+    // Ensure preprocessing flag is cleared
+    const store = useReaderStore.getState()
+    if (store.isPreprocessing) {
+      store.setIsPreprocessing(false)
     }
-
-    // Final render update
-    renderCurrentWord()
+    // Renderer will react to store changes automatically
   }
 
   private handleProcessingError(error: Error, meta: { chunkLength: number; processedChunks: number }): void {

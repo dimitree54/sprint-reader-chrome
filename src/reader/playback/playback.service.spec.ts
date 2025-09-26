@@ -1,9 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { playbackService } from './playback.service'
 import { useReaderStore } from '../state/reader.store'
-import { vi } from 'vitest'
 
-vi.mock('../render', () => ({ renderCurrentWord: vi.fn() }))
 vi.mock('../playback', () => ({ startPlayback: vi.fn(), stopPlayback: vi.fn() }))
 
 describe('PlaybackService', () => {

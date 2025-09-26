@@ -1,6 +1,5 @@
 import { startPlayback, stopPlayback } from './playback'
 import { persistPreferences, syncThemeToggle } from './preferences'
-import { renderCurrentWord } from './render'
 import { useReaderStore } from './state/reader.store'
 import { updateOptimalFontSize, recalculateTimingOnly } from './text'
 import { DEFAULTS } from '../config/defaults'
@@ -24,7 +23,6 @@ function togglePlayback (): void {
   } else {
     startPlayback()
   }
-  renderCurrentWord()
 }
 
 function attachPlaybackControls (): void {
@@ -41,7 +39,6 @@ function attachPlaybackControls (): void {
     }
     stopPlayback()
     store.setPlaybackIndex(0)
-    renderCurrentWord()
   })
 }
 
@@ -81,7 +78,6 @@ function attachSpeedControl (): void {
     updateWpmDisplay(value)
 
     recalculateTimingOnly()
-    renderCurrentWord()
     persistPreferences()
   })
 }
@@ -102,7 +98,6 @@ function attachResizeHandler (): void {
     }
     resizeTimeout = setTimeout(() => {
       updateOptimalFontSize()
-      renderCurrentWord()
     }, DEFAULTS.UI.resizeDebounceMs)
   })
 }

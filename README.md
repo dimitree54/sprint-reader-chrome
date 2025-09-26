@@ -170,7 +170,7 @@ The migration to a service‑oriented architecture is complete (see `docs/refact
 
 - Core services: `BrowserApiService`, `StorageService`, `TimingService`, `AIPreprocessingService`, `PlaybackService` (currently bridged to the legacy timing loop to preserve behavior).
 - State: Centralized Zustand store at `src/reader/state/reader.store.ts` (single source of truth).
-- UI: Store‑driven renderer `src/reader/ui/renderer.ts` and `src/reader/ui/store-controls.ts` coexisting with legacy `render.ts` for compatibility; full renderer takeover is planned without functional change.
+- UI: Store‑driven renderer `src/reader/ui/renderer.ts` and `src/reader/ui/store-controls.ts`. The renderer fully owns DOM updates; legacy `render.ts` has been removed.
 
 Quality gates: lint + typecheck + unit + end‑to‑end tests are green with a real `OPENAI_API_KEY`.
 

@@ -1,6 +1,5 @@
 import { useReaderStore } from '../state/reader.store'
 import { startPlayback as legacyStart, stopPlayback as legacyStop } from '../playback'
-import { renderCurrentWord } from '../render'
 
 export class PlaybackService {
   play (): void {
@@ -18,10 +17,9 @@ export class PlaybackService {
   }
 
   restart (): void {
-    // Reset index to zero and re-render via legacy path
+    // Reset index to zero
     useReaderStore.setState({ index: 0, status: 'paused' })
     legacyStop()
-    renderCurrentWord()
   }
 }
 
