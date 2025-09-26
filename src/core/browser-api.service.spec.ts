@@ -8,6 +8,7 @@ describe('BrowserApiService (chrome adapter)', () => {
   let originalBrowser: any
 
   beforeEach(() => {
+    BrowserApiService.__resetForTests()
     originalChrome = global.chrome
     originalBrowser = global.browser
     delete global.browser
@@ -32,9 +33,11 @@ describe('BrowserApiService (chrome adapter)', () => {
     global.chrome = {
       runtime: {
         lastError: undefined,
-        sendMessage: (message: unknown, cb: (resp: unknown) => void) => {
+        sendMessage: (...args: any[]) => {
+          const message = args[0]
+          const cb = args[args.length - 1]
           responses.push(message)
-          cb({ ok: true })
+          if (typeof cb === 'function') cb({ ok: true })
         },
         getURL: (p: string) => p,
         getManifest: () => ({}) as any,
@@ -58,10 +61,10 @@ describe('BrowserApiService (chrome adapter)', () => {
     global.chrome = {
       runtime: {
         lastError: undefined as any,
-        sendMessage: (_message: unknown, cb: (resp: unknown) => void) => {
-          // simulate error present after callback
+        sendMessage: (...args: any[]) => {
+          const cb = args[args.length - 1]
           ;(global.chrome.runtime as any).lastError = { message: 'boom' }
-          cb(undefined)
+          if (typeof cb === 'function') cb(undefined)
         },
         getURL: (p: string) => p,
         getManifest: () => ({}) as any,
@@ -79,4 +82,3 @@ describe('BrowserApiService (chrome adapter)', () => {
     await expect(service.sendMessage({})).rejects.toThrow(/boom/)
   })
 })
-

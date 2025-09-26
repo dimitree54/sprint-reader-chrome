@@ -17,6 +17,11 @@ export class BrowserApiService {
     return this.instance
   }
 
+  // Test-only: allow unit tests to reset singleton and cache
+  static __resetForTests (): void {
+    this.instance = null
+  }
+
   // Public surface ---------------------------------------------------------
 
   public getBrowser (): MinimalBrowserAPI {
