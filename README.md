@@ -166,20 +166,13 @@ See `docs/architecture.md` for detailed technical documentation covering:
 
 ## Refactoring Status
 
-We are migrating to a service-oriented architecture (see `docs/refactoring/new_architecture.md`). As part of Story 1.3, scaffolding directories have been created to stage the migration without changing behavior:
+The migration to a service‑oriented architecture is complete (see `docs/refactoring/new_architecture.md`). The current active structure:
 
-- `src/core/` (core services such as BrowserApiService, StorageService)
-- `src/reader/playback/`
-- `src/reader/state/`
-- `src/reader/timing/` (pre-existing)
-- `src/reader/ui/`
+- Core services: `BrowserApiService`, `StorageService`, `TimingService`, `AIPreprocessingService`, `PlaybackService` (currently bridged to the legacy timing loop to preserve behavior).
+- State: Centralized Zustand store at `src/reader/state/reader.store.ts` (single source of truth).
+- UI: Store‑driven renderer `src/reader/ui/renderer.ts` and `src/reader/ui/store-controls.ts` coexisting with legacy `render.ts` for compatibility; full renderer takeover is planned without functional change.
 
-These directories are currently placeholders; code will be moved incrementally in subsequent stories with full test coverage at each step.
-
-Latest: Implemented Stories 1.4–1.16.
-- Core services: `BrowserApiService`, `StorageService`, `TimingService`, `AIPreprocessingService`, and `PlaybackService` (bridged to legacy).
-- Delegated reader logic to services; added store-driven `renderer` and `store-controls` while keeping legacy behavior intact.
-- All checks green (lint/typecheck/build) and full Playwright tests passing with real OpenAI API key.
+Quality gates: lint + typecheck + unit + end‑to‑end tests are green with a real `OPENAI_API_KEY`.
 
 ## <a name="license"></a>License
 
