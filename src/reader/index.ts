@@ -5,6 +5,8 @@ import { renderCurrentWord } from './render'
 import { registerRenderCallback } from './text'
 import { state } from './state'
 import { DEFAULTS } from '../config/defaults'
+import { initRenderer } from './ui/renderer'
+import { initStoreBoundControls } from './ui/store-controls'
 
 function initializeCSSVariables(): void {
   const root = document.documentElement
@@ -17,6 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSelectionContent().catch(console.error)
   registerControls()
   registerMessageListener()
+  // Initialize store-driven renderer and controls (non-breaking augmentation)
+  try { initRenderer() } catch (e) { console.warn('Renderer init failed', e) }
+  try { initStoreBoundControls() } catch (e) { console.warn('Controls binding init failed', e) }
 })
 
 if (typeof globalThis !== 'undefined') {
