@@ -39,8 +39,11 @@ export class AIPreprocessingService {
     const { OpenAIProvider } = await import('./providers/openai')
     const { preprocessingConfigService } = await import('./config')
     const cfg = await preprocessingConfigService.getConfig()
+    if (!cfg.enabled) {
+      return this.manager.process(text, cfg)
+    }
     const provider = new OpenAIProvider()
-    if (!provider.isAvailable(cfg) || !cfg.apiKey) {
+    if (!provider.isAvailable(cfg)) {
       // Fallback to non-streaming path through manager
       return this.manager.process(text, cfg)
     }

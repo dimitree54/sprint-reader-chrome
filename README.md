@@ -139,7 +139,7 @@ Alternatively, prefix the command:
 OPENAI_API_KEY="sk-..." npm test
 ```
 
-Without this variable, the OpenAI integration test will fail by design (no mocks or fallbacks are used).
+Without this variable, the OpenAI integration test will fail by design (no mocks or fallbacks are used). Other tests run against the non‑streaming path (preprocessing disabled), and `tests/playwright/preprocessing-toggle.spec.ts` verifies that no network calls occur when preprocessing is disabled.
 
 Note: The Playwright test runner auto-loads variables from a local `.env` file and will pick up `OPENAI_API_KEY` from there if present. Existing process environment variables always take precedence.
 

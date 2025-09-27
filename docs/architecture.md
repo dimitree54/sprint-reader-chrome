@@ -9,9 +9,9 @@ _Last updated: September 2025_
 ```mermaid
 graph TD
     subgraph "Shared Modules"
-        Storage[storage.ts]
-        Messages[messages.ts]
-        BrowserAPI[browser.ts]
+        StorageService[core/storage.service.ts]
+        Messages[common/messages.ts]
+        BrowserAPI[core/browser-api.service.ts]
     end
 
     subgraph "Extension Contexts"
@@ -21,9 +21,9 @@ graph TD
         Reader[reader/index.ts]
     end
 
-    Storage --> Background
-    Storage --> Popup
-    Storage --> Reader
+    StorageService --> Background
+    StorageService --> Popup
+    StorageService --> Reader
     Messages --> Background
     Messages --> Content
     Messages --> Reader
@@ -207,7 +207,7 @@ The testing strategy combines unit tests for isolated component testing with end
 * Tests provide fast, isolated testing of individual functions and modules without requiring browser contexts.
 * Current coverage includes core utilities like HTML encoding/decoding functions in `src/common/html.spec.ts`.
 * The modular reader architecture (`timing-engine.ts`, `text-processor.ts`, `visual-effects.ts`) enables comprehensive unit testing of individual algorithms.
-* Unit tests can directly import modules under `src/common`, `src/platform`, and `src/reader` for isolated testing.
+* Unit tests can directly import modules under `src/common`, `src/core`, and `src/reader` for isolated testing.
 
 ### 7.2 End-to-End Tests
 

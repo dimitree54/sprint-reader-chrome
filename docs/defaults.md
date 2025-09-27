@@ -1,6 +1,6 @@
 # Default Values Configuration
 
-_Last updated: December 2024 (Post-Hardcode Elimination)_
+_Last updated: September 2025_
 
 This document describes all default values used throughout the extension and their purposes. All defaults are centralized in `src/config/defaults.ts` to ensure consistency and easy maintenance.
 
@@ -103,8 +103,6 @@ These values configure the OpenAI API requests for translation and summarization
 ## Preprocessing & Translation Defaults
 
 These values control preprocessing features and default translation behavior.
-
-These values control the default translation behavior for text preprocessing.
 
 | Setting | Default Value | Purpose |
 |---------|---------------|---------|
@@ -233,6 +231,14 @@ As part of the extension's architecture principles, the centralized defaults rep
 This approach ensures consistency and makes it easier to understand and maintain the extension's behavior.
 
 ## Recent Changes
+
+### September 2025 - Streaming & Defaults Alignment
+
+Updates in alignment with the current architecture and tests:
+
+- Preprocessing is disabled by default: `PREPROCESSING.enabled = false`
+- Default translation language is English: `TRANSLATION.defaultLanguage = 'en'`
+- OpenAI requests use the priority tier by default: `OPENAI.service_tier = 'priority'`
 
 ### December 2024 - Hardcode Elimination
 
