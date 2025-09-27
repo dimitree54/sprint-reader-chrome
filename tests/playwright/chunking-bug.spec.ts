@@ -35,11 +35,13 @@ test.describe('Sprint Reader - Chunking Bug', () => {
     await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
 
     const chunkingDetails = await readerPage.evaluate(() => {
-      const state = (window as any).state || (globalThis as any).state;
+      const store = (window as any).readerStore;
+      if (!store) return null;
+      const state = store.getState();
       if (!state || !state.wordItems) return null;
 
       return {
-        originalWords: state.words,
+        originalWords: state.tokens,
         chunkSize: state.chunkSize,
         wordItems: state.wordItems.map((item: any, index: number) => ({
           text: item.text,
@@ -105,11 +107,13 @@ test.describe('Sprint Reader - Chunking Bug', () => {
     await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
 
     const chunkingDetails = await readerPage.evaluate(() => {
-      const state = (window as any).state || (globalThis as any).state;
+      const store = (window as any).readerStore;
+      if (!store) return null;
+      const state = store.getState();
       if (!state || !state.wordItems) return null;
 
       return {
-        originalWords: state.words,
+        originalWords: state.tokens,
         wordItems: state.wordItems.map((item: any) => ({
           text: item.text,
           isGrouped: item.isGrouped,

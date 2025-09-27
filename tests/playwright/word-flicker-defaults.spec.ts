@@ -42,8 +42,9 @@ test.describe('Sprint Reader - Word Flicker Defaults', () => {
 
     // Verify wordFlicker default state
     const initialFlickerState = await readerPage.evaluate(() => {
-      const state = (window as any).state || (globalThis as any).state;
-      if (!state) throw new Error('reader state not found on window/globalThis');
+      const store = (window as any).readerStore;
+      if (!store) throw new Error('reader store not found on window');
+      const state = store.getState();
       return {
         wordFlicker: state.wordFlicker,
         wordFlickerPercent: state.wordFlickerPercent
@@ -87,8 +88,9 @@ test.describe('Sprint Reader - Word Flicker Defaults', () => {
 
     // Verify that the default is correctly loaded from storage fallback
     const persistedFlickerState = await readerPage.evaluate(() => {
-      const state = (window as any).state || (globalThis as any).state;
-      if (!state) throw new Error('reader state not found on window/globalThis');
+      const store = (window as any).readerStore;
+      if (!store) throw new Error('reader store not found on window');
+      const state = store.getState();
       return {
         wordFlicker: state.wordFlicker,
         wordFlickerPercent: state.wordFlickerPercent

@@ -35,7 +35,9 @@ test.describe('Sprint Reader - Improved Word Grouping', () => {
     await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
 
     const chunks = await readerPage.evaluate(() => {
-      const state = (window as any).state || (globalThis as any).state;
+      const store = (window as any).readerStore;
+      if (!store) return null;
+      const state = store.getState();
       if (!state || !state.wordItems) return null;
 
       return state.wordItems.map((item: any) => ({
@@ -131,7 +133,9 @@ test.describe('Sprint Reader - Improved Word Grouping', () => {
       await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
 
       const chunks = await readerPage.evaluate(() => {
-        const state = (window as any).state || (globalThis as any).state;
+        const store = (window as any).readerStore;
+        if (!store) return null;
+        const state = store.getState();
         if (!state || !state.wordItems) return null;
 
         return state.wordItems.map((item: any) => ({

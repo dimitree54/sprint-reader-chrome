@@ -39,7 +39,9 @@ test.describe('Sprint Reader - Timing Algorithms', () => {
       const wordElement = document.getElementById('word');
       if (!wordElement) return null;
 
-      const state = (window as any).state || (globalThis as any).state;
+      const store = (window as any).readerStore;
+      if (!store) return null;
+      const state = store.getState();
       if (!state || !state.wordItems) return null;
 
       return state.wordItems.map((item: any, index: number) => ({
@@ -101,7 +103,9 @@ test.describe('Sprint Reader - Timing Algorithms', () => {
     await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
 
     const chunkingInfo = await readerPage.evaluate(() => {
-      const state = (window as any).state || (globalThis as any).state;
+      const store = (window as any).readerStore;
+      if (!store) return null;
+      const state = store.getState();
       if (!state || !state.wordItems) return null;
 
       return state.wordItems.map((item: any, index: number) => ({

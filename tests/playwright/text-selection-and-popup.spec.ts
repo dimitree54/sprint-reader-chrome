@@ -47,9 +47,11 @@ test.describe('Sprint Reader - Text Selection and Popup', () => {
     await expect(wordLocator1).not.toHaveText('', { timeout: 10_000 });
 
     const firstReaderText = await readerPage.evaluate(() => {
-      const state = (window as any).state || (globalThis as any).state;
-      if (!state || !state.words || state.words.length === 0) return null;
-      return state.words.map((w: any) => w.text).join(' ');
+      const store = (window as any).readerStore;
+      if (!store) return null;
+      const state = store.getState();
+      if (!state.tokens || state.tokens.length === 0) return null;
+      return state.tokens.map((w: any) => w.text).join(' ');
     });
 
     expect(firstReaderText).toBe(firstText);
@@ -91,9 +93,11 @@ test.describe('Sprint Reader - Text Selection and Popup', () => {
     await expect(wordLocator2).not.toHaveText('', { timeout: 10_000 });
 
     const secondReaderText = await readerPage.evaluate(() => {
-      const state = (window as any).state || (globalThis as any).state;
-      if (!state || !state.words || state.words.length === 0) return null;
-      return state.words.map((w: any) => w.text).join(' ');
+      const store = (window as any).readerStore;
+      if (!store) return null;
+      const state = store.getState();
+      if (!state.tokens || state.tokens.length === 0) return null;
+      return state.tokens.map((w: any) => w.text).join(' ');
     });
 
     expect(secondReaderText).toBe(secondText);
@@ -129,9 +133,11 @@ test.describe('Sprint Reader - Text Selection and Popup', () => {
     await expect(wordLocator3).not.toHaveText('', { timeout: 10_000 });
 
     const thirdReaderText = await readerPage.evaluate(() => {
-      const state = (window as any).state || (globalThis as any).state;
-      if (!state || !state.words || state.words.length === 0) return null;
-      return state.words.map((w: any) => w.text).join(' ');
+      const store = (window as any).readerStore;
+      if (!store) return null;
+      const state = store.getState();
+      if (!state.tokens || state.tokens.length === 0) return null;
+      return state.tokens.map((w: any) => w.text).join(' ');
     });
 
     expect(thirdReaderText).toBe(thirdText);

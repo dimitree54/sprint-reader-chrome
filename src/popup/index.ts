@@ -1,5 +1,5 @@
 import { applyThemeToElement } from '../common/theme'
-import type { BackgroundMessage } from '../common/messages'
+import type { BackgroundMessage, BackgroundResponse } from '../common/messages'
 import {
   readReaderPreferences,
   readSummarizationLevel,
@@ -13,7 +13,7 @@ import {
   summarizationLevelToSliderIndex,
   getSummarizationLevelLabel
 } from '../common/summarization'
-import { browser } from '../platform/browser'
+import { browserApi } from '../core/browser-api.service'
 import { DEFAULTS } from '../config/defaults'
 
 const THEME_OPTIONS = {
@@ -59,16 +59,16 @@ async function sendOpenReaderMessage (selectionText: string) {
     theme: currentTheme
   }
 
-  await (browser.runtime.sendMessage as (message: BackgroundMessage) => Promise<unknown>)(message)
+  await browserApi.sendMessage(message)
 }
 
 async function loadMenuEntryText (elements: PopupElements) {
   try {
-    const response = await (browser.runtime.sendMessage as (message: BackgroundMessage) => Promise<{ menuEntryText: string }>)({
+    const response = await browserApi.sendMessage({
       target: 'background',
       type: 'getMenuEntryText'
-    } satisfies BackgroundMessage)
-    if (response?.menuEntryText) {
+    } satisfies BackgroundMessage) as BackgroundResponse
+    if (response && 'menuEntryText' in response) {
       elements.menuEntryTextSpan.textContent = response.menuEntryText
     }
   } catch (error) {
@@ -135,8 +135,8 @@ async function registerEvents (elements: PopupElements) {
 }
 
 async function openSettingsPage (): Promise<void> {
-  const url = browser.runtime.getURL('pages/settings.html')
-  await browser.tabs.create({ url })
+  const url = browserApi.runtime.getURL('pages/settings.html')
+  await browserApi.createTab({ url })
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
