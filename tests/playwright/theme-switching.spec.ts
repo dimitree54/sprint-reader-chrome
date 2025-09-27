@@ -47,12 +47,14 @@ test.describe('Sprint Reader - Theme Switching', () => {
     const initialThemeInfo = await readerPage.evaluate((themeClasses) => {
       const toggle = document.getElementById('toggleTheme') as HTMLInputElement;
       const body = document.body;
+      const store = (window as any).readerStore;
+      const theme = store?.getState()?.theme;
       return {
         toggleChecked: toggle?.checked ?? false,
         hasLightClass: body.classList.contains(themeClasses.LIGHT),
         hasDarkClass: body.classList.contains(themeClasses.DARK),
         dataTheme: body.dataset.theme,
-        state: (window as any).state?.theme || (globalThis as any).state?.theme
+        state: theme
       };
     }, THEME_CLASSES);
 
@@ -121,12 +123,14 @@ test.describe('Sprint Reader - Theme Switching', () => {
     const lightThemeInfo = await readerPage.evaluate((themeClasses) => {
       const toggle = document.getElementById('toggleTheme') as HTMLInputElement;
       const body = document.body;
+      const store = (window as any).readerStore;
+      const theme = store?.getState()?.theme;
       return {
         toggleChecked: toggle?.checked ?? false,
         hasLightClass: body.classList.contains(themeClasses.LIGHT),
         hasDarkClass: body.classList.contains(themeClasses.DARK),
         dataTheme: body.dataset.theme,
-        state: (window as any).state?.theme || (globalThis as any).state?.theme
+        state: theme
       };
     }, THEME_CLASSES);
 
@@ -169,12 +173,14 @@ test.describe('Sprint Reader - Theme Switching', () => {
     const persistedThemeInfo = await readerPage.evaluate((themeClasses) => {
       const toggle = document.getElementById('toggleTheme') as HTMLInputElement;
       const body = document.body;
+      const store = (window as any).readerStore;
+      const theme = store?.getState()?.theme;
       return {
         toggleChecked: toggle?.checked ?? false,
         hasLightClass: body.classList.contains(themeClasses.LIGHT),
         hasDarkClass: body.classList.contains(themeClasses.DARK),
         dataTheme: body.dataset.theme,
-        state: (window as any).state?.theme || (globalThis as any).state?.theme
+        state: theme
       };
     }, THEME_CLASSES);
 

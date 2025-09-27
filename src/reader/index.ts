@@ -21,19 +21,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 if (typeof globalThis !== 'undefined') {
   (globalThis as typeof globalThis & { readerStore?: typeof useReaderStore }).readerStore = useReaderStore
-  // For backward compatibility with tests, expose a state-like object
-  const stateProxy = new Proxy({}, {
-    get: (_target, prop) => {
-      const store = useReaderStore.getState()
-      // Map legacy property names to new store properties
-      if (prop === 'words') {
-        return store.tokens
-      }
-      if (prop === 'playing') {
-        return store.status === 'playing'
-      }
-      return store[prop as keyof typeof store]
-    }
-  });
-  (globalThis as typeof globalThis & { state?: Record<string, unknown> }).state = stateProxy
 }

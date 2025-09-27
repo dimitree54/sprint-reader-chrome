@@ -38,11 +38,13 @@ test.describe('Sprint Reader - Word Grouping Debug', () => {
 
     // Get detailed chunking information
     const chunkingDetails = await readerPage.evaluate(() => {
-      const state = (window as any).state || (globalThis as any).state;
+      const store = (window as any).readerStore;
+      if (!store) return null;
+      const state = store.getState();
       if (!state || !state.wordItems) return null;
 
       return {
-        originalWords: state.words,
+        originalWords: state.tokens,
         chunkSize: state.chunkSize,
         wordItems: state.wordItems.map((item: any, index: number) => ({
           text: item.text,
@@ -139,7 +141,9 @@ test.describe('Sprint Reader - Word Grouping Debug', () => {
       await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
 
       const chunks = await readerPage.evaluate(() => {
-        const state = (window as any).state || (globalThis as any).state;
+        const store = (window as any).readerStore;
+        if (!store) return null;
+        const state = store.getState();
         if (!state || !state.wordItems) return null;
 
         return state.wordItems.map((item: any) => ({
