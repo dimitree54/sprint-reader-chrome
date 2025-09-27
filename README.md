@@ -168,7 +168,7 @@ See `docs/architecture.md` for detailed technical documentation covering:
 
 The extension uses a clean service‑oriented, store‑driven architecture (see `docs/architecture.md`).
 
-- Core services: `BrowserApiService`, `StorageService`, `TimingService`, `AIPreprocessingService`, `PlaybackService` (owns the scheduling loop).
+- Core services: `BrowserApiService`, `StorageService`, `TimingService`, `AIPreprocessingService`, `PlaybackService` (owns the scheduling loop). The legacy `platform/` layer has been removed; all code uses the `BrowserApiService`.
 - State: Centralized Zustand store `src/reader/state/reader.store.ts` (single source of truth).
 - UI: Store‑driven renderer `src/reader/ui/renderer.ts` as the only DOM writer; modern control bindings in `src/reader/ui/controls.ts` wired to store and PlaybackService.
 

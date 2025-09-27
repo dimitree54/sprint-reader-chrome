@@ -39,5 +39,5 @@ export interface MinimalBrowserAPI {
   commands: ChromeAPI['commands'];
 }
 
-export type BrowserLike = typeof globalThis extends { browser: infer B } ? B : MinimalBrowserAPI
-export type BrowserContext = BrowserLike | ChromeAPI
+export type BrowserContext = MinimalBrowserAPI
+

@@ -1,4 +1,4 @@
-import type { ChromeAPI, MinimalBrowserAPI } from '../platform/types'
+import type { ChromeAPI, MinimalBrowserAPI } from './browser-types'
 
 type Callback<T> = (value: T) => void
 type WindowsCreateArgs = Parameters<ChromeAPI['windows']['create']>[0]

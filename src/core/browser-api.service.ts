@@ -1,4 +1,4 @@
-import type { ChromeAPI, MinimalBrowserAPI, BrowserContext } from '../platform/types'
+import type { ChromeAPI, MinimalBrowserAPI, BrowserContext } from './browser-types'
 import { ChromeAdapter } from './chrome-adapter'
 
 type WindowsCreateArgs = Parameters<ChromeAPI['windows']['create']>[0]

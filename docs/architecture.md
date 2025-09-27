@@ -50,7 +50,7 @@ src/
     testing-hooks.ts   → Exposes global Playwright helpers.
   common/          → Cross-context utilities (storage, message contracts, HTML + theme helpers, translation & summarisation metadata).
   content/         → Text selection capture and UX hints for web pages.
-  platform/        → Runtime resolver split into `browser.ts`, `types.ts`, `wrap-chrome.ts`.
+  core/            → Browser API service and adapters (`browser-api.service.ts`, `chrome-adapter.ts`, types).
   popup/           → Action popup with quick-start controls.
   settings/        → Dedicated settings surface for advanced preferences (API providers).
   reader/          → RSVP player UI assembled from focused modules:
@@ -167,7 +167,7 @@ The reader implementation follows a modular architecture with clear separation o
 
 ## 4. Cross-Cutting Modules
 
-* `platform/browser.ts`: resolves the runtime API once, exposes a shared `browser` singleton, and uses wrapper helpers from `platform/types.ts` + `platform/wrap-chrome.ts` to collapse Chrome/Firefox/Safari differences.
+* `core/browser-api.service.ts`: resolves the runtime API once, exposes a shared `browserApi` service, and adapts raw `chrome.*` into a Promise‑based `MinimalBrowserAPI` for all contexts.
 * `common/storage.ts`: wraps the callback-driven storage API with promise helpers, defines canonical keys, and centralises preference persistence.
 * `common/messages.ts`: enumerates every structured message exchanged between contexts, enabling exhaustive checks during refactors.
 * `common/html.ts`: ensures consistent HTML encoding/decoding for text selections and rendered reader output.
