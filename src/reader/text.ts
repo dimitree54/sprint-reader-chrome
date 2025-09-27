@@ -53,7 +53,10 @@ export async function rebuildWordItems (): Promise<void> {
 export async function rebuildWordItemsWithStreaming (): Promise<void> {
   const store = useReaderStore.getState()
   const originalRawText = store.tokens.map(w => w.text).join(' ')
+  await rebuildWordItemsWithStreamingFromRawText(originalRawText)
+}
 
+async function rebuildWordItemsWithStreamingFromRawText (originalRawText: string): Promise<void> {
   // Clear any existing streaming state
   useReaderStore.setState({
     isStreaming: false,
@@ -65,7 +68,8 @@ export async function rebuildWordItemsWithStreaming (): Promise<void> {
   // Initialize streaming
   let streamingProcessor: StreamingTextProcessorInstance | null = null
   try {
-    streamingProcessor = await initializeStreamingText(originalRawText)
+    // Initialize without seeding text to avoid duplicate processing
+    streamingProcessor = await initializeStreamingText('')
   } catch (error) {
     console.error('Failed to initialize streaming:', error)
     useReaderStore.setState({
@@ -121,18 +125,37 @@ export async function rebuildWordItemsWithStreaming (): Promise<void> {
   }
 }
 
-export async function setWords (words: ReaderToken[]): Promise<void> {
-  useReaderStore.setState({ tokens: words, index: 0 })
-  await rebuildWordItems()
-  useReaderStore.setState({ index: 0 })
-}
-
 /**
- * Set words with streaming processing - processes text chunks as they arrive
+ * Start streaming based on provided tokens. This is the canonical path.
+ * Passing full text as tokens is treated as a special case of streaming.
  */
-export async function setWordsWithStreaming (words: ReaderToken[]): Promise<void> {
-  useReaderStore.setState({ tokens: words, index: 0, isPreprocessing: true, isStreaming: true })
-  await rebuildWordItemsWithStreaming()
+export async function startStreamingFromTokens (words: ReaderToken[]): Promise<void> {
+  const rawText = words.map(w => w.text).join(' ')
+  // Seed immediate UI state so the reader shows content before streaming finishes
+  const store = useReaderStore.getState()
+  const preprocessedWords = preprocessText(rawText)
+  const wordsWithBoldInfo = preprocessedWords.map((word, index) => ({
+    text: word.text,
+    isBold: words[index]?.isBold || word.isBold
+  }))
+  const timingSettings = {
+    wordsPerMinute: store.wordsPerMinute,
+    pauseAfterComma: store.pauseAfterComma,
+    pauseAfterPeriod: store.pauseAfterPeriod,
+    pauseAfterParagraph: store.pauseAfterParagraph,
+    chunkSize: store.chunkSize
+  }
+  const wordItems = createChunks(wordsWithBoldInfo, timingSettings)
+  const optimalFontSize = calculateOptimalFontSizeForText(wordItems)
+  useReaderStore.setState({
+    tokens: words,
+    wordItems,
+    optimalFontSize,
+    index: 0,
+    isPreprocessing: true,
+    isStreaming: true
+  })
+  await rebuildWordItemsWithStreamingFromRawText(rawText)
   useReaderStore.setState({ index: 0 })
 }
 

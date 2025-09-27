@@ -1,10 +1,10 @@
 import { loadPreferences } from './preferences'
 import { useReaderStore } from './state/reader.store'
 import { wordsToTokens } from './text-types'
-import { decodeHtml, setWords, setWordsWithStreaming } from './text'
+import { decodeHtml, startStreamingFromTokens } from './text'
 import { browserApi } from '../core/browser-api.service'
 import { DEFAULTS } from '../config/defaults'
-import { aiPreprocessingService } from '../preprocessing/ai-preprocessing.service'
+// aiPreprocessingService availability is handled within streaming manager
 import type { BackgroundMessage, BackgroundResponse } from '../common/messages'
 
 function normaliseText (rawText: string): string {
@@ -56,19 +56,8 @@ export async function loadSelectionContent (): Promise<void> {
   const normalised = normaliseText(rawText)
   const words = normalised.length > 0 ? normalised.split(' ') : []
 
-  // Check if streaming should be used (when OpenAI API key is available)
-  const shouldUseStreaming = await shouldEnableStreaming()
   const tokens = wordsToTokens(words)
-  const setWordsFunction = shouldUseStreaming ? setWordsWithStreaming : setWords
-
-  await setWordsFunction(tokens)
+  await startStreamingFromTokens(tokens)
 }
 
-async function shouldEnableStreaming(): Promise<boolean> {
-  try {
-    return await aiPreprocessingService.isAvailable()
-  } catch (error) {
-    console.debug('Could not check AI preprocessing availability:', error)
-    return false
-  }
-}
+// Streaming is always used; availability is handled inside the streaming manager
