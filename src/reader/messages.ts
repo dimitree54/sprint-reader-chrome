@@ -12,7 +12,7 @@ export function registerMessageListener (): void {
     switch (message.type) {
       case 'refreshReader':
         loadSelectionContent().catch(console.error)
-        return true
+        return undefined
       default:
         return undefined
     }

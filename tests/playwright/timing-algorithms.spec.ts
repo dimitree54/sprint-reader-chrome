@@ -66,7 +66,8 @@ test.describe('Sprint Reader - Timing Algorithms', () => {
       const avgShortDuration = shortWords.reduce((sum: any, w: any) => sum + w.duration, 0) / shortWords.length;
       const avgLongDuration = longWords.reduce((sum: any, w: any) => sum + w.duration, 0) / longWords.length;
 
-      expect(avgLongDuration).toBeGreaterThan(avgShortDuration * 0.9);
+      // Long words should take strictly more time than short words on average
+      expect(avgLongDuration).toBeGreaterThan(avgShortDuration);
     }
 
     if (wordsWithPunctuation.length > 0) {
@@ -137,7 +138,7 @@ test.describe('Sprint Reader - Timing Algorithms', () => {
       expect(chunk.text).toMatch(/\s/);
 
       // Verify individual words in the group follow chunking rules
-      const wordsInGroup = chunk.originalText.split(' ');
+      const wordsInGroup = chunk.originalText.split(/\s+/);
       wordsInGroup.forEach((word: any, index: number) => {
         if (index > 0) {
           // Additional words in chunk must be ≤3 characters for grouping
@@ -153,7 +154,7 @@ test.describe('Sprint Reader - Timing Algorithms', () => {
     // Verify that chunks containing individual long words are not grouped
     const groupedChunksWithLongWords = chunks.filter((chunk: any) => {
       if (!chunk.isGrouped) return false;
-      const words = chunk.originalText.split(' ');
+      const words = chunk.originalText.split(/\s+/);
       return words.some((word: string) => word.length > 3);
     });
     expect(groupedChunksWithLongWords.length).toBe(0);

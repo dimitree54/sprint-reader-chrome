@@ -13,18 +13,22 @@ const THEME_OPTIONS = {
 
 export async function loadPreferences (): Promise<void> {
   const prefs = await readReaderPreferences()
-  useReaderStore.setState({
-    wordsPerMinute: prefs.wordsPerMinute,
+  const store = useReaderStore.getState()
+
+  store.setWPM(prefs.wordsPerMinute)
+  store.setTheme(prefs.theme)
+  store.updatePreferences({
     pauseAfterComma: prefs.pauseAfterComma,
     pauseAfterPeriod: prefs.pauseAfterPeriod,
     pauseAfterParagraph: prefs.pauseAfterParagraph,
     chunkSize: prefs.chunkSize,
     wordFlicker: prefs.wordFlicker,
-    wordFlickerPercent: prefs.wordFlickerPercent,
-    theme: prefs.theme
+    wordFlickerPercent: prefs.wordFlickerPercent
   })
 
-  applyThemeToElement(document.body, prefs.theme, THEME_OPTIONS)
+  if (typeof document !== 'undefined') {
+    applyThemeToElement(document.body, prefs.theme, THEME_OPTIONS)
+  }
 }
 
 export function persistPreferences (): void {
@@ -43,6 +47,8 @@ export function persistPreferences (): void {
 
 export function syncThemeToggle (checked: boolean): void {
   const theme = checked ? DEFAULTS.THEMES.light : DEFAULTS.THEMES.dark
-  applyThemeToElement(document.body, theme, THEME_OPTIONS)
-  useReaderStore.setState({ theme })
+  if (typeof document !== 'undefined') {
+    applyThemeToElement(document.body, theme, THEME_OPTIONS)
+  }
+  useReaderStore.getState().setTheme(theme)
 }

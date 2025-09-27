@@ -16,6 +16,8 @@ describe('PlaybackService', () => {
   })
 
   afterEach(() => {
+    // Ensure timers are cleared between tests
+    playbackService.pause()
     vi.restoreAllMocks()
     vi.useRealTimers()
   })

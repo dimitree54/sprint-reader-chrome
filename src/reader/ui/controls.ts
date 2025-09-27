@@ -41,10 +41,11 @@ function bindKeyboardShortcuts(): void {
 
 function bindSpeedSlider(): void {
   const slider = document.getElementById('sliderWpm') as HTMLInputElement | null
-  slider?.addEventListener('input', () => {
+  slider?.addEventListener('input', (event) => {
     const state = useReaderStore.getState()
     if (state.isPreprocessing) return
-    const value = Number.parseInt(slider.value, 10) || DEFAULTS.READER_PREFERENCES.wordsPerMinute
+    const target = event.currentTarget as HTMLInputElement
+    const value = Number.parseInt(target.value, 10) || DEFAULTS.READER_PREFERENCES.wordsPerMinute
     state.setWPM(value)
     recalculateTimingOnly()
     persistPreferences()
@@ -53,8 +54,9 @@ function bindSpeedSlider(): void {
 
 function bindThemeToggle(): void {
   const themeToggle = document.getElementById('toggleTheme') as HTMLInputElement | null
-  themeToggle?.addEventListener('change', () => {
-    syncThemeToggle(Boolean(themeToggle.checked))
+  themeToggle?.addEventListener('change', (event) => {
+    const target = event.currentTarget as HTMLInputElement
+    syncThemeToggle(Boolean(target.checked))
     persistPreferences()
   })
 }

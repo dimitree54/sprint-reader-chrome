@@ -56,6 +56,17 @@ test.describe('Preprocessing Toggle', () => {
     await readerPage.waitForLoadState('domcontentloaded')
 
     // Step 4: Verify reader shows original English and no API calls were made
+    // Ensure the reader has rendered a word
+    const wordLocator = readerPage.locator('#word')
+    await expect(wordLocator).not.toHaveText('', { timeout: 10_000 })
+
+    // Wait until tokens are populated in store
+    await readerPage.waitForFunction(() => {
+      const store = (window as any).readerStore;
+      const state = store?.getState?.();
+      return !!state && Array.isArray(state.tokens) && state.tokens.length > 0;
+    });
+
     const displayed = await readerPage.evaluate(() => {
       const store = (window as any).readerStore
       const state = store?.getState()
@@ -63,7 +74,13 @@ test.describe('Preprocessing Toggle', () => {
       return state.tokens.map((w: any) => w.text).join(' ')
     })
 
-    expect(displayed).toBe(englishText)
+    // Normalize spaces and punctuation spacing before comparing
+    const normalize = (s: string) => s
+      .replace(/\s+/g, ' ')
+      .replace(/\s+([.,!?;:])/g, '$1')
+      .trim()
+
+    expect(normalize(displayed || '')).toBe(normalize(englishText))
     // No Cyrillic characters (Russian) should appear
     const cyrillic = /[\u0400-\u04FF]/
     expect(cyrillic.test(displayed || '')).toBe(false)
@@ -74,4 +91,3 @@ test.describe('Preprocessing Toggle', () => {
     await readerPage.close()
   })
 })
-

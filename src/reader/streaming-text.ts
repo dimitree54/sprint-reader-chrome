@@ -60,9 +60,8 @@ class StreamingTextOrchestrator {
   }
 
   private handleWordsReady(words: { text: string; isBold: boolean }[]): void {
-    // Add words to store tokens - this is now handled via callback instead of direct mutation
-    const store = useReaderStore.getState()
-    store.setTokens([...store.tokens, ...words])
+    // Add words to store tokens using functional setState to prevent races
+    useReaderStore.setState(s => ({ tokens: s.tokens.concat(words) }))
   }
 
   private handleProgressUpdate(progress: { processedChunks: number; estimatedTotal?: number }): void {
@@ -88,28 +87,18 @@ class StreamingTextOrchestrator {
   }
 
   async startStreamingText(rawText: string): Promise<void> {
-    // Reset state
-    useReaderStore.setState({
-      isStreaming: false,
-      streamingComplete: false,
-      processedChunkCount: 0,
-      estimatedTotalChunks: undefined
-    })
-    useReaderStore.setState({
-      tokens: [],
-      wordItems: [],
-      index: 0
-    })
-
     // Reset text processor
     this.textProcessor.reset()
 
-    // Start streaming mode
+    // Reset and start streaming mode in a single setState to avoid flicker
     useReaderStore.setState({
       isStreaming: true,
       streamingComplete: false,
       processedChunkCount: 0,
-      estimatedTotalChunks: undefined
+      estimatedTotalChunks: undefined,
+      tokens: [],
+      wordItems: [],
+      index: 0
     })
 
     // Do initial preprocessing if we have text
@@ -170,11 +159,11 @@ class StreamingTextOrchestrator {
         // If tokens arrived during the drain, immediately continue processing
         if (this.pendingTokens.length > 0) {
           // Recursively process any tokens that arrived during processing
-          setImmediate(() => {
+          setTimeout(() => {
             this.processTokenQueue().catch(error => {
               console.error('Error in recursive token processing:', error)
             })
-          })
+          }, 0)
         }
       }
     })()

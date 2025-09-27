@@ -40,10 +40,14 @@ export async function rebuildWordItems (): Promise<void> {
   const tokens = preprocessedWords.map(word => ({ text: word.text, isBold: word.isBold }))
 
   const optimalFontSize = calculateOptimalFontSizeForText(wordItems)
+  // Clamp index within bounds after rebuild that can shrink wordItems
+  const currentIndex = store.index
+  const clampedIndex = Math.min(currentIndex, Math.max(0, wordItems.length - 1))
   useReaderStore.setState({
     wordItems,
     tokens,
-    optimalFontSize
+    optimalFontSize,
+    index: clampedIndex
   })
 }
 
@@ -168,7 +172,7 @@ export function updateOptimalFontSize (): void {
 }
 
 export function recalculateTimingOnly (): void {
-  // Only recalculate timing without preprocessing - use existing words
+  // Only recalculate timing with local preprocessing - no AI involved
   const store = useReaderStore.getState()
   const preprocessedWords = preprocessText(store.tokens.map(w => w.text).join(' '))
 
@@ -188,5 +192,7 @@ export function recalculateTimingOnly (): void {
   const wordItems = createChunks(wordsWithBoldInfo, timingSettings)
 
   const optimalFontSize = calculateOptimalFontSizeForText(wordItems)
-  useReaderStore.setState({ wordItems, optimalFontSize })
+  // Clamp index within bounds after rebuild that can shrink wordItems
+  const clampedIndex = Math.min(store.index, Math.max(0, wordItems.length - 1))
+  useReaderStore.setState({ wordItems, optimalFontSize, index: clampedIndex })
 }

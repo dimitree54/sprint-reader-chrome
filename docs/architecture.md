@@ -373,6 +373,7 @@ The streaming system provides enhanced visual feedback:
 * **Efficient Memory Management**: Streaming buffers are cleaned up automatically
 * **Minimal DOM Updates**: Progress updates are batched to prevent UI blocking
 * **Graceful Degradation**: System falls back to traditional processing on any streaming error
+* **Browser-Safe Scheduling**: Streaming queue draining uses `setTimeout(() => {}, 0)` for compatibility across browsers (instead of Node-only `setImmediate`).
 
 ## 8. Future Evolution
 

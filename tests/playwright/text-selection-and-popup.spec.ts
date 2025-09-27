@@ -46,6 +46,13 @@ test.describe('Sprint Reader - Text Selection and Popup', () => {
     const wordLocator1 = readerPage.locator('#word');
     await expect(wordLocator1).not.toHaveText('', { timeout: 10_000 });
 
+    // Wait until tokens are populated in store
+    await readerPage.waitForFunction(() => {
+      const store = (window as any).readerStore;
+      const state = store?.getState?.();
+      return !!state && Array.isArray(state.tokens) && state.tokens.length > 0;
+    });
+
     const firstReaderText = await readerPage.evaluate(() => {
       const store = (window as any).readerStore;
       if (!store) return null;
@@ -92,6 +99,13 @@ test.describe('Sprint Reader - Text Selection and Popup', () => {
     const wordLocator2 = readerPage.locator('#word');
     await expect(wordLocator2).not.toHaveText('', { timeout: 10_000 });
 
+    // Wait until tokens are populated in store
+    await readerPage.waitForFunction(() => {
+      const store = (window as any).readerStore;
+      const state = store?.getState?.();
+      return !!state && Array.isArray(state.tokens) && state.tokens.length > 0;
+    });
+
     const secondReaderText = await readerPage.evaluate(() => {
       const store = (window as any).readerStore;
       if (!store) return null;
@@ -131,6 +145,13 @@ test.describe('Sprint Reader - Text Selection and Popup', () => {
     // Verify third text is loaded in reader
     const wordLocator3 = readerPage.locator('#word');
     await expect(wordLocator3).not.toHaveText('', { timeout: 10_000 });
+
+    // Wait until tokens are populated in store
+    await readerPage.waitForFunction(() => {
+      const store = (window as any).readerStore;
+      const state = store?.getState?.();
+      return !!state && Array.isArray(state.tokens) && state.tokens.length > 0;
+    });
 
     const thirdReaderText = await readerPage.evaluate(() => {
       const store = (window as any).readerStore;

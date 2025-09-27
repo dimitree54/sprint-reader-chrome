@@ -7,11 +7,12 @@ export class PlaybackService {
   private lastWatched: {
     wpm: number
     count: number
+    index: number
     pauseAfterComma?: boolean
     pauseAfterPeriod?: boolean
     pauseAfterParagraph?: boolean
     chunkSize?: number
-  } = { wpm: -1, count: -1 }
+  } = { wpm: -1, count: -1, index: -1 }
 
   constructor () {
     // Subscribe to state changes that should affect scheduling cadence
@@ -19,6 +20,7 @@ export class PlaybackService {
       const next = {
         wpm: s.wordsPerMinute,
         count: s.wordItems.length,
+        index: s.index,
         status: s.status,
         pauseAfterComma: s.pauseAfterComma,
         pauseAfterPeriod: s.pauseAfterPeriod,
@@ -29,6 +31,7 @@ export class PlaybackService {
       const cadenceChanged = (
         next.wpm !== this.lastWatched.wpm ||
         next.count !== this.lastWatched.count ||
+        next.index !== this.lastWatched.index ||
         next.pauseAfterComma !== this.lastWatched.pauseAfterComma ||
         next.pauseAfterPeriod !== this.lastWatched.pauseAfterPeriod ||
         next.pauseAfterParagraph !== this.lastWatched.pauseAfterParagraph ||
@@ -49,16 +52,17 @@ export class PlaybackService {
   }
 
   private computeDelay (): number {
-    const { wordItems, index, wordsPerMinute } = useReaderStore.getState()
+    const s = useReaderStore.getState()
+    const { wordItems, index, wordsPerMinute } = s
     const current = wordItems[index]
     if (current) {
-      // Recalculate duration using current timing preferences
+      // Recalculate duration using current timing preferences from snapshot
       const prefs = {
-        wordsPerMinute: useReaderStore.getState().wordsPerMinute,
-        pauseAfterComma: useReaderStore.getState().pauseAfterComma,
-        pauseAfterPeriod: useReaderStore.getState().pauseAfterPeriod,
-        pauseAfterParagraph: useReaderStore.getState().pauseAfterParagraph,
-        chunkSize: useReaderStore.getState().chunkSize
+        wordsPerMinute: s.wordsPerMinute,
+        pauseAfterComma: s.pauseAfterComma,
+        pauseAfterPeriod: s.pauseAfterPeriod,
+        pauseAfterParagraph: s.pauseAfterParagraph,
+        chunkSize: s.chunkSize
       }
       const [withTiming] = timingService.calculateChunkDurations([current], prefs)
       const duration = (withTiming.duration ?? 0) + (withTiming.postdelay ?? 0)

@@ -29,7 +29,7 @@ function syncControls (): void {
   }
 }
 
-async function getCurrentSelectionFromBackground() {
+async function getCurrentSelectionFromBackground(): Promise<{ text: string; hasSelection: boolean; isRTL: boolean; timestamp: number } | null> {
   try {
     const response = await browserApi.sendMessage({
       target: 'background',
@@ -57,6 +57,13 @@ export async function loadSelectionContent (): Promise<void> {
   const words = normalised.length > 0 ? normalised.split(' ') : []
 
   const tokens = wordsToTokens(words)
+
+  // Guard empty selections: reset store state instead of streaming
+  if (tokens.length === 0) {
+    useReaderStore.getState().reset?.()
+    return
+  }
+
   await startStreamingFromTokens(tokens)
 }
 

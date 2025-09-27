@@ -15,8 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSelectionContent().catch(console.error)
   bindControls()
   registerMessageListener()
-  // Initialize store-driven renderer and controls
-  initRenderer()
+  // Initialize store-driven renderer and capture unsubscribe
+  const unsubscribe = initRenderer()
+  // Register beforeunload to cleanup store subscriptions
+  window.addEventListener('beforeunload', unsubscribe)
 })
 
 if (typeof globalThis !== 'undefined') {

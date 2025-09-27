@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures';
+import { DEFAULTS } from '../../src/config/defaults';
 
 type BackgroundContext = {
   openReaderWindowSetup: (
@@ -53,7 +54,7 @@ test.describe('Sprint Reader - Word Flicker Defaults', () => {
 
     // Assert that wordFlicker defaults to false (as per the new default)
     expect(initialFlickerState.wordFlicker).toBe(false);
-    expect(initialFlickerState.wordFlickerPercent).toBe(10); // Default from DEFAULTS.READER_PREFERENCES.wordFlickerPercent
+    expect(initialFlickerState.wordFlickerPercent).toBe(DEFAULTS.READER_PREFERENCES.wordFlickerPercent);
 
     await readerPage.close();
   });
@@ -99,7 +100,7 @@ test.describe('Sprint Reader - Word Flicker Defaults', () => {
 
     // Assert the default behavior is maintained
     expect(persistedFlickerState.wordFlicker).toBe(false);
-    expect(persistedFlickerState.wordFlickerPercent).toBe(10);
+    expect(persistedFlickerState.wordFlickerPercent).toBe(DEFAULTS.READER_PREFERENCES.wordFlickerPercent);
 
     await readerPage.close();
   });
