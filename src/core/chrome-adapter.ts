@@ -53,7 +53,8 @@ export class ChromeAdapter {
     return { callArgs, callback: undefined }
   }
 
-  private wrapSendMessage (
+  // Generic wrapper used by both runtime and tabs sendMessage to reduce duplication
+  private createSendWrapper (
     send: (...args: unknown[]) => void,
     chromeApi: ChromeAPI
   ) {
@@ -62,28 +63,47 @@ export class ChromeAdapter {
       return new Promise<unknown>((resolve, reject) => {
         const handler: ResponseCallback = (response) => {
           if (callback) {
-            try {
-              callback(response)
-            } catch (callbackError) {
-              console.error(callbackError)
-            }
+            try { callback(response) } catch (callbackError) { console.error(callbackError) }
           }
-
           const maybeError = this.captureLastError(chromeApi)
-          if (maybeError) {
-            reject(maybeError)
-          } else {
-            resolve(response)
-          }
+          if (maybeError) reject(maybeError)
+          else resolve(response)
         }
-
         try {
-          send(...callArgs, handler)
+          (send as unknown as (...args: unknown[]) => void)(...callArgs, handler)
         } catch (error) {
           reject(this.toError(error))
         }
       })
     }
+  }
+
+  // Runtime.sendMessage overloads
+  private wrapRuntimeSendMessage (
+    send: typeof chrome.runtime.sendMessage,
+    chromeApi: ChromeAPI
+  ) {
+    const invoke = this.createSendWrapper(send as unknown as (...args: unknown[]) => void, chromeApi)
+    function runtimeWrapper (message: unknown, options?: chrome.runtime.MessageOptions): Promise<unknown>
+    function runtimeWrapper (extensionId: string, message: unknown, options?: chrome.runtime.MessageOptions): Promise<unknown>
+    function runtimeWrapper (...args: unknown[]): Promise<unknown> {
+      return invoke(...args)
+    }
+    return runtimeWrapper
+  }
+
+  // Tabs.sendMessage overloads
+  private wrapTabsSendMessage (
+    send: typeof chrome.tabs.sendMessage,
+    chromeApi: ChromeAPI
+  ) {
+    const invoke = this.createSendWrapper(send as unknown as (...args: unknown[]) => void, chromeApi)
+    function tabsWrapper (tabId: number, message: unknown, options?: TabsMessageOptions): Promise<unknown>
+    function tabsWrapper (tabId: number, message: unknown, callback: ResponseCallback): Promise<unknown>
+    function tabsWrapper (...args: unknown[]): Promise<unknown> {
+      return invoke(...args)
+    }
+    return tabsWrapper
   }
 
   private wrapContextMenusRemoveAll (chromeApi: ChromeAPI): () => Promise<void> {
@@ -121,23 +141,17 @@ export class ChromeAdapter {
       TabsQueryArgs
     ], chrome.tabs.Tab[]>(chromeApi.tabs.query.bind(chromeApi.tabs), chromeApi)
 
-    const wrapRuntimeSendMessage = this.wrapSendMessage(
-      chromeApi.runtime.sendMessage.bind(chromeApi.runtime) as (...args: unknown[]) => void,
+    const wrapRuntimeSendMessage = this.wrapRuntimeSendMessage(
+      chromeApi.runtime.sendMessage.bind(chromeApi.runtime),
       chromeApi
-    ) as {
-      (message: unknown, options?: chrome.runtime.MessageOptions): Promise<unknown>;
-      (extensionId: string, message: unknown, options?: chrome.runtime.MessageOptions): Promise<unknown>;
-    }
+    )
 
-    const wrapTabsSendMessage = this.wrapSendMessage(
-      chromeApi.tabs.sendMessage.bind(chromeApi.tabs) as (...args: unknown[]) => void,
+    const wrapTabsSendMessage = this.wrapTabsSendMessage(
+      chromeApi.tabs.sendMessage.bind(chromeApi.tabs),
       chromeApi
-    ) as {
-      (tabId: number, message: unknown, options?: TabsMessageOptions): Promise<unknown>;
-      (tabId: number, message: unknown, callback: ResponseCallback): Promise<unknown>;
-    }
+    )
 
-    return {
+    const adapted: MinimalBrowserAPI & { __isChromeAdapter?: true } = {
       runtime: {
         getURL: chromeApi.runtime.getURL.bind(chromeApi.runtime),
         getManifest: chromeApi.runtime.getManifest.bind(chromeApi.runtime),
@@ -163,5 +177,7 @@ export class ChromeAdapter {
       },
       commands: chromeApi.commands
     }
+    Object.defineProperty(adapted, '__isChromeAdapter', { value: true })
+    return adapted
   }
 }

@@ -19,6 +19,10 @@ export class BrowserApiService {
 
   // Test-only: allow unit tests to reset singleton and cache
   static __resetForTests (): void {
+    if (this.instance) {
+      // Clear cached browser so tests can re-adapt to a different global runtime
+      this.instance.cachedBrowser = null
+    }
     this.instance = null
   }
 

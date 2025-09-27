@@ -1,7 +1,6 @@
 import { browserApi, BrowserApiService } from './browser-api.service'
 import { getDefaultReaderPreferences, DEFAULTS } from '../config/defaults'
 import type { ReaderPreferences } from '../common/storage'
-import { readStorageValue } from '../common/storage-helpers'
 import {
   DEFAULT_TRANSLATION_LANGUAGE,
   isTranslationLanguage,
@@ -66,7 +65,7 @@ export class StorageService {
   async readTranslationLanguage (): Promise<TranslationLanguage> {
     const validator = (value: unknown): value is TranslationLanguage =>
       typeof value === 'string' && isTranslationLanguage(value)
-    return readStorageValue(STORAGE_KEYS.translationLanguage, validator, DEFAULT_TRANSLATION_LANGUAGE)
+    return this.readValue(STORAGE_KEYS.translationLanguage, validator, DEFAULT_TRANSLATION_LANGUAGE)
   }
 
   async writeTranslationLanguage (language: TranslationLanguage): Promise<void> {
@@ -77,7 +76,7 @@ export class StorageService {
   async readSummarizationLevel (): Promise<SummarizationLevel> {
     const validator = (value: unknown): value is SummarizationLevel =>
       typeof value === 'string' && isSummarizationLevel(value)
-    return readStorageValue(STORAGE_KEYS.summarizationLevel, validator, DEFAULT_SUMMARIZATION_LEVEL)
+    return this.readValue(STORAGE_KEYS.summarizationLevel, validator, DEFAULT_SUMMARIZATION_LEVEL)
   }
 
   async writeSummarizationLevel (level: SummarizationLevel): Promise<void> {
@@ -87,13 +86,19 @@ export class StorageService {
   // Feature toggles --------------------------------------------------------
   async readPreprocessingEnabled (): Promise<boolean> {
     const validator = (value: unknown): value is boolean => typeof value === 'boolean'
-    return readStorageValue(STORAGE_KEYS.preprocessingEnabled, validator, DEFAULTS.PREPROCESSING.enabled)
+    return this.readValue(STORAGE_KEYS.preprocessingEnabled, validator, DEFAULTS.PREPROCESSING.enabled)
   }
 
   async writePreprocessingEnabled (enabled: boolean): Promise<void> {
     await this.set({ [STORAGE_KEYS.preprocessingEnabled]: enabled })
   }
+
+  // Internal typed read helper to avoid circular dependency on common/storage-helpers
+  private async readValue<T>(key: string, validator: (value: unknown) => value is T, defaultValue: T): Promise<T> {
+    const result = await this.get<T>([key])
+    const value = result[key]
+    return validator(value) ? value : defaultValue
+  }
 }
 
 export const storageService = new StorageService()
-
