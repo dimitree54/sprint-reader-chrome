@@ -33,7 +33,7 @@ where <agent_instructions_file.md> one of:
 After initial greeting the agent will greet you and explain their expertise and capabilities, suggest ways to start. To answer to them use following protocol:
 
 ### Further messages for qa agent:
-`uv run call_multi_turn_agent --session-id <session-id> --message <message>`
+`uv run resume_multi_turn_agent --session-id <session-id> --message <message>`
 
 Use the session-id of the agent you want to talk to.
 
@@ -44,7 +44,7 @@ Use the session-id of the agent you want to talk to.
 After initial greeting the agent will greet you and explain their expertise and capabilities, suggest ways to start. To answer to them use following protocol:
 
 ### Further messages for developer agent:
-`uv run call_glm --session-id <session-id> --message <message>`
+`uv run resume_glm --session-id <session-id> --message <message>`
 
 Use the session-id of the agent you want to talk to.
 
