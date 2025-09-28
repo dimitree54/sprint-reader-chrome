@@ -29,10 +29,12 @@ class StreamingTextOrchestrator {
 
   constructor() {
     this.textBuffer = new StreamingTextBuffer({
-      // Emit early partial chunks primarily for long streams; keep high to avoid over-splitting short texts
-      minBufferSize: 400,
+      // Reduced buffer size for faster initial chunk emission during streaming
+      minBufferSize: 50,
       // Treat newline as a natural boundary for early chunks
-      sentenceDelimiters: '.!?\n'
+      sentenceDelimiters: '.!?\n',
+      // Enable aggressive early flush for immediate word availability
+      aggressiveEarlyFlush: true
     })
 
     this.textProcessor = new StreamingTextProcessor({
@@ -103,9 +105,10 @@ class StreamingTextOrchestrator {
       index: 0
     })
 
-    // Do initial preprocessing if we have text
+    // Do initial preprocessing if we have text (for non-streaming use cases)
     if (rawText.trim()) {
       try {
+        console.log('[StreamingTextOrchestrator] Processing initial text for non-streaming case')
         const preprocessingResult = await preprocessTextForReader(rawText)
 
         if (preprocessingResult.error) {
@@ -118,6 +121,8 @@ class StreamingTextOrchestrator {
         console.error('Error in initial preprocessing:', error)
         useReaderStore.getState().setPreprocessingError('An unexpected error occurred during preprocessing.')
       }
+    } else {
+      console.log('[StreamingTextOrchestrator] Starting streaming mode without initial text processing')
     }
 
     this.isProcessing = true

@@ -8,16 +8,20 @@
 export interface StreamingTextBufferOptions {
   minBufferSize: number
   sentenceDelimiters: string
+  aggressiveEarlyFlush?: boolean
 }
 
 export class StreamingTextBuffer {
   private buffer = ''
   private readonly minBufferSize: number
   private readonly sentenceDelimiters: string
+  private readonly aggressiveEarlyFlush: boolean
+  private tokenCount = 0
 
   constructor(options: StreamingTextBufferOptions = { minBufferSize: 50, sentenceDelimiters: '.!?' }) {
     this.minBufferSize = options.minBufferSize
     this.sentenceDelimiters = options.sentenceDelimiters
+    this.aggressiveEarlyFlush = options.aggressiveEarlyFlush ?? false
   }
 
   /**
@@ -25,6 +29,18 @@ export class StreamingTextBuffer {
    */
   addToken(token: string): string | null {
     this.buffer += token
+    this.tokenCount++
+
+    // For aggressive early flush mode, emit the first few small chunks quickly
+    if (this.aggressiveEarlyFlush && this.tokenCount <= 3) {
+      const spacePos = this.buffer.indexOf(' ')
+      if (spacePos > 0 && this.buffer.slice(0, spacePos).trim().length >= 3) {
+        const chunk = this.buffer.slice(0, spacePos).trim()
+        this.buffer = this.buffer.slice(spacePos + 1).trim()
+        console.log(`[StreamingTextBuffer] Early flush chunk ${this.tokenCount}: "${chunk}"`)
+        return chunk
+      }
+    }
 
     // Search for last sentence delimiter regardless of buffer length
     let lastDelimiterPos = -1
@@ -48,6 +64,12 @@ export class StreamingTextBuffer {
       if (lastSpace > 0) {
         const chunk = this.buffer.slice(0, lastSpace).trim()
         this.buffer = this.buffer.slice(lastSpace + 1).trim()
+        if (chunk.length > 0) return chunk
+      }
+      // If no space found but buffer is quite large, flush it anyway to avoid long delays
+      if (this.buffer.length >= this.minBufferSize * 2) {
+        const chunk = this.buffer.trim()
+        this.buffer = ''
         if (chunk.length > 0) return chunk
       }
     }
@@ -79,5 +101,6 @@ export class StreamingTextBuffer {
    */
   clear(): void {
     this.buffer = ''
+    this.tokenCount = 0
   }
 }
