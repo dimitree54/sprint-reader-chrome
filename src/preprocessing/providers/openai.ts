@@ -32,6 +32,78 @@ export class OpenAIProvider implements PreprocessingProvider {
     return getAuthState().isAuthenticated
   }
 
+  /**
+   * Get detailed availability information with reasons for non-availability
+   */
+  async getAvailabilityInfo(): Promise<{ isAvailable: boolean; reason?: string }> {
+    // Check for test mode override
+    if ((globalThis as any).TEST_MODE) {
+      const hasTestToken = !!(globalThis as any).TEST_AUTH_TOKEN
+      return {
+        isAvailable: hasTestToken,
+        reason: hasTestToken ? undefined : 'No test auth token provided'
+      }
+    }
+
+    const authState = getAuthState()
+
+    if (!authState.isAuthenticated) {
+      if (!authState.user) {
+        return {
+          isAvailable: false,
+          reason: 'User not signed in'
+        }
+      } else {
+        // Check if we can get a token
+        try {
+          const token = await authService.getToken()
+          if (!token) {
+            return {
+              isAvailable: false,
+              reason: 'User signed in but no valid token available'
+            }
+          }
+        } catch (error) {
+          return {
+            isAvailable: false,
+            reason: 'Error retrieving authentication token'
+          }
+        }
+
+        return {
+          isAvailable: false,
+          reason: 'Authentication state invalid'
+        }
+      }
+    }
+
+    // Double-check that we can actually get a token
+    try {
+      const token = await authService.getToken()
+      if (!token) {
+        return {
+          isAvailable: false,
+          reason: 'Authenticated but token is missing or expired'
+        }
+      }
+    } catch (error) {
+      return {
+        isAvailable: false,
+        reason: 'Error retrieving authentication token'
+      }
+    }
+
+    // Check if we're online (basic check)
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return {
+        isAvailable: false,
+        reason: 'No internet connection'
+      }
+    }
+
+    return { isAvailable: true }
+  }
+
   async process(text: string, config: PreprocessingConfig): Promise<PreprocessingResult> {
     const startTime = Date.now()
     const token = await authService.getToken()

@@ -18,6 +18,7 @@ export async function preprocessTextForReader(text: string): Promise<Preprocessi
 
   // Early return - don't even initialize providers if no processing needed
   if (preprocessingConfigService.shouldSkipProcessing(config)) {
+    console.log('[PreprocessingIndex] Skipping preprocessing: processing disabled or conditions not met')
     return {
       text,
       metadata: {

@@ -42,8 +42,7 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  // Run with as many workers as available CPU cores by default
-  workers: os.cpus().length,
+  workers: 1,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
     headless: false,

@@ -13,10 +13,13 @@ export class PreprocessingManager {
       if (provider.isAvailable(config)) {
         const startTime = Date.now()
         try {
+          console.log(`[PreprocessingManager] Using provider: ${provider.name}`)
           return await provider.process(text, config)
         } catch (error) {
           const processingTime = Date.now() - startTime
           const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+
+          console.warn(`[PreprocessingManager] Provider ${provider.name} failed:`, errorMessage)
 
           return {
             text,
@@ -37,10 +40,23 @@ export class PreprocessingManager {
             }
           }
         }
+      } else {
+        // Get detailed reason if available
+        let reason = 'not available'
+        if ('getAvailabilityInfo' in provider && typeof provider.getAvailabilityInfo === 'function') {
+          try {
+            const availabilityInfo = await (provider as any).getAvailabilityInfo(config)
+            reason = availabilityInfo.reason || 'not available'
+          } catch (error) {
+            reason = 'error checking availability'
+          }
+        }
+        console.log(`[PreprocessingManager] Provider ${provider.name} not available (${reason}), trying next provider`)
       }
     }
 
     // This should never happen if PassthroughProvider is included, but fallback just in case
+    console.error('[PreprocessingManager] No available preprocessing providers found')
     return {
       text,
       error: {
