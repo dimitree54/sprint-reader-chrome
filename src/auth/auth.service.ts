@@ -96,7 +96,7 @@ export class AuthService {
 
       const responseData = await res.json()
       const entitlements = responseData.data?.entitlements ?? []
-      const hasPermission = entitlements.some(e => e.feature_key === 'ai_preprocessing')
+      const hasPermission = entitlements.some((e: any) => e.feature_key === 'ai_preprocessing')
       
       const status = hasPermission ? 'pro' : 'free'
       store.setSubscriptionStatus(status)

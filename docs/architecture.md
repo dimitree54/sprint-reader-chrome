@@ -12,6 +12,7 @@ graph TD
         StorageService[core/storage.service.ts]
         Messages[common/messages.ts]
         BrowserAPI[core/browser-api.service.ts]
+        AuthService[auth/auth.service.ts]
     end
 
     subgraph "Extension Contexts"
@@ -19,11 +20,13 @@ graph TD
         Content[content/index.ts]
         Popup[popup/index.ts]
         Reader[reader/index.ts]
+        Settings[settings/index.ts]
     end
 
     StorageService --> Background
     StorageService --> Popup
     StorageService --> Reader
+    StorageService --> Settings
     Messages --> Background
     Messages --> Content
     Messages --> Reader
@@ -31,6 +34,9 @@ graph TD
     BrowserAPI --> Content
     BrowserAPI --> Popup
     BrowserAPI --> Reader
+    BrowserAPI --> Settings
+    AuthService --> Background
+    AuthService --> Settings
 ```
 
 All entry points are authored as ES modules that import from shared packages instead of relying on global scripts. The build pipeline bundles them per browser target and produces isolated distributions in the `dist/` directory.
@@ -39,6 +45,12 @@ All entry points are authored as ES modules that import from shared packages ins
 
 ```
 src/
+  auth/              → Kinde authentication module:
+    index.ts           → Barrel export for auth service, provider, types, and store.
+    auth.service.ts    → Main service for login, logout, and state management.
+    providers/         → Authentication provider implementations (e.g., Kinde).
+    state/             → Zustand store for authentication state.
+    types/             → User and authentication-related types.
   background/      → Modular MV3 service worker composed of:
     index.ts           → Bootstraps state priming, listeners, and testing hooks.
     state.ts           → Caches the latest selection, reader window id, and preferences.
@@ -52,7 +64,7 @@ src/
   content/         → Text selection capture and UX hints for web pages.
   core/            → Browser API service and adapters (`browser-api.service.ts`, `chrome-adapter.ts`, types).
   popup/           → Action popup with quick-start controls.
-  settings/        → Dedicated settings surface for advanced preferences (API providers).
+  settings/        → Dedicated settings surface for advanced preferences and authentication.
   reader/          → RSVP player UI assembled from focused modules:
     index.ts            → Entrypoint that wires selection loading, controls, messaging.
     state/              → Zustand-based state management:
@@ -70,7 +82,7 @@ src/
     timing-engine.ts    → Barrel file exporting the timing helpers above.
     text-processor.ts   → Advanced text preprocessing (acronyms, numbers, hyphenation).
     visual-effects.ts   → Letter highlighting, positioning, flicker effects.
-    openai-prompt.ts    → Builds chat completion payloads for OpenAI translation and summarisation requests.
+    openai-prompt.ts    → Builds chat completion payloads for the Kinde-gated worker.
     ui/                 → UI layer components:
       renderer.ts          → Store-driven DOM updates
       controls.ts          → Control event bindings
@@ -87,7 +99,9 @@ scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 The service-oriented architecture is fully implemented with the following structure:
 
 - `src/core/` — core services (BrowserApiService, StorageService)
-- `src/reader/state/` — Zustand store for centralized state management
+- `src/auth/` — authentication service (AuthService, KindeProvider)
+- `src/reader/state/` — Zustand store for centralized reader state
+- `src/auth/state/` — Zustand store for centralized auth state
 - `src/reader/playback/` — PlaybackService managing timer scheduling and progression
 - `src/reader/timing/` — TimingService wrapper for word timing calculations
 - `src/reader/ui/` — Store-driven UI components (renderer, controls)
@@ -99,6 +113,7 @@ The codebase is fully service‑oriented and store‑driven.
 ### 3.1 Background Service Worker (`src/background/index.ts`)
 
 * Responsibilities
+  * Initializes the authentication service on startup.
   * Tracks the latest selection synchronised from content scripts.
   * Persists reader preferences via `storage.ts` helpers. Text selections are not persisted and each reader session uses fresh input data.
   * Owns the reader window lifecycle (`openReaderWindowSetup`) and exposes the function on `globalThis` for Playwright automation and integration tests.
@@ -109,6 +124,7 @@ The codebase is fully service‑oriented and store‑driven.
 * Key collaborators
   * `BrowserAPI` shim to use `chrome.*` or `browser.*` without scattering feature detection.
   * Runtime message contracts from `common/messages.ts` so that all callers share the same schema.
+  * `AuthService` to manage user authentication state.
 
 ### 3.2 Content Script (`src/content/index.ts`)
 
@@ -162,8 +178,9 @@ The reader implementation follows a modular architecture with clear separation o
 
 * Exposed via the gear icon in the popup and reader footer as well as the extension options entry.
 * Applies the persisted reader theme so the experience matches the active light or dark mode.
-* Loads the OpenAI API key, preferred translation language, and summarisation level from storage, lets users update or clear them, and surfaces inline success or error feedback.
-* Target language options and summarisation levels live alongside storage helpers so the OpenAI provider can build prompts dynamically.
+* Manages Kinde authentication, allowing users to sign in and out.
+* Displays user profile information and subscription status.
+* Loads preferred translation language and summarisation level from storage, lets users update or clear them, and surfaces inline success or error feedback.
 
 ## 4. Cross-Cutting Modules
 
@@ -179,6 +196,7 @@ The reader implementation follows a modular architecture with clear separation o
   * Parses a browser target (`chrome`, `firefox`, `safari`; default `chrome`).
   * Cleans `dist/<browser>/` and copies static assets (`static/pages`, `static/styles`, `static/assets`).
   * Bundles the four TypeScript entry points into ES module outputs under `dist/<browser>/scripts/` with source maps enabled.
+  * Injects environment variables (e.g., Kinde client ID) into the manifest.
   * Deep-merges `config/manifest.base.json` with any browser-specific override before emitting `dist/<browser>/manifest.json`.
 
 * Example invocations
@@ -197,11 +215,35 @@ Each command prepares a fully self-contained directory that can be zipped for st
 * **Firefox**: Shares the same MV3 bundle while injecting `browser_specific_settings.gecko` metadata to enable signing.
 * **Safari**: Keeps metadata overrides lightweight—`safari-web-extension-converter` can ingest the generated directory to create an Xcode project.
 
-## 7. Testing Strategy
+## 7. Authentication Architecture
+
+The extension uses Kinde for authentication, enabling access to premium AI-powered features.
+
+### 7.1 Core Components
+- **`AuthService` (`src/auth/auth.service.ts`)**: A singleton service that orchestrates the entire authentication flow, including login, logout, state management, and subscription checks.
+- **`KindeProvider` (`src/auth/providers/kinde.provider.ts`)**: Implements the `AuthProvider` interface and handles all communication with Kinde, using `chrome.identity.launchWebAuthFlow` for the OAuth2 PKCE flow.
+- **`useAuthStore` (`src/auth/state/auth.store.ts`)**: A Zustand store that serves as the single source of truth for authentication state (user, token, loading status, etc.) across the extension.
+
+### 7.2 Authentication Flow
+1.  User clicks "Sign In" on the settings page.
+2.  `AuthService.login()` is called, which delegates to `KindeProvider.login()`.
+3.  The provider constructs the Kinde authorization URL with PKCE parameters.
+4.  `chrome.identity.launchWebAuthFlow` opens a new window for Kinde authentication.
+5.  After successful login, Kinde redirects to a special `chromiumapp.org` URL.
+6.  The extension captures the authorization code from the redirect URL.
+7.  The provider exchanges the code for an access token by calling Kinde's token endpoint.
+8.  The user profile and token are stored securely in `chrome.storage.local`.
+9.  The `useAuthStore` is updated, and the UI reacts to show the authenticated state.
+
+### 7.3 State Management
+- The `AuthService` initializes on browser startup, checking for a valid session in storage and updating the `useAuthStore` accordingly.
+- All UI components that need authentication information subscribe to the `useAuthStore` for reactive updates.
+
+## 8. Testing Strategy
 
 The testing strategy combines unit tests for isolated component testing with end-to-end tests for full user workflows.
 
-### 7.1 Unit Tests
+### 8.1 Unit Tests
 
 * Unit tests are implemented with [Vitest](https://vitest.dev/) and located co-located with source files using `.spec.ts` extension.
 * Tests provide fast, isolated testing of individual functions and modules without requiring browser contexts.
@@ -209,7 +251,7 @@ The testing strategy combines unit tests for isolated component testing with end
 * The modular reader architecture (`timing-engine.ts`, `text-processor.ts`, `visual-effects.ts`) enables comprehensive unit testing of individual algorithms.
 * Unit tests can directly import modules under `src/common`, `src/core`, and `src/reader` for isolated testing.
 
-### 7.2 End-to-End Tests
+### 8.2 End-to-End Tests
 
 * Playwright tests are executed against the built Chrome bundle (`dist/chrome`). The `npm test` script automatically runs the build before launching the browser.
 * Tests exercise the background worker APIs directly (`openReaderWindowSetup`), wait for the reader window, and verify playbook behaviour by asserting that words progress after toggling play.
@@ -219,13 +261,13 @@ The testing strategy combines unit tests for isolated component testing with end
   * Advanced timing algorithm validation with word frequency differences
   * Text preprocessing capabilities (acronym consolidation, number preservation, hyphen preservation)
   * Chunking logic for short word grouping
-* OpenAI integration test requires a real API key. Set `OPENAI_API_KEY` in the environment before running the suite to validate live provider behavior (no mocks or fallbacks).
+* Kinde-gated AI integration tests require a dev token. Set `VITE_DEV_PRO_TOKEN` in your `.env` file to run these tests.
 
-## 7.5. Text Preprocessing Architecture
+## 9. Text Preprocessing Architecture
 
 The text preprocessing system provides an extensible, provider-based architecture for text enhancement and translation.
 
-### 7.5.1 Provider Architecture
+### 9.1 Provider Architecture
 
 ```typescript
 interface PreprocessingProvider {
@@ -245,78 +287,45 @@ interface PreprocessingResult {
 }
 ```
 
-### 7.5.2 Current Providers
+### 9.2 Current Providers
 
-* **OpenAI Provider**: Translates text to the configured target language using the model from service defaults/config
-  * Requires API key stored in extension storage or environment variable
-  * Includes 10-second timeout and error handling
-  * Automatically falls back if unavailable
+* **`OpenAIProvider`**: Sends text to a Kinde-gated Cloudflare worker for translation and summarization.
+  * Requires an authenticated user session.
+  * Includes a 10-second timeout and error handling.
+* **`PassthroughProvider`**: Returns text unchanged.
+  * Used when AI preprocessing is disabled.
 
-* **Passthrough Provider**: Returns text unchanged
-  * Always available as fallback
-  * Zero processing time
-  * Used when no other providers are available
-
-### 7.5.3 Provider Selection Logic
+### 9.3 Provider Selection Logic
 
 The system automatically selects the best available provider:
 
-1. **Check OpenAI availability**: If API key is present and valid
-2. **Fallback to Passthrough**: If OpenAI fails or unavailable
-3. **Error handling**: Each provider can fail gracefully to the next
+1.  **Check `OpenAIProvider` availability**: Checks if the user is authenticated.
+2.  **Fallback to `PassthroughProvider`**: If the user is not authenticated or AI preprocessing is disabled.
 
-### 7.5.4 Configuration and Security
+### 9.4 Configuration and Security
 
-* **API Key Storage**: Securely stored in Chrome extension storage
-* **User Configuration**: API key entered via popup interface
-* **Automatic Fallback**: No configuration needed - system handles provider selection
-* **No Key Leakage**: API keys never logged or exposed in client code
+* **Authentication**: AI features are only available to authenticated users with a valid Kinde session.
+* **API Calls**: All calls to the AI worker are authenticated with the user's Kinde access token.
 
-### 7.5.5 Implementation Details
-
-The preprocessing system is implemented under `src/preprocessing/` with:
-
-* **Provider Classes**: `providers/openai.ts`, `providers/passthrough.ts` implementing `PreprocessingProvider`
-* **Manager**: `manager.ts` handling provider selection and fallback logic
-* **Streaming Manager**: `streaming-manager.ts` coordinating real-time streaming with OpenAI provider
-* **Integration**: Seamlessly integrated into the reader text processing pipeline
-* **Storage Integration**: Uses extension storage for API key persistence
-### 7.5.6 Future Extensibility
-
-The architecture supports easy addition of new providers:
-
-```typescript
-class CustomProvider implements PreprocessingProvider {
-  name = 'custom'
-  async isAvailable() { /* check availability */ }
-  async process(text) { /* process text */ }
-}
-```
-
-Future providers could include:
-* **Proxy Provider**: Authenticated requests through custom server
-* **Local AI Provider**: Chrome's built-in AI APIs for on-device processing
-* **Translation Services**: Google Translate, DeepL, etc.
-
-## 7.6. Real-Time Streaming Architecture
+## 10. Real-Time Streaming Architecture
 
 The streaming system enables progressive text processing and immediate content availability, significantly improving user experience by starting playback before all preprocessing is complete.
 
-### 7.6.1 Streaming Components
+### 10.1 Streaming Components
 
 The streaming system consists of several coordinated modules under `src/reader/` and `src/preprocessing/`:
 
-* **StreamingTextOrchestrator** (`streaming-text.ts`): Main coordinator that manages the entire streaming pipeline
-* **StreamingTextBuffer** (`streaming-text-buffer.ts`): Buffers incoming tokens until complete sentences are formed
-* **StreamingTextProcessor** (`streaming-text-processor.ts`): Converts text chunks into RSVP word items in real-time
-* **StreamingPreprocessingManager** (`streaming-manager.ts`): Coordinates streaming with OpenAI provider
+* **`StreamingTextOrchestrator` (`streaming-text.ts`)**: Main coordinator that manages the entire streaming pipeline
+* **`StreamingTextBuffer` (`streaming-text-buffer.ts`)**: Buffers incoming tokens until complete sentences are formed
+* **`StreamingTextProcessor` (`streaming-text-processor.ts`)**: Converts text chunks into RSVP word items in real-time
+* **`OpenAIProvider` (`src/preprocessing/providers/openai.ts`)**: Handles the streaming request to the Kinde-gated worker.
 
-### 7.6.2 Streaming Flow
+### 10.2 Streaming Flow
 
 ```mermaid
 graph LR
     A[Raw Text] --> B[StreamingOrchestrator]
-    B --> C[OpenAI Streaming]
+    B --> C[Kinde-gated Worker]
     C --> D[Token Stream]
     D --> E[StreamingTextBuffer]
     E --> F[Complete Sentences]
@@ -326,56 +335,33 @@ graph LR
     H --> J[Progress Updates]
 ```
 
-### 7.6.3 Progressive Processing
+### 10.3 Progressive Processing
 
-1. **Immediate Start**: Text processing begins immediately when content is loaded
-2. **Token-Level Streaming**: OpenAI tokens are processed as they arrive from the API
-3. **Sentence Buffering**: Tokens are buffered until complete sentences are formed
-4. **Chunk Generation**: Complete sentences are immediately converted to RSVP chunks
-5. **Progressive Display**: Users can start reading while processing continues in background
+1.  **Immediate Start**: Text processing begins immediately when content is loaded
+2.  **Token-Level Streaming**: Tokens from the worker are processed as they arrive.
+3.  **Sentence Buffering**: Tokens are buffered until complete sentences are formed
+4.  **Chunk Generation**: Complete sentences are immediately converted to RSVP chunks
+5.  **Progressive Display**: Users can start reading while processing continues in background
 
-### 7.6.4 Feature Detection
+### 10.4 Feature Detection
 
-The system intelligently enables streaming based on available configuration:
+The system intelligently enables streaming based on user authentication:
 
-```typescript
-// Automatic feature detection
-const shouldUseStreaming = await shouldEnableStreaming()
-if (shouldUseStreaming) {
-  await setWordsWithStreaming(tokens)
-} else {
-  await setWords(tokens) // Traditional processing
-}
-```
+* **Authenticated User**: Full streaming processing with real-time progress.
+* **Guest User**: Graceful fallback to traditional, local text processing.
+* **Error Handling**: Automatic fallback on streaming failures, with an error message displayed to the user.
 
-* **With OpenAI API Key**: Full streaming processing with real-time progress
-* **Without API Key**: Graceful fallback to traditional preprocessing
-* **Error Handling**: Automatic fallback on streaming failures
-
-#### Requirements for Streaming
-
-* Valid OpenAI API key configured in the extension settings panel
-* Active internet connection to establish streaming requests to OpenAI
-* Available API quota to prevent mid-stream interruptions
-
-### 7.6.5 UI Integration
+### 10.5 UI Integration
 
 The streaming system provides enhanced visual feedback:
 
 * **Real-time Progress**: Visual progress bar shows processing percentage
 * **Status Messages**: Clear indication of streaming state ("Processing...", "Loading...")
+* **Error Messages**: A red bubble appears if preprocessing fails.
 * **Progressive Availability**: Content becomes readable as soon as sufficient chunks are processed
 * **Smooth Transitions**: Seamless state changes between streaming and reading modes
 
-### 7.6.6 Performance Optimizations
-
-* **Non-blocking Processing**: UI remains responsive during streaming
-* **Efficient Memory Management**: Streaming buffers are cleaned up automatically
-* **Minimal DOM Updates**: Progress updates are batched to prevent UI blocking
-* **Graceful Degradation**: System falls back to traditional processing on any streaming error
-* **Browser-Safe Scheduling**: Streaming queue draining uses `setTimeout(() => {}, 0)` for compatibility across browsers (instead of Node-only `setImmediate`).
-
-## 8. Future Evolution
+## 11. Future Evolution
 
 * Expand the manifest overrides to capture Firefox-specific permission tweaks (e.g., action button behaviour) and Safari-specific entitlements.
 * Introduce dedicated unit tests for the reader timing logic and storage helpers.

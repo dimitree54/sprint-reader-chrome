@@ -178,22 +178,6 @@ async function runBuild(browser) {
 
   // Security check: prevent API key embedding in production builds
   const isProduction = process.env.NODE_ENV === 'production';
-  let apiKeyValue = '';
-
-  if (isProduction) {
-    // Fail fast if API key is present in production environment
-    if (process.env.OPENAI_API_KEY) {
-      console.error('❌ SECURITY ERROR: OPENAI_API_KEY detected in production build environment!');
-      console.error('   API keys should never be embedded in production builds.');
-      console.error('   Remove OPENAI_API_KEY from environment variables for production builds.');
-      process.exit(1);
-    }
-    // Always use empty string for production builds
-    apiKeyValue = '';
-  } else {
-    // For non-production builds, keep existing behavior
-    apiKeyValue = process.env.OPENAI_API_KEY || '';
-  }
 
   await build({
     entryPoints: {
@@ -213,10 +197,10 @@ async function runBuild(browser) {
     logLevel: 'info',
     define: {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-      'process.env.OPENAI_API_KEY': JSON.stringify(apiKeyValue),
       'process.env.VITE_KINDE_CLIENT_ID': JSON.stringify(process.env.VITE_KINDE_CLIENT_ID || ''),
       'process.env.VITE_KINDE_DOMAIN': JSON.stringify(process.env.VITE_KINDE_DOMAIN || ''),
       'process.env.VITE_KINDE_REDIRECT_URL': JSON.stringify(process.env.VITE_KINDE_REDIRECT_URL || ''),
+      'process.env.VITE_DEV_PRO_TOKEN': JSON.stringify(process.env.VITE_DEV_PRO_TOKEN || ''),
     },
   });
 

@@ -9,7 +9,8 @@ function bindPlaybackButtons(): void {
   const playButton = document.getElementById('btnPlay')
   playButton?.addEventListener('click', () => {
     const state = useReaderStore.getState()
-    if (state.isPreprocessing) return
+    // Allow play/pause during streaming as soon as initial tokens are available
+    if (state.wordItems.length === 0) return
     if (state.status === 'playing') playbackService.pause()
     else playbackService.play()
   })
@@ -29,11 +30,9 @@ function bindKeyboardShortcuts(): void {
     const target = event.target
     if (target instanceof Element && target.closest('input, button, textarea, select, [contenteditable]')) return
     const state = useReaderStore.getState()
-    if (state.isPreprocessing) {
-      event.preventDefault()
-      return
-    }
     event.preventDefault()
+    // Allow toggling during streaming if at least one item is available
+    if (state.wordItems.length === 0) return
     if (state.status === 'playing') playbackService.pause()
     else playbackService.play()
   })
@@ -87,4 +86,3 @@ export function bindControls(): void {
   bindKeyboardShortcuts()
   bindSettingsButton()
 }
-

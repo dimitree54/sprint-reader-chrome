@@ -37,13 +37,6 @@ export async function writeReaderPreferences (prefs: ReaderPreferences): Promise
   await storageService.writeReaderPreferences(prefs)
 }
 
-export async function readOpenAIApiKey (): Promise<string | null> {
-  return storageService.readOpenAIApiKey()
-}
-
-export async function writeOpenAIApiKey (apiKey: string): Promise<void> {
-  await storageService.writeOpenAIApiKey(apiKey)
-}
 
 export async function readTranslationLanguage (): Promise<TranslationLanguage> {
   return storageService.readTranslationLanguage()

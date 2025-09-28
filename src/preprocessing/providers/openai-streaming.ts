@@ -64,26 +64,54 @@ export async function processStreamLinesWithCallback(
 }
 
 function extractProcessableLines(buffer: string): { updatedBuffer: string; processableLines: string[] } {
-  const lines = buffer.split('\n')
-  let updatedBuffer = lines.pop() || '' // Keep potentially incomplete last line in buffer
   const processableLines: string[] = []
+  let remainingBuffer = buffer
 
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (!trimmed || !trimmed.startsWith('data: ')) {
+  while (true) {
+    // Look for the next complete data line
+    const dataStart = remainingBuffer.indexOf('data: ')
+    if (dataStart === -1) {
+      // No more data lines, return remaining buffer
+      return { updatedBuffer: remainingBuffer, processableLines }
+    }
+
+    // Find the end of this data line (next newline)
+    const lineStart = dataStart
+    const lineEnd = remainingBuffer.indexOf('\n', lineStart)
+
+    if (lineEnd === -1) {
+      // No complete line found, return remaining buffer
+      return { updatedBuffer: remainingBuffer, processableLines }
+    }
+
+    // Extract the complete line
+    const line = remainingBuffer.slice(lineStart, lineEnd).trim()
+
+    // Handle [DONE] marker
+    if (line === 'data: [DONE]') {
+      processableLines.push(line)
+      remainingBuffer = remainingBuffer.slice(lineEnd + 1)
       continue
     }
 
-    if (trimmed !== 'data: [DONE]' && !/[}\]]$/.test(trimmed)) {
-      // Line might be incomplete JSON; keep it in the buffer for the next chunk
-      updatedBuffer = `${trimmed}\n${updatedBuffer}`.trim()
-      continue
+    // Check if this is a valid data line with complete JSON
+    if (line.startsWith('data: ')) {
+      const jsonStr = line.substring(6) // Remove 'data: ' prefix
+      try {
+        JSON.parse(jsonStr)
+        // JSON is valid and complete
+        processableLines.push(line)
+        remainingBuffer = remainingBuffer.slice(lineEnd + 1)
+      } catch (e) {
+        // JSON is incomplete, but we found a newline - this might be split JSON
+        // Keep this line in buffer and wait for more data
+        return { updatedBuffer: remainingBuffer, processableLines }
+      }
+    } else {
+      // Not a data line, skip it
+      remainingBuffer = remainingBuffer.slice(lineEnd + 1)
     }
-
-    processableLines.push(trimmed)
   }
-
-  return { updatedBuffer, processableLines }
 }
 
 function extractDeltaFromLine(line: string): string | null {
@@ -94,9 +122,18 @@ function extractDeltaFromLine(line: string): string | null {
   const data = line.slice(6)
 
   try {
-    const event: StreamingEvent = JSON.parse(data)
-    if (event.type === 'response.output_text.delta') {
+    const event: any = JSON.parse(data)
+    // OpenAI Responses API streaming event
+    if (event && typeof event === 'object' && event.type === 'response.output_text.delta') {
       return (event as ResponseOutputTextDelta).delta
+    }
+    // OpenAI Chat Completions streaming chunk
+    if (event && typeof event === 'object' && event.object === 'chat.completion.chunk') {
+      const delta = event.choices?.[0]?.delta
+      const content: unknown = delta?.content
+      if (typeof content === 'string' && content.length > 0) {
+        return content
+      }
     }
   } catch {
     // Skip invalid JSON lines

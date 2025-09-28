@@ -106,10 +106,15 @@ class StreamingTextOrchestrator {
       try {
         const preprocessingResult = await preprocessTextForReader(rawText)
 
+        if (preprocessingResult.error) {
+          useReaderStore.getState().setPreprocessingError(preprocessingResult.error.message)
+        }
+
         // Process the initial text immediately
         await this.textProcessor.processTextChunk(preprocessingResult.text)
       } catch (error) {
         console.error('Error in initial preprocessing:', error)
+        useReaderStore.getState().setPreprocessingError('An unexpected error occurred during preprocessing.')
       }
     }
 

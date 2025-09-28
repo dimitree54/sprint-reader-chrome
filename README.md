@@ -2,19 +2,19 @@
 
 **10x your reading speed** is a multi-browser speed reading extension that supercharges your reading with RSVP (Rapid Serial Visual Presentation) technology enhanced by AI preprocessing and real-time streaming.
 
-> Current version: 3.0.3
+> Current version: 3.1.0
 
 Simply select text on a webpage, right-click and select `10x your reading speed - read selected text` from the menu. This launches the reader window where selected text is displayed word-by-word in a fixed focal position. The duration of each slide is calculated based on your word-per-minute (WPM) setting.
 
-Prefer to paste something manually? Click the extension icon, drop your text into the popup, and then press **Speed read it** to open the reader with that content. Use the gear icon in the popup or reader to open the dedicated settings page where you can manage the OpenAI API key, pick the target language, and choose the summarisation level for AI-powered translation.
+Prefer to paste something manually? Click the extension icon, drop your text into the popup, and then press **Speed read it** to open the reader with that content. Use the gear icon in the popup or reader to open the dedicated settings page where you can sign in with your Kinde account to unlock AI-powered features.
 
-**New**: When an OpenAI API key is configured, the extension uses real-time streaming processing that begins displaying content immediately while continuing to process text in the background, providing instant feedback and progress visualization.
+**New in 3.1.0**: AI-powered features are now available to authenticated users. Sign in to get access to translation and summarization, powered by a Kinde-gated backend.
 
 ## What makes this special
 
 On top of traditional **Rapid Serial Visual Presentation** (RSVP), we've added **LLM pre-processing** and **real-time streaming** to further accelerate your reading comprehension. Studies show that the habit of internally "sounding out" (sub-vocalising) words is a limiting factor that prevents faster reading speeds. RSVP eliminates this by not displaying words long enough for sub-vocalisation to occur.
 
-Our AI preprocessing optimizes text before presentation, and with streaming enabled, you can start reading immediately while the AI continues processing the remaining content in the background - allowing you to absorb information even faster than standard RSVP while maintaining the same level of comprehension.
+Our AI preprocessing, available to authenticated users, optimizes text before presentation. With streaming enabled, you can start reading immediately while the AI continues processing the remaining content in the background - allowing you to absorb information even faster than standard RSVP while maintaining the same level of comprehension.
 
 ## Key Features
 
@@ -30,14 +30,15 @@ Our AI preprocessing optimizes text before presentation, and with streaming enab
 > Optimal word positioning to improve comprehension
 > Optional grammar delays
 > **Multi-browser support** (Chrome, Firefox, Safari)
-> **AI-powered text preprocessing** for enhanced comprehension
-> **Real-time streaming processing** with visual progress feedback
-> Progressive content loading - start reading while processing continues
-> Intelligent feature detection (streaming when API key available, fallback otherwise)
-> Dedicated settings page for managing translation providers
-> 47+ translation languages with "no translation" default
-> Adjustable summarisation depth (literal, 50% reduction, or key-point digest)
-> Keyboard shortcut helper that nudges you to select text when none is highlighted
+> **Kinde-powered Authentication** for unlocking AI features.
+> **AI-powered text preprocessing** for enhanced comprehension (pro feature).
+> **Real-time streaming processing** with visual progress feedback.
+> Progressive content loading - start reading while processing continues.
+> Intelligent feature detection (AI features for authenticated users).
+> Dedicated settings page for managing your account.
+> 47+ translation languages with "no translation" default.
+> Adjustable summarisation depth (literal, 50% reduction, or key-point digest).
+> Keyboard shortcut helper that nudges you to select text when none is highlighted.
 
 ## Table of Contents
 
@@ -52,6 +53,7 @@ Our AI preprocessing optimizes text before presentation, and with streaming enab
 ## <a name="original-attribution"></a>Original Attribution
 
 This extension is based on **Sprint Reader** originally created by Anthony Nosek. We've enhanced it with:
+- Kinde authentication to gate AI-powered features.
 - AI-powered text preprocessing with real-time streaming (see docs/architecture.md#76-real-time-streaming-architecture)
 - Progressive content loading and visual progress feedback
 - Multi-browser support (Chrome, Firefox, Safari)
@@ -63,8 +65,13 @@ Original Sprint Reader: Copyright (c) 2013-2025, Anthony Nosek. Used under BSD l
 
 ### Installation from Source
 
-1. Download or clone this repository
-2. Build the extension for your target browser:
+1.  Download or clone this repository
+2.  Create a `.env` file in the root of the project with your Kinde credentials:
+    ```
+    VITE_KINDE_CLIENT_ID=your_kinde_client_id
+    VITE_KINDE_DOMAIN=your_kinde_domain
+    ```
+3.  Build the extension for your target browser:
 
 ```bash
 npm install
@@ -73,7 +80,7 @@ npm run build:firefox   # For Firefox
 npm run build:safari    # For Safari
 ```
 
-3. Load the extension in your browser:
+4.  Load the extension in your browser:
 
 **Chrome:**
 - Visit `chrome://extensions`
@@ -112,6 +119,8 @@ npm run test:unit
 
 Unit tests are co-located with source files using the `.spec.ts` extension and provide comprehensive coverage of core utilities and algorithms.
 
+Note: Vitest automatically loads environment variables from `.env` (via `dotenv/config`). To run the real Kinde‑gated API integration test, set `VITE_DEV_PRO_TOKEN` in your `.env` file.
+
 ### End-to-End Tests
 
 End-to-end regression tests run on Chromium via [Playwright](https://playwright.dev/).
@@ -126,22 +135,17 @@ Tests exercise the complete reader flow including background worker APIs, reader
 
 ### Testing prerequisites
 
-Some E2E scenarios validate the real OpenAI integration. To run the full suite successfully you must provide a valid API key via environment variable:
+Some E2E scenarios validate the Kinde-gated AI preprocessing. To run the full suite successfully you must provide a valid dev token via an environment variable in your `.env` file:
 
-```bash
-export OPENAI_API_KEY="sk-..."
-npm test
+```
+VITE_DEV_PRO_TOKEN=your_dev_token
 ```
 
-Alternatively, prefix the command:
+Without this variable, the AI integration test will be skipped. Other tests run against the non-streaming path (preprocessing disabled).
 
-```bash
-OPENAI_API_KEY="sk-..." npm test
-```
+Additionally, the extension manifest includes host permissions for the Kinde‑gated worker domain so the reader and background can call it during tests:
 
-Without this variable, the OpenAI integration test will fail by design (no mocks or fallbacks are used). Other tests run against the non‑streaming path (preprocessing disabled), and `tests/playwright/preprocessing-toggle.spec.ts` verifies that no network calls occur when preprocessing is disabled.
-
-Note: The Playwright test runner auto-loads variables from a local `.env` file and will pick up `OPENAI_API_KEY` from there if present. Existing process environment variables always take precedence.
+- `https://kinde-gated-openai-responses-api.path2dream.workers.dev/*`
 
 ## <a name="useful-resources"></a>Useful Resources
 
@@ -168,11 +172,11 @@ See `docs/architecture.md` for detailed technical documentation covering:
 
 The extension uses a clean service‑oriented, store‑driven architecture (see `docs/architecture.md`).
 
-- Core services: `BrowserApiService`, `StorageService`, `TimingService`, `AIPreprocessingService`, `PlaybackService` (owns the scheduling loop). The legacy `platform/` layer has been removed; all code uses the `BrowserApiService`.
-- State: Centralized Zustand store `src/reader/state/reader.store.ts` (single source of truth).
+- Core services: `BrowserApiService`, `StorageService`, `TimingService`, `AIPreprocessingService`, `PlaybackService` (owns the scheduling loop), `AuthService`.
+- State: Centralized Zustand stores for reader state (`src/reader/state/reader.store.ts`) and auth state (`src/auth/state/auth.store.ts`).
 - UI: Store‑driven renderer `src/reader/ui/renderer.ts` as the only DOM writer; modern control bindings in `src/reader/ui/controls.ts` wired to store and PlaybackService.
 
-Quality gates: lint + typecheck + unit + end‑to‑end tests are green with a real `OPENAI_API_KEY`.
+Quality gates: lint + typecheck + unit + end‑to‑end tests are green.
 
 ## <a name="license"></a>License
 

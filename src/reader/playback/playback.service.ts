@@ -81,10 +81,18 @@ export class PlaybackService {
     }
 
     if (store.index >= store.wordItems.length - 1) {
-      // End of available items
-      useReaderStore.setState({ status: 'paused' })
-      this.clearTimer()
-      return
+      // End of currently available items
+      if (store.isStreaming && !store.streamingComplete) {
+        // Keep playing state; poll until new items arrive
+        this.clearTimer()
+        this.timerId = setTimeout(this.scheduleNextWord, DEFAULTS.TIMING.minimumDelayMs)
+        return
+      } else {
+        // Streaming finished or not streaming: pause at the end
+        useReaderStore.setState({ status: 'paused' })
+        this.clearTimer()
+        return
+      }
     }
 
     useReaderStore.setState({ index: store.index + 1 })

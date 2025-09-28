@@ -3,8 +3,6 @@ import { applyThemeToElement } from '../common/theme'
 import {
   readReaderPreferences,
   writeReaderPreferences,
-  readOpenAIApiKey,
-  writeOpenAIApiKey,
   readTranslationLanguage,
   writeTranslationLanguage,
   readSummarizationLevel,
@@ -38,8 +36,6 @@ const THEME_OPTIONS = {
 
 type SettingsElements = {
   form: HTMLFormElement;
-  apiKeyInput: HTMLInputElement;
-  clearButton: HTMLButtonElement;
   enablePreprocessingToggle: HTMLInputElement;
   languageSelect: HTMLSelectElement;
   wpmSlider: HTMLInputElement;
@@ -192,11 +188,6 @@ async function loadInitialState (elements: SettingsElements): Promise<void> {
   const prefs = await readReaderPreferences()
   applyThemeToElement(document.body, prefs.theme, THEME_OPTIONS)
 
-  const apiKey = await readOpenAIApiKey()
-  if (apiKey) {
-    elements.apiKeyInput.value = apiKey
-  }
-
   // Populate language dropdown with all available languages
   populateLanguageOptions(elements.languageSelect)
 
@@ -230,10 +221,6 @@ async function loadInitialState (elements: SettingsElements): Promise<void> {
   await loadAuthState(elements)
 }
 
-async function persistApiKey (value: string): Promise<void> {
-  await writeOpenAIApiKey(value)
-}
-
 function registerEvents (elements: SettingsElements): void {
   elements.wpmSlider.addEventListener('input', () => {
     const value = Number.parseInt(elements.wpmSlider.value, 10) || DEFAULTS.READER_PREFERENCES.wordsPerMinute
@@ -255,7 +242,6 @@ function registerEvents (elements: SettingsElements): void {
   
   elements.form.addEventListener('submit', async (event) => {
     event.preventDefault()
-    const value = elements.apiKeyInput.value.trim()
 
     // Get preprocessing enabled state
     const preprocessingEnabled = elements.enablePreprocessingToggle.checked
@@ -276,7 +262,6 @@ function registerEvents (elements: SettingsElements): void {
       const updatedPrefs = { ...currentPrefs, wordsPerMinute: wpmValue }
 
       await Promise.all([
-        persistApiKey(value),
         writePreprocessingEnabled(preprocessingEnabled),
         writeTranslationLanguage(language),
         writeSummarizationLevel(summarizationLevel),
@@ -286,17 +271,6 @@ function registerEvents (elements: SettingsElements): void {
     } catch (error: unknown) {
       console.error('Failed to save settings', error)
       showStatus(elements, 'Could not save settings. Try again.', 'error')
-    }
-  })
-
-  elements.clearButton.addEventListener('click', async () => {
-    elements.apiKeyInput.value = ''
-    try {
-      await persistApiKey('')
-      showStatus(elements, 'API key cleared.', 'success')
-    } catch (error: unknown) {
-      console.error('Failed to clear API key', error)
-      showStatus(elements, 'Could not clear API key. Try again.', 'error')
     }
   })
 
@@ -330,8 +304,6 @@ function registerEvents (elements: SettingsElements): void {
 document.addEventListener('DOMContentLoaded', () => {
   const elements: SettingsElements = {
     form: document.getElementById('settingsForm') as HTMLFormElement,
-    apiKeyInput: document.getElementById('openaiApiKey') as HTMLInputElement,
-    clearButton: document.getElementById('clearSettings') as HTMLButtonElement,
     enablePreprocessingToggle: document.getElementById('enableTranslation') as HTMLInputElement,
     languageSelect: document.getElementById('targetLanguage') as HTMLSelectElement,
     wpmSlider: document.getElementById('wordsPerMinute') as HTMLInputElement,

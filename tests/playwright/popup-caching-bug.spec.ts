@@ -148,6 +148,13 @@ test.describe('Sprint Reader - Popup Caching Bug', () => {
       const wordLocator = readerPage.locator('#word');
       await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
 
+      // Ensure tokens are populated in store before reading them (prevents race conditions)
+      await readerPage.waitForFunction(() => {
+        const store = (window as any).readerStore;
+        const state = store?.getState?.();
+        return !!state && Array.isArray(state.tokens) && state.tokens.length > 0;
+      });
+
       const actualText = await readerPage.evaluate(() => {
         const store = (window as any).readerStore;
         if (!store) return null;

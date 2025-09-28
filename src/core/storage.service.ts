@@ -15,15 +15,13 @@ import type { User } from '../auth/types/user.types'
 
 export const STORAGE_KEYS = {
   readerPrefs: 'sprintReader.readerPrefs',
-  openaiApiKey: 'sprintReader.openaiApiKey',
   translationLanguage: 'sprintReader.translationLanguage',
   summarizationLevel: 'sprintReader.summarizationLevel',
   preprocessingEnabled: 'sprintReader.preprocessingEnabled',
   // Authentication keys
   authUser: 'sprintReader.auth.user',
   authToken: 'sprintReader.auth.token'
-} as const
-
+ } as const
 export class StorageService {
   constructor (private readonly api: BrowserApiService = browserApi) {}
 
@@ -56,14 +54,7 @@ export class StorageService {
   }
 
   // API key & config -------------------------------------------------------
-  async readOpenAIApiKey (): Promise<string | null> {
-    const result = await this.get<string>([STORAGE_KEYS.openaiApiKey])
-    return result[STORAGE_KEYS.openaiApiKey] || null
-  }
 
-  async writeOpenAIApiKey (apiKey: string): Promise<void> {
-    await this.set({ [STORAGE_KEYS.openaiApiKey]: apiKey })
-  }
 
   // Translation language ---------------------------------------------------
   async readTranslationLanguage (): Promise<TranslationLanguage> {

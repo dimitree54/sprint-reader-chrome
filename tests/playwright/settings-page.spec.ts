@@ -20,8 +20,6 @@ test.describe('Sprint Reader - Settings Page', () => {
     const targetLanguageSelect = page.locator('#targetLanguage');
     await targetLanguageSelect.selectOption('fr');
 
-    const openaiApiKeyInput = page.locator('#openaiApiKey');
-    await openaiApiKeyInput.fill('sk-test-key');
 
     // 3. Click the "Save" button
     const saveButton = page.locator('#saveSettings');
@@ -39,7 +37,7 @@ test.describe('Sprint Reader - Settings Page', () => {
         chrome.storage.local.get([
           'sprintReader.readerPrefs',
           'sprintReader.translationLanguage',
-          'sprintReader.openaiApiKey',
+          'sprintReader.preprocessingEnabled',
         ], (result) => {
           resolve(result);
         });
@@ -48,6 +46,6 @@ test.describe('Sprint Reader - Settings Page', () => {
 
     expect(savedSettings['sprintReader.readerPrefs'].wordsPerMinute).toBe(450);
     expect(savedSettings['sprintReader.translationLanguage']).toBe('fr');
-    expect(savedSettings['sprintReader.openaiApiKey']).toBe('sk-test-key');
+    expect(savedSettings['sprintReader.preprocessingEnabled']).toBe(true);
   });
 });

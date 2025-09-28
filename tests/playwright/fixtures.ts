@@ -34,7 +34,7 @@ export const test = base.extend<ExtensionFixtures>({
         '--no-default-browser-check',
         '--disable-features=TranslateUI,site-per-process',
         '--disable-component-extensions-with-background-pages',
-        '--disable-background-networking',
+        // allow network access for Kinde-gated worker calls in tests
         '--mute-audio',
       ],
     });

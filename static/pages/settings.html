@@ -23,19 +23,7 @@
           <p class="settings__card-subtitle">Configure the optional OpenAI powered translation provider.</p>
         </header>
         <form id="settingsForm" class="settings__form" novalidate>
-          <label class="settings__field" for="openaiApiKey">
-            <span class="settings__field-label">OpenAI API Key</span>
-            <input
-              id="openaiApiKey"
-              name="openaiApiKey"
-              type="password"
-              autocomplete="off"
-              placeholder="sk-..."
-              class="settings__text-input"
-              spellcheck="false"
-            />
-          </label>
-          <p class="settings__hint">Keys are stored locally inside your browser. Leave blank to disable the OpenAI provider.</p>
+
           <label class="settings__field settings__field--checkbox" for="enableTranslation">
             <input
               id="enableTranslation"
@@ -99,7 +87,6 @@
           <p class="settings__hint">Adjust how much the AI condenses text while translating. No summarization keeps content verbatim, moderate halves each paragraph, significant extracts only key takeaways.</p>
           <div class="settings__actions">
             <button type="submit" id="saveSettings" class="settings__button settings__button--primary">Save changes</button>
-            <button type="button" id="clearSettings" class="settings__button settings__button--ghost">Clear key</button>
           </div>
           <p id="settingsStatus" class="settings__status" role="status" aria-live="polite" hidden></p>
         </form>

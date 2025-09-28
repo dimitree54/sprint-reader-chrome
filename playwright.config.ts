@@ -34,9 +34,9 @@ import path from 'path';
 
 export default defineConfig({
   testDir: './tests/playwright',
-  timeout: 30_000,
+  timeout: 5_000,
   expect: {
-    timeout: 10_000,
+    timeout: 5_000,
   },
   fullyParallel: false,
   forbidOnly: !!process.env.CI,

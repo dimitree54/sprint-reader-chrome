@@ -12,6 +12,7 @@ interface RenderElements {
   progressBarElement: HTMLElement
   progressFillElement: HTMLElement
   playButton: HTMLButtonElement | null
+  errorBubbleElement: HTMLElement
 }
 
 
@@ -22,8 +23,9 @@ function getRequiredElements(): RenderElements | null {
   const progressBarElement = document.querySelector('.reader__progress-bar') as HTMLElement
   const progressFillElement = document.getElementById('progressBarFill')
   const playButton = document.getElementById('btnPlay') as HTMLButtonElement | null
+  const errorBubbleElement = document.getElementById('error-bubble')
 
-  if (!wordElement || !statusElement || !progressElement || !progressBarElement || !progressFillElement) {
+  if (!wordElement || !statusElement || !progressElement || !progressBarElement || !progressFillElement || !errorBubbleElement) {
     return null
   }
 
@@ -33,7 +35,8 @@ function getRequiredElements(): RenderElements | null {
     progressElement,
     progressBarElement,
     progressFillElement,
-    playButton
+    playButton,
+    errorBubbleElement
   }
 }
 
@@ -96,6 +99,14 @@ function updateDOM(elements: RenderElements, state: ReturnType<typeof useReaderS
     elements.playButton.textContent = state.status === 'playing' ? 'Pause' : 'Play'
   }
 
+  // Update error bubble
+  if (state.preprocessingError) {
+    elements.errorBubbleElement.textContent = state.preprocessingError
+    elements.errorBubbleElement.hidden = false
+  } else {
+    elements.errorBubbleElement.hidden = true
+  }
+
   // Update control disabled states and WPM value display
   const isDisabled = state.isPreprocessing
   const restartButton = document.getElementById('btnRestart') as HTMLButtonElement | null
@@ -138,7 +149,8 @@ export function initRenderer (): () => void {
     highlightOptimalLetter: false,
     highlightOptimalLetterColor: '',
     wordFlicker: false,
-    wordFlickerPercent: -1
+    wordFlickerPercent: -1,
+    preprocessingError: null as string | null
   }
 
   const unsubscribe = useReaderStore.subscribe((state) => {
@@ -159,7 +171,8 @@ export function initRenderer (): () => void {
       highlightOptimalLetter: state.highlightOptimalLetter,
       highlightOptimalLetterColor: state.highlightOptimalLetterColor,
       wordFlicker: state.wordFlicker,
-      wordFlickerPercent: state.wordFlickerPercent
+      wordFlickerPercent: state.wordFlickerPercent,
+      preprocessingError: state.preprocessingError
     }
 
     // Only update if relevant state has changed
@@ -180,7 +193,8 @@ export function initRenderer (): () => void {
       next.highlightOptimalLetter !== last.highlightOptimalLetter ||
       next.highlightOptimalLetterColor !== last.highlightOptimalLetterColor ||
       next.wordFlicker !== last.wordFlicker ||
-      next.wordFlickerPercent !== last.wordFlickerPercent
+      next.wordFlickerPercent !== last.wordFlickerPercent ||
+      next.preprocessingError !== last.preprocessingError
 
     if (hasRelevantChanges) {
       updateDOM(elements, state)

@@ -4,7 +4,8 @@ import { resolve } from 'path'
 export default defineConfig({
   test: {
     include: ['src/**/*.{spec,test}.ts'],
-    environment: 'node'
+    environment: 'node',
+    setupFiles: ['dotenv/config']
   },
   resolve: {
     alias: {

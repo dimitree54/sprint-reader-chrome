@@ -49,7 +49,7 @@ export class StreamingPreprocessingManager {
       const passthroughProvider = new PassthroughProvider()
 
       // Check if we should use streaming preprocessing (only when enabled and provider is available)
-      if (config.enabled && openAiProvider.isAvailable(config)) {
+      if (config.enabled && openAiProvider.isAvailable()) {
         await this.processWithStreamingProvider(rawText, openAiProvider, config, streamingProcessor)
       } else {
         // Fall back to non-streaming preprocessing (simulate streaming)

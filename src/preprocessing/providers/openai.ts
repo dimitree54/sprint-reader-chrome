@@ -1,6 +1,8 @@
-import { buildTranslationPromptPayload } from '../../reader/openai-prompt'
+import { buildChatCompletionPayload } from '../../reader/openai-prompt'
 import type { PreprocessingProvider, PreprocessingResult } from './types'
 import type { PreprocessingConfig } from '../config'
+import { authService } from '../../auth'
+import { getAuthState } from '../../auth/state/auth.store'
 
 // OpenAI Streaming interfaces
 import {
@@ -11,39 +13,37 @@ import {
 export type { StreamingTokenCallback } from './openai-streaming'
 import { handleApiError, handleProcessingError } from './openai-errors'
 
+const KINDE_GATED_WORKER_URL = 'https://kinde-gated-openai-responses-api.path2dream.workers.dev';
+
 // OpenAI Responses API interfaces
-interface OpenAIResponseContent {
-  type: string
-  text: string
-}
-
-interface OpenAIResponseOutput {
-  type: 'message' | 'reasoning'
-  content: OpenAIResponseContent[]
-}
-
-interface OpenAIResponsesApiResponse {
-  output: OpenAIResponseOutput[]
+interface OpenAIChatCompletionsResponse {
+  choices: Array<{ message?: { content?: string }; delta?: { content?: string } }>
 }
 
 export class OpenAIProvider implements PreprocessingProvider {
   name = 'openai'
 
-  isAvailable(config: PreprocessingConfig): boolean {
-    return !!config.apiKey
+  isAvailable(): boolean {
+    // Check for test mode override
+    if ((globalThis as any).TEST_MODE) {
+      return !!(globalThis as any).TEST_AUTH_TOKEN
+    }
+
+    return getAuthState().isAuthenticated
   }
 
   async process(text: string, config: PreprocessingConfig): Promise<PreprocessingResult> {
     const startTime = Date.now()
+    const token = await authService.getToken()
 
-    if (!config.apiKey) {
+    if (!token) {
       return {
         text,
         error: {
           type: 'missing_api_key',
-          message: 'OpenAI API key not configured',
+          message: 'User is not authenticated',
           details: {
-            suggestion: 'Please configure your OpenAI API key in the extension settings'
+            suggestion: 'Please sign in to use this feature'
           }
         }
       }
@@ -54,14 +54,13 @@ export class OpenAIProvider implements PreprocessingProvider {
     try {
       timeoutId = setTimeout(() => controller.abort(), 10000)
 
-      const payload = buildTranslationPromptPayload(text, config.targetLanguage, config.summarizationLevel)
+      const payload = buildChatCompletionPayload(text, config.targetLanguage, config.summarizationLevel)
 
-      // eslint-disable-next-line n/no-unsupported-features/node-builtins
-      const response = await fetch('https://api.openai.com/v1/responses', {
+      const response = await fetch(KINDE_GATED_WORKER_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.apiKey}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(payload),
         signal: controller.signal
@@ -73,10 +72,8 @@ export class OpenAIProvider implements PreprocessingProvider {
         return handleApiError(response, text)
       }
 
-      const data = await response.json() as OpenAIResponsesApiResponse
-      // Find the message output (not reasoning) - it should have type 'message'
-      const messageOutput = data.output?.find((item) => item.type === 'message')
-      const translatedText = messageOutput?.content?.[0]?.text || text
+      const data = await response.json() as OpenAIChatCompletionsResponse
+      const translatedText = data.choices?.[0]?.message?.content || text
 
       return {
         text: translatedText.trim(),
@@ -95,25 +92,22 @@ export class OpenAIProvider implements PreprocessingProvider {
     }
   }
 
-
-  /**
-   * Process text with streaming support - tokens are sent to callback as they arrive
-   */
   async processWithStreaming(
     text: string,
     config: PreprocessingConfig,
     onToken: StreamingTokenCallback
   ): Promise<PreprocessingResult> {
     const startTime = Date.now()
+    const token = await authService.getToken()
 
-    if (!config.apiKey) {
+    if (!token) {
       return {
         text,
         error: {
           type: 'missing_api_key',
-          message: 'OpenAI API key not configured',
+          message: 'User is not authenticated',
           details: {
-            suggestion: 'Please configure your OpenAI API key in the extension settings'
+            suggestion: 'Please sign in to use this feature'
           }
         }
       }
@@ -124,16 +118,14 @@ export class OpenAIProvider implements PreprocessingProvider {
     try {
       timeoutId = setTimeout(() => controller.abort(), 10000)
 
-      const payload = buildTranslationPromptPayload(text, config.targetLanguage, config.summarizationLevel)
-      // Enable streaming
+      const payload = buildChatCompletionPayload(text, config.targetLanguage, config.summarizationLevel)
       const streamingPayload = { ...payload, stream: true }
 
-      // eslint-disable-next-line n/no-unsupported-features/node-builtins
-      const response = await fetch('https://api.openai.com/v1/responses', {
+      const response = await fetch(KINDE_GATED_WORKER_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.apiKey}`,
+          'Authorization': `Bearer ${token}`,
           'Accept': 'text/event-stream'
         },
         body: JSON.stringify(streamingPayload),
@@ -146,7 +138,6 @@ export class OpenAIProvider implements PreprocessingProvider {
         return handleApiError(response, text)
       }
 
-      // Process streaming response with token callback
       const translatedText = await this.processStreamingResponseWithCallback(response, controller.signal, onToken)
 
       return {
@@ -167,7 +158,6 @@ export class OpenAIProvider implements PreprocessingProvider {
   }
 
   private async processStreamingResponseWithCallback(
-    // eslint-disable-next-line n/no-unsupported-features/node-builtins
     response: Response,
     signal: AbortSignal,
     onToken: StreamingTokenCallback

@@ -14,7 +14,7 @@ export class AIPreprocessingService {
 
   async isAvailable (): Promise<boolean> {
     const cfg = await preprocessingConfigService.getConfig()
-    return !!cfg.apiKey && !!cfg.enabled
+    return !!cfg.enabled
   }
 
   async translateText (text: string, targetLanguage?: TranslationLanguage): Promise<PreprocessingResult> {
@@ -47,7 +47,7 @@ export class AIPreprocessingService {
       return this.manager.process(text, cfg)
     }
     const provider = new OpenAIProvider()
-    if (!provider.isAvailable(cfg)) {
+    if (!provider.isAvailable()) {
       // Fallback to non-streaming path through manager
       return this.manager.process(text, cfg)
     }

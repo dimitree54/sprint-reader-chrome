@@ -102,6 +102,11 @@ export class KindeProvider implements AuthProvider {
 
   async getUser(): Promise<User | null> {
     try {
+      // Check for test mode override
+      if ((globalThis as any).TEST_MODE) {
+        return (globalThis as any).TEST_AUTH_USER || null
+      }
+
       return await storageService.readAuthUser()
     } catch (error) {
       console.error('Error getting Kinde user:', error)
@@ -111,6 +116,11 @@ export class KindeProvider implements AuthProvider {
 
   async getToken(): Promise<string | null> {
     try {
+      // Check for test mode override
+      if ((globalThis as any).TEST_MODE) {
+        return (globalThis as any).TEST_AUTH_TOKEN || null
+      }
+
       return await storageService.readAuthToken()
     } catch (error) {
       console.error('Error getting Kinde token:', error)
@@ -120,6 +130,11 @@ export class KindeProvider implements AuthProvider {
 
   async isAuthenticated(): Promise<boolean> {
     try {
+      // Check for test mode override
+      if ((globalThis as any).TEST_MODE) {
+        return !!(globalThis as any).TEST_AUTH_TOKEN && !!(globalThis as any).TEST_AUTH_USER
+      }
+
       const token = await this.getToken()
       const user = await this.getUser()
       return !!(token && user)
@@ -233,7 +248,8 @@ export class KindeProvider implements AuthProvider {
         given_name: kindeUser.given_name,
         family_name: kindeUser.family_name,
         picture: kindeUser.picture,
-        username: kindeUser.preferred_username
+        username: kindeUser.preferred_username,
+        subscriptionStatus: 'free' // Default status, will be updated by checkSubscriptionStatus
       }
 
       return user

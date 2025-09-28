@@ -42,7 +42,7 @@ jobs:
       env:
         DISPLAY: :99
         CI: true
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        VITE_DEV_PRO_TOKEN: ${{ secrets.VITE_DEV_PRO_TOKEN }}
 
     - uses: actions/upload-artifact@v4
       if: always()

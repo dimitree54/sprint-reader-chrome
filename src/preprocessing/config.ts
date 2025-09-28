@@ -1,26 +1,23 @@
-import { readOpenAIApiKey, readTranslationLanguage, readSummarizationLevel, readPreprocessingEnabled } from '../common/storage'
+import { readTranslationLanguage, readSummarizationLevel, readPreprocessingEnabled } from '../common/storage'
 import type { TranslationLanguage } from '../common/translation'
 import type { SummarizationLevel } from '../common/summarization'
 
 export interface PreprocessingConfig {
   enabled: boolean
-  apiKey: string | null
   targetLanguage: TranslationLanguage
   summarizationLevel: SummarizationLevel
 }
 
 export class PreprocessingConfigService {
   async getConfig(): Promise<PreprocessingConfig> {
-    const [enabled, apiKey, targetLanguage, summarizationLevel] = await Promise.all([
+    const [enabled, targetLanguage, summarizationLevel] = await Promise.all([
       readPreprocessingEnabled(),
-      readOpenAIApiKey(),
       readTranslationLanguage(),
       readSummarizationLevel()
     ])
 
     return {
       enabled,
-      apiKey,
       targetLanguage,
       summarizationLevel
     }

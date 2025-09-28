@@ -34,6 +34,7 @@ export type ReaderStoreState = {
   streamingComplete: boolean
   processedChunkCount: number
   estimatedTotalChunks?: number
+  preprocessingError: string | null
 
   // Actions
   togglePlay: () => void
@@ -48,6 +49,7 @@ export type ReaderStoreState = {
   setIsPreprocessing: (isPreprocessing: boolean) => void
   setStreamingState: (isStreaming: boolean, streamingComplete?: boolean) => void
   setOptimalFontSize: (fontSize: string) => void
+  setPreprocessingError: (error: string | null) => void
   updatePreferences: (prefs: Partial<Pick<ReaderStoreState, 'highlightOptimalLetter' | 'highlightOptimalLetterColor' | 'wordFlicker' | 'wordFlickerPercent' | 'pauseAfterComma' | 'pauseAfterPeriod' | 'pauseAfterParagraph' | 'chunkSize'>>) => void
   reset: () => void
 }
@@ -76,6 +78,7 @@ export const useReaderStore = create<ReaderStoreState>()((set) => ({
   streamingComplete: false,
   processedChunkCount: 0,
   estimatedTotalChunks: undefined,
+  preprocessingError: null,
 
   togglePlay: () => set((s) => (s.isPreprocessing ? {} : { status: s.status === 'playing' ? 'paused' : 'playing' })),
   setPlaybackIndex: (index) => set({ index }),
@@ -99,6 +102,7 @@ export const useReaderStore = create<ReaderStoreState>()((set) => ({
     streamingComplete: streamingComplete ?? false
   }),
   setOptimalFontSize: (fontSize) => set({ optimalFontSize: fontSize }),
+  setPreprocessingError: (error) => set({ preprocessingError: error }),
   updatePreferences: (prefs) => set((s) => ({ ...s, ...prefs })),
   reset: () => set(() => ({
     status: 'idle',
@@ -120,6 +124,7 @@ export const useReaderStore = create<ReaderStoreState>()((set) => ({
     isStreaming: false,
     streamingComplete: false,
     processedChunkCount: 0,
-    estimatedTotalChunks: undefined
+    estimatedTotalChunks: undefined,
+    preprocessingError: null
   }))
 }))

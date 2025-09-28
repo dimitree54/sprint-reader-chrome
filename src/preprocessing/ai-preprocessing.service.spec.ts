@@ -3,7 +3,6 @@ import { aiPreprocessingService } from './ai-preprocessing.service'
 
 const mockConfig = {
   enabled: true,
-  apiKey: 'sk-test',
   targetLanguage: 'en',
   summarizationLevel: 'none'
 }
@@ -37,7 +36,7 @@ vi.mock('./providers/openai', async (orig) => {
 })
 
 describe('AIPreprocessingService', () => {
-  it('reports availability when API key exists', async () => {
+  it('reports availability when preprocessing is enabled', async () => {
     await expect(aiPreprocessingService.isAvailable()).resolves.toBe(true)
   })
 

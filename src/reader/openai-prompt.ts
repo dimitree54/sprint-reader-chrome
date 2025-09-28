@@ -2,31 +2,19 @@ import { getTranslationLanguageLabel, type TranslationLanguage } from '../common
 import type { SummarizationLevel } from '../common/summarization'
 import { DEFAULTS } from '../config/defaults'
 
-export type OpenAIResponsesPayload = {
+export type OpenAIChatCompletionsPayload = {
   model: string;
-  /**
-   * System behavior/instructions for the model (equivalent to a "system" message).
-   */
-  instructions?: string;
-  /**
-   * Responses API chat-style input. For simple text, one user turn is sufficient.
-   */
-  input: { role: 'user' | 'system'; content: string }[];
-  /** Sampling temperature (optional). */
+  messages: Array<{ role: 'system' | 'user'; content: string }>;
   temperature?: number;
-  /** Optional reasoning control (minimal | low | medium | high). Omit to not constrain. */
-  reasoning?: { effort?: 'minimal' | 'low' | 'medium' | 'high' };
-  /** Optional processing tier. "flex" is cheaper/slower; "priority" faster (if enabled). */
-  service_tier?: 'auto' | 'default' | 'flex' | 'priority' | 'scale';
 }
 
 const BOLD_FORMATTING_INSTRUCTION = 'Format the most important words and phrases with **bold** (use **word** format only, no other markdown syntax).'
 
-export function buildTranslationPromptPayload (
+export function buildChatCompletionPayload (
   text: string,
   targetLanguage: TranslationLanguage,
   summarizationLevel: SummarizationLevel
-): OpenAIResponsesPayload {
+): OpenAIChatCompletionsPayload {
   const languageLabel = getTranslationLanguageLabel(targetLanguage)
   const normalizedText = text.trim()
 
@@ -34,14 +22,9 @@ export function buildTranslationPromptPayload (
 
   return {
     model: DEFAULTS.OPENAI.model,
-    instructions: systemContent,
-    service_tier: DEFAULTS.OPENAI.service_tier,
-    reasoning: DEFAULTS.OPENAI.reasoning,
-    input: [
-      {
-        role: 'user',
-        content: normalizedText
-      }
+    messages: [
+      { role: 'system', content: systemContent },
+      { role: 'user', content: normalizedText }
     ]
   }
 }

@@ -10,7 +10,7 @@ const getExtensionRedirectUri = (): string => {
 
     // Last resort fallback
     return 'https://unknown.chromiumapp.org/'
-  } catch (error) {
+  } catch {
     return 'https://unknown.chromiumapp.org/'
   }
 }

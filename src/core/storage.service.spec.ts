@@ -33,12 +33,6 @@ describe('StorageService', () => {
     expect(['dark', 'light']).toContain(prefs.theme)
   })
 
-  it('round-trips OpenAI API key via set/get', async () => {
-    const service = new StorageService()
-    await service.writeOpenAIApiKey('sk-abc')
-    const key = await service.readOpenAIApiKey()
-    expect(key).toBe('sk-abc')
-  })
 
   it('persists reader preferences exactly and reads them back', async () => {
     const service = new StorageService()

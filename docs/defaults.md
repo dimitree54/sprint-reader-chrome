@@ -99,15 +99,6 @@ These values define the timeouts for network requests and API calls.
 |---------|---------------|---------|
 | `getCurrentSelectionTimeout` | `3000` | Timeout in milliseconds for getting the current selection from the background script |
 
-## OpenAI API Defaults
-
-These values configure the OpenAI API requests for translation and summarization.
-
-| Setting | Default Value | Purpose |
-|---------|---------------|---------|
-| `model` | `'gpt-5-mini'` | Model to use for processing requests |
-| `service_tier` | `'priority'` | Processing tier - priority is faster (higher cost), flex is cheaper/slower |
-| `reasoning.effort` | `'minimal'` | Reasoning effort level - minimal, low, medium, or high |
 
 ## Preprocessing & Translation Defaults
 
@@ -197,13 +188,7 @@ export const DEFAULTS = {
     dark: 'dark' as ReaderTheme
   },
 
-  OPENAI: {
-    model: 'gpt-5-mini',
-    service_tier: 'priority',
-    reasoning: {
-      effort: 'minimal'
-    }
-  },
+
 
   PREPROCESSING: {
     enabled: false
