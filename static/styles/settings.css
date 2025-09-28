@@ -539,3 +539,27 @@ body.settings--light .settings__user-profile {
   gap: 12px;
   align-items: center;
 }
+
+.settings__user-name-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings__user-subscription-status {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.settings__user-subscription-status[data-status="pro"] {
+  background-color: #facc15; /* yellow-400 */
+  color: #422006;
+}
+
+.settings__user-subscription-status[data-status="free"] {
+  background-color: #9ca3af; /* gray-400 */
+  color: #1f2937; /* gray-800 */
+}

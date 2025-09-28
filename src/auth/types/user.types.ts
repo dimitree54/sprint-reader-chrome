@@ -5,6 +5,7 @@ export interface User {
   family_name?: string
   picture?: string
   username?: string
+  subscriptionStatus: 'pro' | 'free' | null
 }
 
 export interface AuthResult {

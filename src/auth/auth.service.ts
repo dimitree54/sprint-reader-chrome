@@ -2,6 +2,7 @@ import type { AuthProvider } from './providers/types'
 import type { AuthResult, User } from './types/user.types'
 import { useAuthStore, getAuthState } from './state/auth.store'
 import { storageService } from '../core/storage.service'
+import { getAuthConfig } from './config/auth.config'
 
 export class AuthService {
   constructor(private readonly provider: AuthProvider) {}
@@ -21,7 +22,6 @@ export class AuthService {
 
       const result = await this.provider.login()
       if (result.success) {
-        // After successful login, try to get user data
         await this.refreshUserData()
       } else {
         store.setError(result.error || 'Login failed')
@@ -47,7 +47,6 @@ export class AuthService {
       store.setUser(null)
     } catch (error) {
       console.error('Logout error:', error)
-      // Clear local state even if logout call fails
       await storageService.clearAuthData()
       store.setUser(null)
     } finally {
@@ -60,10 +59,55 @@ export class AuthService {
       const user = await this.provider.getUser()
       const store = getAuthState()
       store.setUser(user)
-      return user
+
+      if (user) {
+        await this.checkSubscriptionStatus()
+      }
+
+      return getAuthState().user
     } catch (error) {
       console.error('Error refreshing user data:', error)
       return null
+    }
+  }
+
+  private async checkSubscriptionStatus(): Promise<'pro' | 'free'> {
+    const store = getAuthState()
+    try {
+      const token = await this.getToken()
+      if (!token) {
+        return 'free'
+      }
+
+      const config = getAuthConfig()
+      const domain = config.kinde.domain.replace(/^https?:\/\//, '')
+      const entitlementsUrl = `https://${domain}/account_api/v1/entitlements`
+
+      const res = await fetch(entitlementsUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      if (!res.ok) {
+        console.error(`Kinde API returned status ${res.status}.`)
+        return 'free'
+      }
+
+      const responseData = await res.json()
+      const entitlements = responseData.data?.entitlements ?? []
+      const hasPermission = entitlements.some(e => e.feature_key === 'ai_preprocessing')
+      
+      const status = hasPermission ? 'pro' : 'free'
+      store.setSubscriptionStatus(status)
+
+      const user = store.user
+      if (user) {
+        await storageService.writeAuthUser({ ...user, subscriptionStatus: status })
+      }
+
+      return status
+    } catch (error) {
+      console.error("Error checking subscription status:", error)
+      return 'free'
     }
   }
 
@@ -90,20 +134,16 @@ export class AuthService {
     store.setLoading(true)
 
     try {
-      // Check if user is authenticated with provider
       const isAuthenticated = await this.provider.isAuthenticated()
 
       if (isAuthenticated) {
-        // Get fresh user data from provider
         await this.refreshUserData()
       } else {
-        // Clear any stale local data
         await storageService.clearAuthData()
         store.setUser(null)
       }
     } catch (error) {
       console.error('Error initializing auth:', error)
-      // Clear local data on error
       await storageService.clearAuthData()
       store.setUser(null)
     } finally {
@@ -111,12 +151,10 @@ export class AuthService {
     }
   }
 
-  // Get current authentication state
   getAuthState() {
     return getAuthState()
   }
 
-  // Subscribe to auth state changes
   subscribe(callback: (state: ReturnType<typeof getAuthState>) => void) {
     return useAuthStore.subscribe(callback)
   }

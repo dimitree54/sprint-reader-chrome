@@ -12,6 +12,7 @@ interface AuthState {
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
   clearError: () => void
+  setSubscriptionStatus: (status: 'pro' | 'free' | null) => void
   reset: () => void
 }
 
@@ -22,7 +23,7 @@ const initialState = {
   error: null
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   ...initialState,
 
   setUser: (user: User | null) =>
@@ -40,6 +41,13 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   clearError: () =>
     set(() => ({ error: null })),
+  
+  setSubscriptionStatus: (status: 'pro' | 'free' | null) => {
+    const { user } = get()
+    if (user) {
+      set({ user: { ...user, subscriptionStatus: status } })
+    }
+  },
 
   reset: () =>
     set(() => initialState)

@@ -92,6 +92,7 @@ function renderUserProfile (elements: SettingsElements, user: User): void {
   const namePlaceholder = elements.userProfile.querySelector('.js-user-name') as HTMLElement
   const avatarPlaceholder = elements.userProfile.querySelector('.js-user-avatar') as HTMLElement
   const avatarPicturePlaceholder = elements.userProfile.querySelector('.js-user-avatar-picture') as HTMLImageElement
+  const subscriptionStatusPlaceholder = elements.userProfile.querySelector('.js-user-subscription-status') as HTMLElement
 
   if (namePlaceholder) {
     namePlaceholder.textContent = `${user.given_name || ''} ${user.family_name || ''}`.trim() || user.email || 'User'
@@ -111,12 +112,23 @@ function renderUserProfile (elements: SettingsElements, user: User): void {
       avatarPicturePlaceholder.hidden = true
     }
   }
+
+  if (subscriptionStatusPlaceholder) {
+    if (user.subscriptionStatus) {
+      subscriptionStatusPlaceholder.textContent = user.subscriptionStatus
+      subscriptionStatusPlaceholder.dataset.status = user.subscriptionStatus
+      subscriptionStatusPlaceholder.hidden = false
+    } else {
+      subscriptionStatusPlaceholder.hidden = true
+    }
+  }
 }
 
 function clearUserProfile (elements: SettingsElements): void {
   const namePlaceholder = elements.userProfile.querySelector('.js-user-name') as HTMLElement
   const avatarPlaceholder = elements.userProfile.querySelector('.js-user-avatar') as HTMLElement
   const avatarPicturePlaceholder = elements.userProfile.querySelector('.js-user-avatar-picture') as HTMLImageElement
+  const subscriptionStatusPlaceholder = elements.userProfile.querySelector('.js-user-subscription-status') as HTMLElement
 
   if (namePlaceholder) {
     namePlaceholder.textContent = ''
@@ -128,6 +140,10 @@ function clearUserProfile (elements: SettingsElements): void {
   if (avatarPicturePlaceholder) {
     avatarPicturePlaceholder.src = ''
     avatarPicturePlaceholder.hidden = true
+  }
+  if (subscriptionStatusPlaceholder) {
+    subscriptionStatusPlaceholder.textContent = ''
+    subscriptionStatusPlaceholder.hidden = true
   }
 }
 
