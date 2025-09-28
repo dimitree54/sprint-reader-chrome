@@ -71,6 +71,8 @@ export class AuthService {
     }
   }
 
+
+
   private async checkSubscriptionStatus(): Promise<'pro' | 'free'> {
     const store = getAuthState()
     try {
