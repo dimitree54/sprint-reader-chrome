@@ -28,9 +28,13 @@ export class PlaybackService {
         chunkSize: s.chunkSize
       }
       const playing = next.status === 'playing'
+      // Do not reschedule on count-only changes. When streaming appends
+      // new items rapidly, constantly clearing and resetting the timer
+      // can push the next tick indefinitely. We intentionally exclude
+      // `count` from the cadence comparison.
       const cadenceChanged = (
         next.wpm !== this.lastWatched.wpm ||
-        next.count !== this.lastWatched.count ||
+        /* next.count excluded */
         next.index !== this.lastWatched.index ||
         next.pauseAfterComma !== this.lastWatched.pauseAfterComma ||
         next.pauseAfterPeriod !== this.lastWatched.pauseAfterPeriod ||

@@ -133,6 +133,12 @@ npm test
 
 Tests exercise the complete reader flow including background worker APIs, reader window lifecycle, and RSVP playback behavior.
 
+By default, Playwright runs tests in parallel using as many workers as there are CPU cores. You can override this at runtime, for example:
+
+```bash
+npx playwright test --workers=4
+```
+
 ### Testing prerequisites
 
 Some E2E scenarios validate the Kinde-gated AI preprocessing. To run the full suite successfully you must provide a valid dev token via an environment variable in your `.env` file:

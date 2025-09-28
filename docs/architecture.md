@@ -254,6 +254,7 @@ The testing strategy combines unit tests for isolated component testing with end
 ### 8.2 End-to-End Tests
 
 * Playwright tests are executed against the built Chrome bundle (`dist/chrome`). The `npm test` script automatically runs the build before launching the browser.
+* Tests run in parallel by default with the number of workers equal to the machine's CPU cores; override with `--workers` when needed.
 * Tests exercise the background worker APIs directly (`openReaderWindowSetup`), wait for the reader window, and verify playbook behaviour by asserting that words progress after toggling play.
 * Comprehensive coverage includes:
   * Reader window opening and basic playback functionality

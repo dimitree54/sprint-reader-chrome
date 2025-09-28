@@ -29,8 +29,10 @@ class StreamingTextOrchestrator {
 
   constructor() {
     this.textBuffer = new StreamingTextBuffer({
-      minBufferSize: 50,
-      sentenceDelimiters: '.!?'
+      // Emit early partial chunks primarily for long streams; keep high to avoid over-splitting short texts
+      minBufferSize: 400,
+      // Treat newline as a natural boundary for early chunks
+      sentenceDelimiters: '.!?\n'
     })
 
     this.textProcessor = new StreamingTextProcessor({

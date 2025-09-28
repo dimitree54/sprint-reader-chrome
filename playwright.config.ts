@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test';
+import os from 'os';
 import fs from 'fs';
 import path from 'path';
 
@@ -41,7 +42,8 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: 1,
+  // Run with as many workers as available CPU cores by default
+  workers: os.cpus().length,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
     headless: false,

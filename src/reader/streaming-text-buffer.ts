@@ -42,9 +42,14 @@ export class StreamingTextBuffer {
       return sentence
     }
 
-    // No delimiter found; fall back to min buffer guard for partial flush decisions
+    // No delimiter found; if buffer is large enough, flush up to the last whitespace
     if (this.buffer.length >= this.minBufferSize) {
-      return null
+      const lastSpace = this.buffer.lastIndexOf(' ')
+      if (lastSpace > 0) {
+        const chunk = this.buffer.slice(0, lastSpace).trim()
+        this.buffer = this.buffer.slice(lastSpace + 1).trim()
+        if (chunk.length > 0) return chunk
+      }
     }
 
     return null
