@@ -27,13 +27,12 @@ export async function rebuildWordItems (): Promise<void> {
   const rawText = store.tokens.map(w => w.text).join(' ')
   const preprocessingResult = await aiPreprocessingService.translateText(rawText)
   // Let the timing service compute the final word items from text
-  const prefs = useReaderStore.getState()
   const wordItems = timingService.calculateWordTimingFromText(preprocessingResult.text, {
-    wordsPerMinute: prefs.wordsPerMinute,
-    pauseAfterComma: prefs.pauseAfterComma,
-    pauseAfterPeriod: prefs.pauseAfterPeriod,
-    pauseAfterParagraph: prefs.pauseAfterParagraph,
-    chunkSize: prefs.chunkSize
+    wordsPerMinute: store.wordsPerMinute,
+    pauseAfterComma: store.pauseAfterComma,
+    pauseAfterPeriod: store.pauseAfterPeriod,
+    pauseAfterParagraph: store.pauseAfterParagraph,
+    chunkSize: store.chunkSize
   })
   // Update words (with bold info) to match processed text
   const preprocessedWords = preprocessText(preprocessingResult.text)
@@ -117,6 +116,11 @@ async function rebuildWordItemsWithStreamingFromRawText (originalRawText: string
         notifyRender()
       },
       onStreamingComplete: () => {
+        useReaderStore.setState({
+          isStreaming: false,
+          streamingComplete: true,
+          isPreprocessing: false
+        })
         notifyRender()
       },
       onError: async (error) => {
@@ -140,8 +144,8 @@ export async function startStreamingFromTokens (
   words: ReaderToken[],
   rawText?: string
 ): Promise<void> {
-  const inputText = rawText?.length
-    ? rawText
+  const inputText = rawText && rawText.trim().length
+    ? rawText.trim()
     : words.map(w => w.text).join(' ')
   // Seed immediate UI state so the reader shows content before streaming finishes
   const store = useReaderStore.getState()
@@ -149,7 +153,7 @@ export async function startStreamingFromTokens (
   const preprocessedWords = preprocessText(rawText && rawText.trim() ? rawText : tokenFallback)
   const wordsWithBoldInfo = preprocessedWords.map((word, index) => ({
     text: word.text,
-    isBold: words[index]?.isBold || word.isBold
+    isBold: words[index]?.isBold ?? word.isBold
   }))
   const timingSettings = {
     wordsPerMinute: store.wordsPerMinute,
@@ -161,7 +165,7 @@ export async function startStreamingFromTokens (
   const wordItems = createChunks(wordsWithBoldInfo, timingSettings)
   const optimalFontSize = calculateOptimalFontSizeForText(wordItems)
   useReaderStore.setState({
-    tokens: words,
+    tokens: wordsWithBoldInfo,
     wordItems,
     optimalFontSize,
     index: 0,
@@ -188,7 +192,7 @@ export function recalculateTimingOnly (): void {
   // Preserve the isBold information from existing tokens
   const wordsWithBoldInfo = preprocessedWords.map((word, index) => ({
     text: word.text,
-    isBold: store.tokens[index]?.isBold || word.isBold
+    isBold: store.tokens[index]?.isBold ?? word.isBold
   }))
 
   const timingSettings = {
