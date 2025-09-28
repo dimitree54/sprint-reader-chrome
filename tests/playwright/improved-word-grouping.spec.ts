@@ -33,9 +33,17 @@ test.describe('Sprint Reader - Improved Word Grouping', () => {
 
     const wordLocator = readerPage.locator('#word');
     await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
+    // Wait for reader store readiness (wordItems populated)
+    await readerPage.waitForFunction(() => {
+      const store = (window as any).readerStore;
+      const state = store?.getState?.();
+      return !!state && Array.isArray(state.wordItems) && state.wordItems.length > 0;
+    });
 
     const chunks = await readerPage.evaluate(() => {
-      const state = (window as any).state || (globalThis as any).state;
+      const store = (window as any).readerStore;
+      if (!store) return null;
+      const state = store.getState();
       if (!state || !state.wordItems) return null;
 
       return state.wordItems.map((item: any) => ({
@@ -129,9 +137,17 @@ test.describe('Sprint Reader - Improved Word Grouping', () => {
 
       const wordLocator = readerPage.locator('#word');
       await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
+      // Wait for reader store readiness (wordItems populated)
+      await readerPage.waitForFunction(() => {
+        const store = (window as any).readerStore;
+        const state = store?.getState?.();
+        return !!state && Array.isArray(state.wordItems) && state.wordItems.length > 0;
+      });
 
       const chunks = await readerPage.evaluate(() => {
-        const state = (window as any).state || (globalThis as any).state;
+        const store = (window as any).readerStore;
+        if (!store) return null;
+        const state = store.getState();
         if (!state || !state.wordItems) return null;
 
         return state.wordItems.map((item: any) => ({

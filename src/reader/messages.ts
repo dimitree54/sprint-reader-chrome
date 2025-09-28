@@ -1,9 +1,9 @@
 import type { ReaderMessage } from '../common/messages'
-import { browser } from '../platform/browser'
+import { browserApi } from '../core/browser-api.service'
 import { loadSelectionContent } from './selection-loader'
 
 export function registerMessageListener (): void {
-  browser.runtime.onMessage.addListener((rawMessage: unknown) => {
+  browserApi.runtime.onMessage.addListener((rawMessage: unknown) => {
     const message = rawMessage as ReaderMessage
     if (message.target !== 'reader') {
       return undefined
@@ -12,7 +12,7 @@ export function registerMessageListener (): void {
     switch (message.type) {
       case 'refreshReader':
         loadSelectionContent().catch(console.error)
-        return true
+        return undefined
       default:
         return undefined
     }

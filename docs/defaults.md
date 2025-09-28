@@ -1,6 +1,6 @@
 # Default Values Configuration
 
-_Last updated: December 2024 (Post-Hardcode Elimination)_
+## Last updated: September 2025
 
 This document describes all default values used throughout the extension and their purposes. All defaults are centralized in `src/config/defaults.ts` to ensure consistency and easy maintenance.
 
@@ -59,6 +59,7 @@ These values control how text is processed and grouped for optimal reading.
 | Setting | Default Value | Purpose |
 |---------|---------------|---------|
 | `maxWordLengthForGrouping` | `3` | Maximum word length (in characters) for grouping multiple words together |
+| `rawText` | `''` | Fallback for empty raw text to prevent errors in preprocessing |
 
 ## Visual Effects Defaults
 
@@ -90,6 +91,14 @@ These values provide consistent error handling behavior.
 | `consoleErrorHandler` | `console.error` | Default error logging function |
 | `consoleWarnHandler` | `console.warn` | Default warning logging function |
 
+## Network and API Timeouts
+
+These values define the timeouts for network requests and API calls.
+
+| Setting | Default Value | Purpose |
+|---------|---------------|---------|
+| `getCurrentSelectionTimeout` | `3000` | Timeout in milliseconds for getting the current selection from the background script |
+
 ## OpenAI API Defaults
 
 These values configure the OpenAI API requests for translation and summarization.
@@ -100,13 +109,14 @@ These values configure the OpenAI API requests for translation and summarization
 | `service_tier` | `'priority'` | Processing tier - priority is faster (higher cost), flex is cheaper/slower |
 | `reasoning.effort` | `'minimal'` | Reasoning effort level - minimal, low, medium, or high |
 
-## Translation Defaults
+## Preprocessing & Translation Defaults
 
-These values control the default translation behavior for text preprocessing.
+These values control preprocessing features and default translation behavior.
 
 | Setting | Default Value | Purpose |
 |---------|---------------|---------|
-| `defaultLanguage` | `'none'` | Default translation language (none = no translation) |
+| `PREPROCESSING.enabled` | `false` | Enables AI preprocessing/streaming features |
+| `TRANSLATION.defaultLanguage` | `'en'` | Default translation language (user‑visible language) |
 
 ## Summarization Defaults
 
@@ -189,14 +199,18 @@ export const DEFAULTS = {
 
   OPENAI: {
     model: 'gpt-5-mini',
-    service_tier: 'flex',
+    service_tier: 'priority',
     reasoning: {
       effort: 'minimal'
     }
   },
 
+  PREPROCESSING: {
+    enabled: false
+  },
+
   TRANSLATION: {
-    defaultLanguage: 'none'
+    defaultLanguage: 'en'
   },
 
   SUMMARIZATION: {
@@ -226,6 +240,14 @@ As part of the extension's architecture principles, the centralized defaults rep
 This approach ensures consistency and makes it easier to understand and maintain the extension's behavior.
 
 ## Recent Changes
+
+### September 2025 - Streaming & Defaults Alignment
+
+Updates in alignment with the current architecture and tests:
+
+- Preprocessing is disabled by default: `PREPROCESSING.enabled = false`
+- Default translation language is English: `TRANSLATION.defaultLanguage = 'en'`
+- OpenAI requests use the priority tier by default: `OPENAI.service_tier = 'priority'`
 
 ### December 2024 - Hardcode Elimination
 

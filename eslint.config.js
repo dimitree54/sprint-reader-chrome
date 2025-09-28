@@ -129,7 +129,7 @@ module.exports = [
         allowModules: ['@eslint/eslintrc', '@eslint/js', 'eslint-plugin-sonarjs']
       }],
       'n/no-unpublished-import': ['error', {
-        allowModules: ['@playwright/test', 'esbuild']
+        allowModules: ['@playwright/test', 'esbuild', 'vitest']
       }]
     }
   })

@@ -8,15 +8,8 @@
 import { preprocessTextForReader } from '../preprocessing/index'
 import { StreamingTextBuffer } from './streaming-text-buffer'
 import { StreamingTextProcessor } from './streaming-text-processor'
-import {
-  state,
-  startStreaming,
-  completeStreaming,
-  appendWordItems,
-  updateStreamingProgress,
-  resetStreamingState
-} from './state'
-import { renderCurrentWord } from './render'
+// legacy-state-helpers removed; use store directly
+import { useReaderStore } from './state/reader.store'
 import type { WordItem } from './timing-engine'
 
 export interface StreamingTextProcessorInstance {
@@ -51,51 +44,42 @@ class StreamingTextOrchestrator {
 
   private handleChunksReady(chunks: WordItem[]): void {
     // Add new chunks to state
-    appendWordItems(chunks)
+    useReaderStore.getState().appendWordItems(chunks)
 
     // Update optimal font size based on all words so far
-    state.optimalFontSize = this.textProcessor.updateOptimalFontSize(state.words)
+    const store = useReaderStore.getState()
+    const optimalFontSize = this.textProcessor.updateOptimalFontSize(store.tokens)
+    store.setOptimalFontSize(optimalFontSize)
 
     // If not playing yet and we have enough chunks, allow user to start
-    if (!state.playing && state.wordItems.length >= 3) {
-      renderCurrentWord() // Update the display
+    // Renderer will react to wordItems.length change automatically
+    // Once we have any chunks, preprocessing is no longer blocking UI
+    if (store.isPreprocessing && store.wordItems.length > 0) {
+      store.setIsPreprocessing(false)
     }
   }
 
   private handleWordsReady(words: { text: string; isBold: boolean }[]): void {
-    // Add words to state.words - this is now handled via callback instead of direct mutation
-    state.words.push(...words)
+    // Add words to store tokens using functional setState to prevent races
+    useReaderStore.setState(s => ({ tokens: s.tokens.concat(words) }))
   }
 
   private handleProgressUpdate(progress: { processedChunks: number; estimatedTotal?: number }): void {
-    updateStreamingProgress(progress.processedChunks, progress.estimatedTotal)
-
-    // Update progress UI if available
-    const progressElement = document.getElementById('progress')
-    if (progressElement && state.isStreaming) {
-      const percentage = state.estimatedTotalChunks
-        ? Math.min((progress.processedChunks / state.estimatedTotalChunks) * 100, 100)
-        : undefined
-
-      if (percentage !== undefined) {
-        progressElement.textContent = `Processing... ${Math.round(percentage)}%`
-      } else {
-        progressElement.textContent = `Processing... ${progress.processedChunks} chunks ready`
-      }
-    }
+    useReaderStore.setState({
+      processedChunkCount: progress.processedChunks,
+      estimatedTotalChunks: progress.estimatedTotal
+    })
+    // Renderer will react to store changes automatically
   }
 
   private handleProcessingComplete(): void {
-    completeStreaming()
-
-    // Update progress UI
-    const progressElement = document.getElementById('progress')
-    if (progressElement) {
-      progressElement.textContent = `Ready: ${state.wordItems.length} chunks`
+    useReaderStore.setState({ isStreaming: false, streamingComplete: true })
+    // Ensure preprocessing flag is cleared
+    const store = useReaderStore.getState()
+    if (store.isPreprocessing) {
+      store.setIsPreprocessing(false)
     }
-
-    // Final render update
-    renderCurrentWord()
+    // Renderer will react to store changes automatically
   }
 
   private handleProcessingError(error: Error, meta: { chunkLength: number; processedChunks: number }): void {
@@ -103,17 +87,19 @@ class StreamingTextOrchestrator {
   }
 
   async startStreamingText(rawText: string): Promise<void> {
-    // Reset state
-    resetStreamingState()
-    state.words = []
-    state.wordItems = []
-    state.index = 0
-
     // Reset text processor
     this.textProcessor.reset()
 
-    // Start streaming mode
-    startStreaming()
+    // Reset and start streaming mode in a single setState to avoid flicker
+    useReaderStore.setState({
+      isStreaming: true,
+      streamingComplete: false,
+      processedChunkCount: 0,
+      estimatedTotalChunks: undefined,
+      tokens: [],
+      wordItems: [],
+      index: 0
+    })
 
     // Do initial preprocessing if we have text
     if (rawText.trim()) {
@@ -173,11 +159,11 @@ class StreamingTextOrchestrator {
         // If tokens arrived during the drain, immediately continue processing
         if (this.pendingTokens.length > 0) {
           // Recursively process any tokens that arrived during processing
-          setImmediate(() => {
+          setTimeout(() => {
             this.processTokenQueue().catch(error => {
               console.error('Error in recursive token processing:', error)
             })
-          })
+          }, 0)
         }
       }
     })()
@@ -214,7 +200,13 @@ class StreamingTextOrchestrator {
     this.textBuffer.clear()
     this.textProcessor.reset()
     this.currentProcessingPromise = null
-    resetStreamingState()
+    useReaderStore.setState({
+      isStreaming: false,
+      streamingComplete: false,
+      processedChunkCount: 0,
+      estimatedTotalChunks: undefined,
+      isPreprocessing: false
+    })
   }
 }
 
@@ -245,10 +237,33 @@ export async function initializeStreamingText(rawText: string): Promise<Streamin
 }
 
 /**
+ * Initialize a new streaming text session without auto-starting processing.
+ * Returns a processor instance; caller is responsible for invoking startStreamingText().
+ */
+export async function initializeStreamingSession(): Promise<StreamingTextProcessorInstance> {
+  // Ensure any previous session is torn down
+  if (streamingOrchestrator) {
+    try { streamingOrchestrator.cancelStreaming() } catch { /* ignore errors during cleanup */ }
+    streamingOrchestrator = null
+  }
+
+  // Create new orchestrator for this session
+  streamingOrchestrator = new StreamingTextOrchestrator()
+
+  // Do not start processing here; return bound methods
+  return {
+    startStreamingText: streamingOrchestrator.startStreamingText.bind(streamingOrchestrator),
+    addStreamingToken: streamingOrchestrator.addStreamingToken.bind(streamingOrchestrator),
+    completeStreamingText: streamingOrchestrator.completeStreamingText.bind(streamingOrchestrator),
+    cancelStreaming: streamingOrchestrator.cancelStreaming.bind(streamingOrchestrator)
+  }
+}
+
+/**
  * Check if we're currently in streaming mode
  */
 export function isCurrentlyStreaming(): boolean {
-  return state.isStreaming
+  return useReaderStore.getState().isStreaming
 }
 
 /**
@@ -259,9 +274,10 @@ export function getStreamingProgress(): {
   estimatedTotal?: number
   isComplete: boolean
 } {
+  const store = useReaderStore.getState()
   return {
-    processedChunks: state.processedChunkCount,
-    estimatedTotal: state.estimatedTotalChunks,
-    isComplete: state.streamingComplete
+    processedChunks: store.processedChunkCount,
+    estimatedTotal: store.estimatedTotalChunks,
+    isComplete: store.streamingComplete
   }
 }

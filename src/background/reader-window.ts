@@ -1,4 +1,4 @@
-import { browser } from '../platform/browser'
+import { browserApi } from '../core/browser-api.service'
 import type { ReaderMessage } from '../common/messages'
 import {
   createSelection
@@ -17,8 +17,8 @@ async function focusExistingWindow (): Promise<boolean> {
   }
 
   try {
-    await browser.windows.update(windowId, { focused: true })
-    await (browser.runtime.sendMessage as (message: ReaderMessage) => Promise<unknown>)({ target: 'reader', type: 'refreshReader' } satisfies ReaderMessage)
+    await browserApi.updateWindow(windowId, { focused: true })
+    await browserApi.sendMessage({ target: 'reader', type: 'refreshReader' } satisfies ReaderMessage)
     return true
   } catch (error) {
     console.warn('[Speed Reader] Failed to focus reader window, opening a new one.', error)
@@ -28,8 +28,8 @@ async function focusExistingWindow (): Promise<boolean> {
 }
 
 async function createReaderWindow (): Promise<void> {
-  const url = browser.runtime.getURL('pages/reader.html')
-  const created = await browser.windows.create({
+  const url = browserApi.runtime.getURL('pages/reader.html')
+  const created = await browserApi.createWindow({
     url,
     type: 'popup',
     width: DEFAULTS.UI.windowDimensions.width,

@@ -100,6 +100,20 @@ Each browser target produces an optimized distribution in `dist/<browser>/`.
 
 ## <a name="automated-testing"></a>Automated Testing
 
+The project includes both unit tests and end-to-end tests to ensure code quality and functionality.
+
+### Unit Tests
+
+Unit tests are implemented with [Vitest](https://vitest.dev/) and provide fast, isolated testing of individual functions and modules.
+
+```bash
+npm run test:unit
+```
+
+Unit tests are co-located with source files using the `.spec.ts` extension and provide comprehensive coverage of core utilities and algorithms.
+
+### End-to-End Tests
+
 End-to-end regression tests run on Chromium via [Playwright](https://playwright.dev/).
 
 ```bash
@@ -109,6 +123,25 @@ npm test
 ```
 
 Tests exercise the complete reader flow including background worker APIs, reader window lifecycle, and RSVP playback behavior.
+
+### Testing prerequisites
+
+Some E2E scenarios validate the real OpenAI integration. To run the full suite successfully you must provide a valid API key via environment variable:
+
+```bash
+export OPENAI_API_KEY="sk-..."
+npm test
+```
+
+Alternatively, prefix the command:
+
+```bash
+OPENAI_API_KEY="sk-..." npm test
+```
+
+Without this variable, the OpenAI integration test will fail by design (no mocks or fallbacks are used). Other tests run against the non‑streaming path (preprocessing disabled), and `tests/playwright/preprocessing-toggle.spec.ts` verifies that no network calls occur when preprocessing is disabled.
+
+Note: The Playwright test runner auto-loads variables from a local `.env` file and will pick up `OPENAI_API_KEY` from there if present. Existing process environment variables always take precedence.
 
 ## <a name="useful-resources"></a>Useful Resources
 
@@ -130,6 +163,16 @@ See `docs/architecture.md` for detailed technical documentation covering:
 - `npm run lint` must pass; the ESLint config now enforces `space-in-parens` so padding spaces like `( selection` are reported (use `npm run lint:fix` for automatic cleanup).
 - `npm run typecheck` and `npm test` guard TypeScript types and Playwright scenarios respectively before submitting changes.
 - A Husky `pre-push` hook runs `npm run lint` and `npm run typecheck` automatically; if hooks are missing (e.g., after cloning), run `npm run prepare` to re-install them.
+
+## Architecture Summary
+
+The extension uses a clean service‑oriented, store‑driven architecture (see `docs/architecture.md`).
+
+- Core services: `BrowserApiService`, `StorageService`, `TimingService`, `AIPreprocessingService`, `PlaybackService` (owns the scheduling loop). The legacy `platform/` layer has been removed; all code uses the `BrowserApiService`.
+- State: Centralized Zustand store `src/reader/state/reader.store.ts` (single source of truth).
+- UI: Store‑driven renderer `src/reader/ui/renderer.ts` as the only DOM writer; modern control bindings in `src/reader/ui/controls.ts` wired to store and PlaybackService.
+
+Quality gates: lint + typecheck + unit + end‑to‑end tests are green with a real `OPENAI_API_KEY`.
 
 ## <a name="license"></a>License
 

@@ -1,10 +1,9 @@
-import { registerControls } from './controls'
+import { bindControls } from './ui/controls'
 import { registerMessageListener } from './messages'
 import { loadSelectionContent } from './selection-loader'
-import { renderCurrentWord } from './render'
-import { registerRenderCallback } from './text'
-import { state } from './state'
+import { useReaderStore } from './state/reader.store'
 import { DEFAULTS } from '../config/defaults'
+import { initRenderer } from './ui/renderer'
 
 function initializeCSSVariables(): void {
   const root = document.documentElement
@@ -13,12 +12,15 @@ function initializeCSSVariables(): void {
 
 document.addEventListener('DOMContentLoaded', () => {
   initializeCSSVariables()
-  registerRenderCallback(renderCurrentWord)
   loadSelectionContent().catch(console.error)
-  registerControls()
   registerMessageListener()
+  // Initialize store-driven renderer and capture unsubscribe
+  const unsubscribe = initRenderer()
+  bindControls()
+  // Register beforeunload to cleanup store subscriptions
+  window.addEventListener('beforeunload', () => unsubscribe())
 })
 
-if (typeof globalThis !== 'undefined') {
-  (globalThis as typeof globalThis & { state?: typeof state }).state = state
+if (typeof globalThis !== 'undefined' && process.env.NODE_ENV !== 'production') {
+  (globalThis as typeof globalThis & { readerStore?: typeof useReaderStore }).readerStore = useReaderStore
 }

@@ -42,10 +42,19 @@ test.describe('Sprint Reader - Popup Caching Bug', () => {
     const wordLocator = readerPage.locator('#word');
     await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
 
+    // Ensure tokens are populated in store
+    await readerPage.waitForFunction(() => {
+      const store = (window as any).readerStore;
+      const state = store?.getState?.();
+      return !!state && Array.isArray(state.tokens) && state.tokens.length > 0;
+    });
+
     const cachedReaderText = await readerPage.evaluate(() => {
-      const state = (window as any).state || (globalThis as any).state;
-      if (!state || !state.words || state.words.length === 0) return null;
-      return state.words.map((w: any) => w.text).join(' ');
+      const store = (window as any).readerStore;
+      if (!store) return null;
+      const state = store.getState();
+      if (!state.tokens || state.tokens.length === 0) return null;
+      return state.tokens.map((w: any) => w.text).join(' ');
     });
 
     expect(cachedReaderText).toBe(cachedText);
@@ -82,10 +91,19 @@ test.describe('Sprint Reader - Popup Caching Bug', () => {
     const wordLocator2 = readerPage.locator('#word');
     await expect(wordLocator2).not.toHaveText('', { timeout: 10_000 });
 
+    // Ensure tokens are populated in store
+    await readerPage.waitForFunction(() => {
+      const store = (window as any).readerStore;
+      const state = store?.getState?.();
+      return !!state && Array.isArray(state.tokens) && state.tokens.length > 0;
+    });
+
     const actualReaderText = await readerPage.evaluate(() => {
-      const state = (window as any).state || (globalThis as any).state;
-      if (!state || !state.words || state.words.length === 0) return null;
-      return state.words.map((w: any) => w.text).join(' ');
+      const store = (window as any).readerStore;
+      if (!store) return null;
+      const state = store.getState();
+      if (!state.tokens || state.tokens.length === 0) return null;
+      return state.tokens.map((w: any) => w.text).join(' ');
     });
 
     // This should pass - popup text should be used, not cached text
@@ -131,9 +149,11 @@ test.describe('Sprint Reader - Popup Caching Bug', () => {
       await expect(wordLocator).not.toHaveText('', { timeout: 10_000 });
 
       const actualText = await readerPage.evaluate(() => {
-        const state = (window as any).state || (globalThis as any).state;
-        if (!state || !state.words || state.words.length === 0) return null;
-        return state.words.map((w: any) => w.text).join(' ');
+        const store = (window as any).readerStore;
+        if (!store) return null;
+        const state = store.getState();
+        if (!state.tokens || state.tokens.length === 0) return null;
+        return state.tokens.map((w: any) => w.text).join(' ');
       });
 
       expect(actualText).toBe(currentText);

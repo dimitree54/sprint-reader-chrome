@@ -1,10 +1,10 @@
 import { loadPreferences } from './preferences'
-import { state } from './state'
+import { useReaderStore } from './state/reader.store'
 import { wordsToTokens } from './text-types'
-import { decodeHtml, setWords, setWordsWithStreaming } from './text'
-import { renderCurrentWord } from './render'
-import { browser } from '../platform/browser'
+import { decodeHtml, startStreamingFromTokens } from './text'
+import { browserApi } from '../core/browser-api.service'
 import { DEFAULTS } from '../config/defaults'
+// aiPreprocessingService availability is handled within streaming manager
 import type { BackgroundMessage } from '../common/messages'
 
 function normaliseText (rawText: string): string {
@@ -12,29 +12,37 @@ function normaliseText (rawText: string): string {
 }
 
 function syncControls (): void {
+  const store = useReaderStore.getState()
   const slider = document.getElementById('sliderWpm') as HTMLInputElement | null
   if (slider) {
-    slider.value = String(state.wordsPerMinute)
+    slider.value = String(store.wordsPerMinute)
   }
 
   const wpmValue = document.getElementById('wpmValue')
   if (wpmValue) {
-    wpmValue.textContent = String(state.wordsPerMinute)
+    wpmValue.textContent = String(store.wordsPerMinute)
   }
 
   const themeToggle = document.getElementById('toggleTheme') as HTMLInputElement | null
   if (themeToggle) {
-    themeToggle.checked = state.theme === DEFAULTS.THEMES.light
+    themeToggle.checked = store.theme === DEFAULTS.THEMES.light
   }
 }
 
-async function getCurrentSelectionFromBackground() {
+async function getCurrentSelectionFromBackground(): Promise<{ text: string; hasSelection: boolean; isRTL: boolean; timestamp: number } | null> {
   try {
-    const response = await (browser.runtime.sendMessage as (message: BackgroundMessage) => Promise<{ selection: { text: string; hasSelection: boolean; isRTL: boolean; timestamp: number } }>)({
-      target: 'background',
-      type: 'getCurrentSelection'
-    } satisfies BackgroundMessage)
-    return response?.selection
+    const response = await Promise.race([
+      browserApi.sendMessage({
+        target: 'background',
+        type: 'getCurrentSelection'
+      } satisfies BackgroundMessage),
+      new Promise((_resolve, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+    ])
+
+    if (response && typeof response === 'object' && 'selection' in response && response.selection && typeof response.selection === 'object') {
+      return response.selection as { text: string; hasSelection: boolean; isRTL: boolean; timestamp: number };
+    }
+    return null
   } catch (error) {
     console.warn('Failed to get current selection from background:', error)
     return null
@@ -52,24 +60,18 @@ export async function loadSelectionContent (): Promise<void> {
   const normalised = normaliseText(rawText)
   const words = normalised.length > 0 ? normalised.split(' ') : []
 
-  // Check if streaming should be used (when OpenAI API key is available)
-  const shouldUseStreaming = await shouldEnableStreaming()
   const tokens = wordsToTokens(words)
-  const setWordsFunction = shouldUseStreaming ? setWordsWithStreaming : setWords
 
-  await setWordsFunction(tokens)
-
-  // Update UI after text processing
-  renderCurrentWord()
-}
-
-async function shouldEnableStreaming(): Promise<boolean> {
-  try {
-    const { readOpenAIApiKey } = await import('../common/storage')
-    const apiKey = await readOpenAIApiKey()
-    return !!apiKey && apiKey.length > 0
-  } catch (error) {
-    console.debug('Could not check API key for streaming:', error)
-    return false
+  // Guard empty selections: reset store state instead of streaming
+  if (tokens.length === 0) {
+    useReaderStore.getState().reset()
+    return
   }
+
+  await startStreamingFromTokens(
+    tokens,
+    selection?.text ? decodeHtml(selection.text) : ''
+  )
 }
+
+// Streaming is always used; availability is handled inside the streaming manager

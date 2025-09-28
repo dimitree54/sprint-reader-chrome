@@ -8,7 +8,7 @@
 import { preprocessText } from './text-processor'
 import { createChunks } from './timing-engine'
 import { calculateOptimalFontSizeForText } from './visual-effects'
-import { getTimingSettings, state } from './state'
+import { useReaderStore } from './state/reader.store'
 import type { WordItem } from './timing-engine'
 import type { ReaderToken } from './text-types'
 
@@ -28,7 +28,7 @@ const fontSizeCache = new Map<string, FontSizeCache>()
 function getFontSizeCache(key: string): FontSizeCache {
   let cache = fontSizeCache.get(key)
   if (!cache) {
-    cache = { lastUpdate: 0, lastSize: state.optimalFontSize }
+    cache = { lastUpdate: 0, lastSize: useReaderStore.getState().optimalFontSize }
     fontSizeCache.set(key, cache)
   }
   return cache
@@ -78,7 +78,14 @@ export class StreamingTextProcessor {
       this.onWordsReady(readerTokens)
 
       // Create RSVP chunks with current timing settings
-      const timingSettings = getTimingSettings()
+      const s = useReaderStore.getState()
+      const timingSettings = {
+        wordsPerMinute: s.wordsPerMinute,
+        pauseAfterComma: s.pauseAfterComma,
+        pauseAfterPeriod: s.pauseAfterPeriod,
+        pauseAfterParagraph: s.pauseAfterParagraph,
+        chunkSize: s.chunkSize
+      }
       const chunks = createChunks(preprocessedWords, timingSettings)
 
       if (chunks.length > 0) {
@@ -91,7 +98,7 @@ export class StreamingTextProcessor {
         // Update progress
         this.onProgressUpdate({
           processedChunks: this.processedChunkCount,
-          estimatedTotal: state.estimatedTotalChunks
+          estimatedTotal: useReaderStore.getState().estimatedTotalChunks
         })
       }
     } catch (error) {

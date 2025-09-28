@@ -9,9 +9,9 @@ _Last updated: September 2025_
 ```mermaid
 graph TD
     subgraph "Shared Modules"
-        Storage[storage.ts]
-        Messages[messages.ts]
-        BrowserAPI[browser.ts]
+        StorageService[core/storage.service.ts]
+        Messages[common/messages.ts]
+        BrowserAPI[core/browser-api.service.ts]
     end
 
     subgraph "Extension Contexts"
@@ -21,9 +21,9 @@ graph TD
         Reader[reader/index.ts]
     end
 
-    Storage --> Background
-    Storage --> Popup
-    Storage --> Reader
+    StorageService --> Background
+    StorageService --> Popup
+    StorageService --> Reader
     Messages --> Background
     Messages --> Content
     Messages --> Reader
@@ -50,25 +50,30 @@ src/
     testing-hooks.ts   → Exposes global Playwright helpers.
   common/          → Cross-context utilities (storage, message contracts, HTML + theme helpers, translation & summarisation metadata).
   content/         → Text selection capture and UX hints for web pages.
-  platform/        → Runtime resolver split into `browser.ts`, `types.ts`, `wrap-chrome.ts`.
+  core/            → Browser API service and adapters (`browser-api.service.ts`, `chrome-adapter.ts`, types).
   popup/           → Action popup with quick-start controls.
   settings/        → Dedicated settings surface for advanced preferences (API providers).
   reader/          → RSVP player UI assembled from focused modules:
     index.ts            → Entrypoint that wires selection loading, controls, messaging.
-    state.ts            → Central playback state container + shared helpers.
+    state/              → Zustand-based state management:
+      reader.store.ts      → Centralized Zustand store for all reader state
     selection-loader.ts → Loads current selection/preferences and syncs UI controls.
-    controls.ts         → DOM event bindings (playback, WPM slider, theme toggle, resize).
-    playback.ts         → Timer management and playback progression.
-    render.ts           → Word rendering, progress display, play/pause visuals.
+    playback/           → Service-oriented playback management:
+      playback.service.ts  → Owns timer scheduling and playback progression.
+    ui/renderer.ts      → Store-driven word rendering, progress display, play/pause visuals.
+    ui/controls.ts      → Modern control bindings wired to store and PlaybackService.
     text.ts             → Word preprocessing glue and chunk/font recalculation.
     streaming-text.ts   → Main streaming orchestrator for real-time text processing.
     streaming-text-buffer.ts → Token buffering for sentence-based chunk delivery.
     streaming-text-processor.ts → Real-time RSVP chunk generation from streaming text.
-    timing/             → Split timing engine (`types.ts`, `word-analysis.ts`, `durations.ts`, `chunking.ts`).
+    timing/             → Split timing engine with `timing.service.ts` wrapper
     timing-engine.ts    → Barrel file exporting the timing helpers above.
     text-processor.ts   → Advanced text preprocessing (acronyms, numbers, hyphenation).
     visual-effects.ts   → Letter highlighting, positioning, flicker effects.
     openai-prompt.ts    → Builds chat completion payloads for OpenAI translation and summarisation requests.
+    ui/                 → UI layer components:
+      renderer.ts          → Store-driven DOM updates
+      controls.ts          → Control event bindings
 static/
   assets/          → Icons and imagery shared across contexts.
   pages/           → HTML documents for popup, reader, settings, welcome, updated pages.
@@ -78,6 +83,16 @@ config/
   manifest.<browser>.json  → Browser overrides merged during the build.
 scripts/build-extension.mjs → Esbuild-driven bundler & manifest generator.
 ```
+
+The service-oriented architecture is fully implemented with the following structure:
+
+- `src/core/` — core services (BrowserApiService, StorageService)
+- `src/reader/state/` — Zustand store for centralized state management
+- `src/reader/playback/` — PlaybackService managing timer scheduling and progression
+- `src/reader/timing/` — TimingService wrapper for word timing calculations
+- `src/reader/ui/` — Store-driven UI components (renderer, controls)
+
+The codebase is fully service‑oriented and store‑driven.
 
 ## 3. Execution Contexts
 
@@ -117,12 +132,12 @@ The reader implementation follows a modular architecture with clear separation o
 * `selection-loader.ts` fetches current preferences/selection, normalises HTML, rebuilds timing chunks, and synchronises slider/theme UI.
 * `messages.ts` listens for `refreshReader` runtime events and reuses the loader to refresh the view on demand.
 
-#### 3.4.2 State & Playback (`src/reader/state.ts`, `playback.ts`, `controls.ts`, `render.ts`, `text.ts`)
-* `state.ts` centralises the reader's playback state and surfaces helpers for timing/visual configuration.
+#### 3.4.2 State & Playback (`src/reader/state/reader.store.ts`, `playback/playback.service.ts`, `ui/controls.ts`, `text.ts`, `ui/renderer.ts`)
+* `state/reader.store.ts` centralises the reader's playback state and surfaces helpers for timing/visual configuration.
 * `text.ts` bridges preprocessing, chunk generation, and optimal font sizing whenever the active text or WPM changes.
-* `render.ts` updates the DOM with the current word, status, and progress while delegating highlighting/flicker to `visual-effects.ts`.
-* `playback.ts` manages timers, scheduling, and play/pause transitions, keeping state mutations predictable.
-* `controls.ts` binds UI events (play/pause/restart, WPM slider, theme toggle, resize) to the playback/state modules and persists preference changes.
+* `ui/renderer.ts` is the sole DOM writer: it updates the current word, status, and progress while delegating highlighting/flicker to `visual-effects.ts`.
+* `playback/playback.service.ts` manages timers, scheduling, and play/pause transitions, keeping state mutations predictable.
+* `ui/controls.ts` binds UI events (play/pause/restart, WPM slider, theme toggle, resize) to the PlaybackService and store, and persists preference changes.
 
 #### 3.4.3 Timing Engine (`src/reader/timing/…`, `timing-engine.ts`)
 * `timing/word-analysis.ts` stores the word-frequency corpus, entropy calculation, punctuation heuristics, and optimal letter selection.
@@ -152,7 +167,7 @@ The reader implementation follows a modular architecture with clear separation o
 
 ## 4. Cross-Cutting Modules
 
-* `platform/browser.ts`: resolves the runtime API once, exposes a shared `browser` singleton, and uses wrapper helpers from `platform/types.ts` + `platform/wrap-chrome.ts` to collapse Chrome/Firefox/Safari differences.
+* `core/browser-api.service.ts`: resolves the runtime API once, exposes a shared `browserApi` service, and adapts raw `chrome.*` into a Promise‑based `MinimalBrowserAPI` for all contexts.
 * `common/storage.ts`: wraps the callback-driven storage API with promise helpers, defines canonical keys, and centralises preference persistence.
 * `common/messages.ts`: enumerates every structured message exchanged between contexts, enabling exhaustive checks during refactors.
 * `common/html.ts`: ensures consistent HTML encoding/decoding for text selections and rendered reader output.
@@ -184,6 +199,18 @@ Each command prepares a fully self-contained directory that can be zipped for st
 
 ## 7. Testing Strategy
 
+The testing strategy combines unit tests for isolated component testing with end-to-end tests for full user workflows.
+
+### 7.1 Unit Tests
+
+* Unit tests are implemented with [Vitest](https://vitest.dev/) and located co-located with source files using `.spec.ts` extension.
+* Tests provide fast, isolated testing of individual functions and modules without requiring browser contexts.
+* Current coverage includes core utilities like HTML encoding/decoding functions in `src/common/html.spec.ts`.
+* The modular reader architecture (`timing-engine.ts`, `text-processor.ts`, `visual-effects.ts`) enables comprehensive unit testing of individual algorithms.
+* Unit tests can directly import modules under `src/common`, `src/core`, and `src/reader` for isolated testing.
+
+### 7.2 End-to-End Tests
+
 * Playwright tests are executed against the built Chrome bundle (`dist/chrome`). The `npm test` script automatically runs the build before launching the browser.
 * Tests exercise the background worker APIs directly (`openReaderWindowSetup`), wait for the reader window, and verify playbook behaviour by asserting that words progress after toggling play.
 * Comprehensive coverage includes:
@@ -192,8 +219,7 @@ Each command prepares a fully self-contained directory that can be zipped for st
   * Advanced timing algorithm validation with word frequency differences
   * Text preprocessing capabilities (acronym consolidation, number preservation, hyphen preservation)
   * Chunking logic for short word grouping
-* The modular reader architecture (`timing-engine.ts`, `text-processor.ts`, `visual-effects.ts`) enables isolated unit testing of individual algorithms.
-* Future unit-test coverage can directly import modules under `src/common`, `src/platform`, and `src/reader` for Jest/Vitest testing.
+* OpenAI integration test requires a real API key. Set `OPENAI_API_KEY` in the environment before running the suite to validate live provider behavior (no mocks or fallbacks).
 
 ## 7.5. Text Preprocessing Architecture
 
@@ -347,6 +373,7 @@ The streaming system provides enhanced visual feedback:
 * **Efficient Memory Management**: Streaming buffers are cleaned up automatically
 * **Minimal DOM Updates**: Progress updates are batched to prevent UI blocking
 * **Graceful Degradation**: System falls back to traditional processing on any streaming error
+* **Browser-Safe Scheduling**: Streaming queue draining uses `setTimeout(() => {}, 0)` for compatibility across browsers (instead of Node-only `setImmediate`).
 
 ## 8. Future Evolution
 
