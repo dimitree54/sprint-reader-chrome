@@ -2,6 +2,10 @@ import { build } from 'esbuild';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -115,9 +119,50 @@ async function writeManifest(browser) {
   // Remove null values that were used to override base manifest properties
   manifest = removeNullValues(manifest);
 
+  // Inject environment variables into manifest
+  manifest = injectEnvironmentVariables(manifest);
+
   const distPath = path.join(repoRoot, 'dist', browser);
   await fs.mkdir(distPath, { recursive: true });
   await fs.writeFile(path.join(distPath, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+}
+
+function injectEnvironmentVariables(manifest) {
+  // Deep clone the manifest to avoid modifying the original
+  const processedManifest = JSON.parse(JSON.stringify(manifest));
+
+  // Environment variable substitution mapping
+  const envMapping = {
+    'VITE_KINDE_CLIENT_ID': process.env.VITE_KINDE_CLIENT_ID || '',
+    'VITE_KINDE_DOMAIN': process.env.VITE_KINDE_DOMAIN || '',
+    'VITE_KINDE_REDIRECT_URL': process.env.VITE_KINDE_REDIRECT_URL || '',
+    'NODE_ENV': process.env.NODE_ENV || 'development'
+  };
+
+  // Function to recursively process strings in the manifest
+  function processValue(value) {
+    if (typeof value === 'string') {
+      // Replace ${ENV_VAR} patterns with actual values
+      return value.replace(/\$\{([^}]+)\}/g, (match, envVar) => {
+        if (envVar in envMapping) {
+          return envMapping[envVar];
+        }
+        console.warn(`Warning: Environment variable ${envVar} not found, keeping placeholder`);
+        return match;
+      });
+    } else if (Array.isArray(value)) {
+      return value.map(processValue);
+    } else if (typeof value === 'object' && value !== null) {
+      const result = {};
+      for (const [key, val] of Object.entries(value)) {
+        result[key] = processValue(val);
+      }
+      return result;
+    }
+    return value;
+  }
+
+  return processValue(processedManifest);
 }
 
 async function runBuild(browser) {
@@ -169,10 +214,27 @@ async function runBuild(browser) {
     define: {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
       'process.env.OPENAI_API_KEY': JSON.stringify(apiKeyValue),
+      'process.env.VITE_KINDE_CLIENT_ID': JSON.stringify(process.env.VITE_KINDE_CLIENT_ID || ''),
+      'process.env.VITE_KINDE_DOMAIN': JSON.stringify(process.env.VITE_KINDE_DOMAIN || ''),
+      'process.env.VITE_KINDE_REDIRECT_URL': JSON.stringify(process.env.VITE_KINDE_REDIRECT_URL || ''),
     },
   });
 
   await writeManifest(browser);
+
+  // Show extension ID and Kinde callback URL for easy configuration
+  await showExtensionInfo(browser);
+}
+
+async function showExtensionInfo(browser) {
+  console.log('\n' + '='.repeat(60));
+  console.log('🔐 KINDE CONFIGURATION REMINDER');
+  console.log('='.repeat(60));
+  console.log('1. Load extension in Chrome (chrome://extensions)');
+  console.log('2. Copy the extension ID');
+  console.log('3. Run: node scripts/show-extension-id.mjs <your-id>');
+  console.log('4. Add the callback URL to Kinde dashboard');
+  console.log('='.repeat(60) + '\n');
 }
 
 (async () => {

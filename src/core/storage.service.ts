@@ -11,13 +11,17 @@ import {
   isSummarizationLevel,
   type SummarizationLevel
 } from '../common/summarization'
+import type { User } from '../auth/types/user.types'
 
 export const STORAGE_KEYS = {
   readerPrefs: 'sprintReader.readerPrefs',
   openaiApiKey: 'sprintReader.openaiApiKey',
   translationLanguage: 'sprintReader.translationLanguage',
   summarizationLevel: 'sprintReader.summarizationLevel',
-  preprocessingEnabled: 'sprintReader.preprocessingEnabled'
+  preprocessingEnabled: 'sprintReader.preprocessingEnabled',
+  // Authentication keys
+  authUser: 'sprintReader.auth.user',
+  authToken: 'sprintReader.auth.token'
 } as const
 
 export class StorageService {
@@ -91,6 +95,32 @@ export class StorageService {
 
   async writePreprocessingEnabled (enabled: boolean): Promise<void> {
     await this.set({ [STORAGE_KEYS.preprocessingEnabled]: enabled })
+  }
+
+  // Authentication methods --------------------------------------------------------
+  async readAuthUser (): Promise<User | null> {
+    const result = await this.get<User>([STORAGE_KEYS.authUser])
+    return result[STORAGE_KEYS.authUser] || null
+  }
+
+  async writeAuthUser (user: User | null): Promise<void> {
+    await this.set({ [STORAGE_KEYS.authUser]: user })
+  }
+
+  async readAuthToken (): Promise<string | null> {
+    const result = await this.get<string>([STORAGE_KEYS.authToken])
+    return result[STORAGE_KEYS.authToken] || null
+  }
+
+  async writeAuthToken (token: string | null): Promise<void> {
+    await this.set({ [STORAGE_KEYS.authToken]: token })
+  }
+
+  async clearAuthData (): Promise<void> {
+    await this.set({
+      [STORAGE_KEYS.authUser]: null,
+      [STORAGE_KEYS.authToken]: null
+    })
   }
 
   // Internal typed read helper to avoid circular dependency on common/storage-helpers

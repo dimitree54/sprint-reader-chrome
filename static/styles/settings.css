@@ -468,3 +468,74 @@ body.settings--light .settings__theme-switch-input:checked + .settings__theme-sw
     font-size: 1.5rem;
   }
 }
+
+/* Authentication Styles */
+.settings__auth-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settings__user-profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+body.settings--light .settings__user-profile {
+  background: rgba(74, 0, 224, 0.04);
+  border: 1px solid rgba(74, 0, 224, 0.08);
+}
+
+.settings__user-avatar {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.settings__user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.settings__user-avatar-text {
+  color: white;
+  font-weight: 600;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+}
+
+.settings__user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings__user-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--settings-fg);
+}
+
+.settings__user-status {
+  font-size: 0.85rem;
+  color: var(--settings-muted);
+}
+
+.settings__auth-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}

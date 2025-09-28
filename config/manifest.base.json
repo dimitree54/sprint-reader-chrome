@@ -33,8 +33,12 @@
       "matches": ["<all_urls>"]
     }
   ],
-  "permissions": ["contextMenus", "activeTab", "tabs", "storage", "clipboardRead"],
-  "host_permissions": ["https://api.openai.com/*"],
+  "permissions": ["contextMenus", "activeTab", "tabs", "storage", "clipboardRead", "identity"],
+  "host_permissions": ["https://api.openai.com/*", "https://*.kinde.com/*"],
+  "oauth2": {
+    "client_id": "${VITE_KINDE_CLIENT_ID}",
+    "scopes": ["openid", "profile", "email"]
+  },
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],

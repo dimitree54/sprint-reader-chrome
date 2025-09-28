@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { applyThemeToElement } from '../common/theme'
 import {
   readReaderPreferences,
@@ -23,6 +24,12 @@ import {
   getSummarizationLevelLabel,
   type SummarizationLevel
 } from '../common/summarization'
+import { authService, type User } from '../auth/index'
+
+// Import debug utilities in development
+if (process.env.NODE_ENV === 'development') {
+  import('../auth/debug').catch(console.error)
+}
 
 const THEME_OPTIONS = {
   lightClass: 'settings--light',
@@ -40,6 +47,11 @@ type SettingsElements = {
   summarizationSlider: HTMLInputElement;
   summarizationLabel: HTMLElement;
   status: HTMLElement;
+  // Authentication elements
+  userProfile: HTMLElement;
+  loginButton: HTMLButtonElement;
+  logoutButton: HTMLButtonElement;
+  authStatus: HTMLElement;
 };
 
 let statusTimeout: ReturnType<typeof setTimeout> | undefined
@@ -58,6 +70,93 @@ function showStatus (elements: SettingsElements, message: string, variant: 'succ
     elements.status.hidden = true
     elements.status.removeAttribute('data-variant')
   }, 4000)
+}
+
+function showAuthStatus (elements: SettingsElements, message: string, variant: 'success' | 'error'): void {
+  if (statusTimeout) {
+    clearTimeout(statusTimeout)
+    statusTimeout = undefined
+  }
+
+  elements.authStatus.textContent = message
+  elements.authStatus.dataset.variant = variant
+  elements.authStatus.hidden = false
+
+  statusTimeout = setTimeout(() => {
+    elements.authStatus.hidden = true
+    elements.authStatus.removeAttribute('data-variant')
+  }, 4000)
+}
+
+function renderUserProfile (elements: SettingsElements, user: User): void {
+  const namePlaceholder = elements.userProfile.querySelector('.js-user-name') as HTMLElement
+  const avatarPlaceholder = elements.userProfile.querySelector('.js-user-avatar') as HTMLElement
+  const avatarPicturePlaceholder = elements.userProfile.querySelector('.js-user-avatar-picture') as HTMLImageElement
+
+  if (namePlaceholder) {
+    namePlaceholder.textContent = `${user.given_name || ''} ${user.family_name || ''}`.trim() || user.email || 'User'
+  }
+
+  if (user.picture && avatarPicturePlaceholder) {
+    avatarPicturePlaceholder.src = user.picture
+    avatarPicturePlaceholder.hidden = false
+    if (avatarPlaceholder) {
+      avatarPlaceholder.hidden = true
+    }
+  } else if (avatarPlaceholder) {
+    const initials = `${user.given_name?.[0] || ''}${user.family_name?.[0] || user.given_name?.[1] || ''}`.toUpperCase()
+    avatarPlaceholder.textContent = initials || user.email?.[0]?.toUpperCase() || 'U'
+    avatarPlaceholder.hidden = false
+    if (avatarPicturePlaceholder) {
+      avatarPicturePlaceholder.hidden = true
+    }
+  }
+}
+
+function clearUserProfile (elements: SettingsElements): void {
+  const namePlaceholder = elements.userProfile.querySelector('.js-user-name') as HTMLElement
+  const avatarPlaceholder = elements.userProfile.querySelector('.js-user-avatar') as HTMLElement
+  const avatarPicturePlaceholder = elements.userProfile.querySelector('.js-user-avatar-picture') as HTMLImageElement
+
+  if (namePlaceholder) {
+    namePlaceholder.textContent = ''
+  }
+  if (avatarPlaceholder) {
+    avatarPlaceholder.textContent = ''
+    avatarPlaceholder.hidden = true
+  }
+  if (avatarPicturePlaceholder) {
+    avatarPicturePlaceholder.src = ''
+    avatarPicturePlaceholder.hidden = true
+  }
+}
+
+function updateAuthUI (elements: SettingsElements, isAuthenticated: boolean, user: User | null): void {
+  if (isAuthenticated && user) {
+    elements.loginButton.hidden = true
+    elements.logoutButton.hidden = false
+    elements.userProfile.hidden = false
+    renderUserProfile(elements, user)
+  } else {
+    elements.loginButton.hidden = false
+    elements.logoutButton.hidden = true
+    elements.userProfile.hidden = true
+    clearUserProfile(elements)
+  }
+}
+
+async function loadAuthState (elements: SettingsElements): Promise<void> {
+  // Initialize auth service
+  await authService.initializeAuth()
+
+  // Get current auth state
+  const authState = authService.getAuthState()
+  updateAuthUI(elements, authState.isAuthenticated, authState.user)
+
+  // Subscribe to auth state changes
+  authService.subscribe((state) => {
+    updateAuthUI(elements, state.isAuthenticated, state.user)
+  })
 }
 
 function populateLanguageOptions (selectElement: HTMLSelectElement): void {
@@ -110,6 +209,9 @@ async function loadInitialState (elements: SettingsElements): Promise<void> {
   const sliderIndex = summarizationLevelToSliderIndex(summarizationLevel)
   elements.summarizationSlider.value = String(sliderIndex)
   elements.summarizationLabel.textContent = getSummarizationLevelLabel(summarizationLevel)
+
+  // Load authentication state
+  await loadAuthState(elements)
 }
 
 async function persistApiKey (value: string): Promise<void> {
@@ -181,6 +283,32 @@ function registerEvents (elements: SettingsElements): void {
       showStatus(elements, 'Could not clear API key. Try again.', 'error')
     }
   })
+
+  // Authentication event handlers
+  elements.loginButton.addEventListener('click', async () => {
+    try {
+      const result = await authService.login()
+      if (result.success) {
+        showAuthStatus(elements, 'Login initiated. Please complete authentication.', 'success')
+      } else {
+        showAuthStatus(elements, result.error || 'Authentication failed. Please try again.', 'error')
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      showAuthStatus(elements, 'Authentication failed. Please try again.', 'error')
+    }
+  })
+
+  elements.logoutButton.addEventListener('click', async () => {
+    try {
+      await authService.logout()
+      showAuthStatus(elements, 'Logged out successfully.', 'success')
+    } catch (error) {
+      console.error('Logout error:', error)
+      showAuthStatus(elements, 'Logout failed. Please try again.', 'error')
+    }
+  })
+
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -194,7 +322,12 @@ document.addEventListener('DOMContentLoaded', () => {
     wpmValue: document.getElementById('wpmValue') as HTMLElement,
     summarizationSlider: document.getElementById('summarizationLevel') as HTMLInputElement,
     summarizationLabel: document.getElementById('summarizationLabel') as HTMLElement,
-    status: document.getElementById('settingsStatus') as HTMLElement
+    status: document.getElementById('settingsStatus') as HTMLElement,
+    // Authentication elements
+    userProfile: document.getElementById('userProfile') as HTMLElement,
+    loginButton: document.getElementById('loginButton') as HTMLButtonElement,
+    logoutButton: document.getElementById('logoutButton') as HTMLButtonElement,
+    authStatus: document.getElementById('authStatus') as HTMLElement
   }
 
   loadInitialState(elements).catch((error: unknown) => {

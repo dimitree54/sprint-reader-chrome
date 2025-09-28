@@ -104,6 +104,40 @@
           <p id="settingsStatus" class="settings__status" role="status" aria-live="polite" hidden></p>
         </form>
       </section>
+
+      <section class="settings__card">
+        <header class="settings__card-header">
+          <h2 class="settings__card-title">Authentication</h2>
+          <p class="settings__card-subtitle">Manage your account and authentication settings.</p>
+        </header>
+
+        <div class="settings__auth-section">
+          <!-- User Profile (when authenticated) -->
+          <div id="userProfile" class="settings__user-profile" hidden>
+            <div class="settings__user-avatar">
+              <img class="js-user-avatar-picture settings__user-avatar-img" hidden />
+              <span class="js-user-avatar settings__user-avatar-text" hidden></span>
+            </div>
+            <div class="settings__user-info">
+              <span class="js-user-name settings__user-name"></span>
+              <span class="settings__user-status">Authenticated</span>
+            </div>
+          </div>
+
+          <!-- Authentication Actions -->
+          <div class="settings__auth-actions">
+            <button type="button" id="loginButton" class="settings__button settings__button--primary">
+              Sign In
+            </button>
+            <button type="button" id="logoutButton" class="settings__button settings__button--ghost" hidden>
+              Sign Out
+            </button>
+          </div>
+
+          <!-- Authentication Status -->
+          <p id="authStatus" class="settings__status" role="status" aria-live="polite" hidden></p>
+        </div>
+      </section>
     </main>
     <footer class="settings__footer">
       <a href="https://speed-reader.com" target="_blank" rel="noreferrer">Visit support site</a>

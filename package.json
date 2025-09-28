@@ -23,6 +23,7 @@
     "@types/node": "^24.5.2",
     "@typescript-eslint/eslint-plugin": "^8.44.0",
     "@typescript-eslint/parser": "^8.44.0",
+    "dotenv": "^17.2.2",
     "esbuild": "^0.23.0",
     "eslint": "^9.36.0",
     "eslint-import-resolver-typescript": "^4.4.4",
@@ -31,12 +32,13 @@
     "eslint-plugin-promise": "^7.2.1",
     "eslint-plugin-sonarjs": "^3.0.5",
     "husky": "^9.1.7",
+    "jsdom": "^25.0.0",
     "typescript": "^5.9.2",
     "vitest": "^2.1.5",
-    "jsdom": "^25.0.0",
     "yazl": "^3.3.1"
   },
   "dependencies": {
+    "@kinde-oss/kinde-auth-pkce-js": "^4.3.0",
     "zustand": "^4.5.7"
   }
 }
