@@ -37,7 +37,10 @@ export async function rebuildWordItems (): Promise<void> {
   })
   // Update words (with bold info) to match processed text
   const preprocessedWords = preprocessText(preprocessingResult.text)
-  const tokens = preprocessedWords.map(word => ({ text: word.text, isBold: word.isBold }))
+  const tokens = preprocessedWords.map((word, index) => ({
+    text: word.text,
+    isBold: store.tokens[index]?.isBold ?? word.isBold
+  }))
 
   const optimalFontSize = calculateOptimalFontSizeForText(wordItems)
   // Clamp index within bounds after rebuild that can shrink wordItems
@@ -133,11 +136,16 @@ async function rebuildWordItemsWithStreamingFromRawText (originalRawText: string
  * Start streaming based on provided tokens. This is the canonical path.
  * Passing full text as tokens is treated as a special case of streaming.
  */
-export async function startStreamingFromTokens (words: ReaderToken[]): Promise<void> {
-  const rawText = words.map(w => w.text).join(' ')
+export async function startStreamingFromTokens (
+  words: ReaderToken[],
+  rawText?: string
+): Promise<void> {
+  const inputText = rawText?.length
+    ? rawText
+    : words.map(w => w.text).join(' ')
   // Seed immediate UI state so the reader shows content before streaming finishes
   const store = useReaderStore.getState()
-  const preprocessedWords = preprocessText(rawText)
+  const preprocessedWords = preprocessText(rawText ?? '')
   const wordsWithBoldInfo = preprocessedWords.map((word, index) => ({
     text: word.text,
     isBold: words[index]?.isBold || word.isBold
@@ -159,7 +167,7 @@ export async function startStreamingFromTokens (words: ReaderToken[]): Promise<v
     isPreprocessing: true,
     isStreaming: true
   })
-  await rebuildWordItemsWithStreamingFromRawText(rawText)
+  await rebuildWordItemsWithStreamingFromRawText(inputText)
   useReaderStore.setState({ index: 0 })
 }
 

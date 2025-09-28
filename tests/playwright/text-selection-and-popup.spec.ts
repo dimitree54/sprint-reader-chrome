@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures';
+import type { Page } from '@playwright/test';
 
 type BackgroundContext = {
   openReaderWindowSetup: (
@@ -7,6 +8,22 @@ type BackgroundContext = {
     directionRTL: boolean,
   ) => Promise<void>;
 };
+
+async function waitForTokens (readerPage: Page): Promise<string | null> {
+  await readerPage.waitForFunction(() => {
+    const store = (window as any).readerStore;
+    const state = store?.getState?.();
+    return !!state && Array.isArray(state.tokens) && state.tokens.length > 0;
+  });
+
+  return readerPage.evaluate(() => {
+    const store = (window as any).readerStore;
+    if (!store) return null;
+    const state = store.getState();
+    if (!state.tokens || state.tokens.length === 0) return null;
+    return state.tokens.map((w: any) => w.text).join(' ');
+  });
+}
 
 test.describe('Sprint Reader - Text Selection and Popup', () => {
   test('handles multiple text selections and popup input correctly', async ({ page, context, extensionId, background }) => {
@@ -46,21 +63,7 @@ test.describe('Sprint Reader - Text Selection and Popup', () => {
     const wordLocator1 = readerPage.locator('#word');
     await expect(wordLocator1).not.toHaveText('', { timeout: 10_000 });
 
-    // Wait until tokens are populated in store
-    await readerPage.waitForFunction(() => {
-      const store = (window as any).readerStore;
-      const state = store?.getState?.();
-      return !!state && Array.isArray(state.tokens) && state.tokens.length > 0;
-    });
-
-    const firstReaderText = await readerPage.evaluate(() => {
-      const store = (window as any).readerStore;
-      if (!store) return null;
-      const state = store.getState();
-      if (!state.tokens || state.tokens.length === 0) return null;
-      return state.tokens.map((w: any) => w.text).join(' ');
-    });
-
+    const firstReaderText = await waitForTokens(readerPage);
     expect(firstReaderText).toBe(firstText);
 
     // Close the reader
@@ -99,21 +102,7 @@ test.describe('Sprint Reader - Text Selection and Popup', () => {
     const wordLocator2 = readerPage.locator('#word');
     await expect(wordLocator2).not.toHaveText('', { timeout: 10_000 });
 
-    // Wait until tokens are populated in store
-    await readerPage.waitForFunction(() => {
-      const store = (window as any).readerStore;
-      const state = store?.getState?.();
-      return !!state && Array.isArray(state.tokens) && state.tokens.length > 0;
-    });
-
-    const secondReaderText = await readerPage.evaluate(() => {
-      const store = (window as any).readerStore;
-      if (!store) return null;
-      const state = store.getState();
-      if (!state.tokens || state.tokens.length === 0) return null;
-      return state.tokens.map((w: any) => w.text).join(' ');
-    });
-
+    const secondReaderText = await waitForTokens(readerPage);
     expect(secondReaderText).toBe(secondText);
 
     // Close the reader
@@ -146,21 +135,7 @@ test.describe('Sprint Reader - Text Selection and Popup', () => {
     const wordLocator3 = readerPage.locator('#word');
     await expect(wordLocator3).not.toHaveText('', { timeout: 10_000 });
 
-    // Wait until tokens are populated in store
-    await readerPage.waitForFunction(() => {
-      const store = (window as any).readerStore;
-      const state = store?.getState?.();
-      return !!state && Array.isArray(state.tokens) && state.tokens.length > 0;
-    });
-
-    const thirdReaderText = await readerPage.evaluate(() => {
-      const store = (window as any).readerStore;
-      if (!store) return null;
-      const state = store.getState();
-      if (!state.tokens || state.tokens.length === 0) return null;
-      return state.tokens.map((w: any) => w.text).join(' ');
-    });
-
+    const thirdReaderText = await waitForTokens(readerPage);
     expect(thirdReaderText).toBe(thirdText);
 
     // Verify that each text was different

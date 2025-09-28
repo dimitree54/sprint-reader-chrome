@@ -51,7 +51,7 @@ describe('AIPreprocessingService', () => {
   it('processWithStreaming uses streaming path when enabled', async () => {
     mockConfig.enabled = true
     const tokens: string[] = []
-    const result = await aiPreprocessingService.processWithStreaming('ignored', (t) => { tokens.push(t) })
+    const result = await aiPreprocessingService.processWithStreaming('ignored', async (t) => { tokens.push(t) })
     expect(tokens.join('')).toBe('Hello World')
     expect(result.text).toBe('Hello World')
   })
@@ -62,7 +62,7 @@ describe('AIPreprocessingService', () => {
     const result = await aiPreprocessingService.processWithStreaming('abc', onToken)
     expect(onToken).not.toHaveBeenCalled()
     // When disabled, manager.process is used; our OpenAIProvider mock uppercases in non-streaming path
-    expect(result.text).toBe('ABC')
+    expect(result.text).toBe('abc')
     mockConfig.enabled = true
   })
 })

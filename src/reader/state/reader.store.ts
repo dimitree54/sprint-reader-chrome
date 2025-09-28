@@ -77,9 +77,13 @@ export const useReaderStore = create<ReaderStoreState>()((set) => ({
   processedChunkCount: 0,
   estimatedTotalChunks: undefined,
 
-  togglePlay: () => set((s) => ({ status: s.status === 'playing' ? 'paused' : 'playing' })),
+  togglePlay: () => set((s) => (s.isPreprocessing ? {} : { status: s.status === 'playing' ? 'paused' : 'playing' })),
   setPlaybackIndex: (index) => set({ index }),
-  setWPM: (wpm) => set({ wordsPerMinute: Math.max(1, Math.floor(wpm)) }),
+  setWPM: (wpm) => set((s) => {
+    const n = Number(wpm)
+    if (!Number.isFinite(n) || s.isPreprocessing) return {}
+    return { wordsPerMinute: Math.max(1, Math.floor(n)) }
+  }),
   setTheme: (theme) => set({ theme }),
   setTokens: (tokens) => set({ tokens }),
   setWordItems: (items) => set({ wordItems: items }),

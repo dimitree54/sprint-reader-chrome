@@ -31,7 +31,7 @@ export function computeProgress(state: ReturnType<typeof useReaderStore.getState
     }
 
     const processedInfo = state.estimatedTotalChunks
-      ? ` (${Math.round((available / state.estimatedTotalChunks) * 100)}% processed)`
+      ? ` (${Math.round(Math.min(100, (available / state.estimatedTotalChunks) * 100))}% processed)`
       : ' (processing...)'
 
     return {
@@ -59,13 +59,19 @@ export function computeProgress(state: ReturnType<typeof useReaderStore.getState
   }
 }
 
+const LOADING_TEXT = 'Loading...'
+
 export function computeStatus(state: ReturnType<typeof useReaderStore.getState>): StatusData {
   if (state.isPreprocessing) {
     return { text: 'Preprocessing...' }
   }
 
+  if (state.status === 'loading') {
+    return { text: LOADING_TEXT }
+  }
+
   if (state.isStreaming && state.wordItems.length === 0) {
-    return { text: 'Loading...' }
+    return { text: LOADING_TEXT }
   }
 
   if (state.isStreaming && state.status === 'playing') {
@@ -73,8 +79,8 @@ export function computeStatus(state: ReturnType<typeof useReaderStore.getState>)
   }
 
   if (state.isStreaming) {
-    return { text: 'Loading...' }
+    return { text: LOADING_TEXT }
   }
 
-  return { text: state.status === 'playing' ? 'Playing' : 'Paused' }
+  return { text: state.status === 'playing' ? 'Playing' : (state.status === 'idle' ? 'Idle' : 'Paused') }
 }

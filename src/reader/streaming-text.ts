@@ -204,7 +204,8 @@ class StreamingTextOrchestrator {
       isStreaming: false,
       streamingComplete: false,
       processedChunkCount: 0,
-      estimatedTotalChunks: undefined
+      estimatedTotalChunks: undefined,
+      isPreprocessing: false
     })
   }
 }

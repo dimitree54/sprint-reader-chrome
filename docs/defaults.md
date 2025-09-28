@@ -1,6 +1,6 @@
 # Default Values Configuration
 
-_Last updated: September 2025_
+### Last updated: September 2025
 
 This document describes all default values used throughout the extension and their purposes. All defaults are centralized in `src/config/defaults.ts` to ensure consistency and easy maintenance.
 
@@ -59,6 +59,7 @@ These values control how text is processed and grouped for optimal reading.
 | Setting | Default Value | Purpose |
 |---------|---------------|---------|
 | `maxWordLengthForGrouping` | `3` | Maximum word length (in characters) for grouping multiple words together |
+| `rawText` | `''` | Fallback for empty raw text to prevent errors in preprocessing |
 
 ## Visual Effects Defaults
 
@@ -90,6 +91,14 @@ These values provide consistent error handling behavior.
 | `consoleErrorHandler` | `console.error` | Default error logging function |
 | `consoleWarnHandler` | `console.warn` | Default warning logging function |
 
+## Network and API Timeouts
+
+These values define the timeouts for network requests and API calls.
+
+| Setting | Default Value | Purpose |
+|---------|---------------|---------|
+| `getCurrentSelectionTimeout` | `3000` | Timeout in milliseconds for getting the current selection from the background script |
+
 ## OpenAI API Defaults
 
 These values configure the OpenAI API requests for translation and summarization.
@@ -107,7 +116,7 @@ These values control preprocessing features and default translation behavior.
 | Setting | Default Value | Purpose |
 |---------|---------------|---------|
 | `PREPROCESSING.enabled` | `false` | Enables AI preprocessing/streaming features |
-| `defaultLanguage` | `'en'` | Default translation language (user‑visible language) |
+| `TRANSLATION.defaultLanguage` | `'en'` | Default translation language (user‑visible language) |
 
 ## Summarization Defaults
 

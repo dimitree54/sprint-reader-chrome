@@ -8,23 +8,29 @@ import type { SummarizationLevel } from '../common/summarization'
 
 export class AIPreprocessingService {
   private manager = new PreprocessingManager([
-    new OpenAIProvider(),
-    new PassthroughProvider()
+    new PassthroughProvider(),
+    new OpenAIProvider()
   ])
 
   async isAvailable (): Promise<boolean> {
     const cfg = await preprocessingConfigService.getConfig()
-    return !!cfg.apiKey
+    return !!cfg.apiKey && !!cfg.enabled
   }
 
   async translateText (text: string, targetLanguage?: TranslationLanguage): Promise<PreprocessingResult> {
     const cfg = await preprocessingConfigService.getConfig()
+    if (!cfg.enabled) {
+      return this.manager.process(text, cfg)
+    }
     const effective = targetLanguage ? { ...cfg, targetLanguage } : cfg
     return this.manager.process(text, effective)
   }
 
   async summarizeText (text: string, level?: SummarizationLevel): Promise<PreprocessingResult> {
     const cfg = await preprocessingConfigService.getConfig()
+    if (!cfg.enabled) {
+      return this.manager.process(text, cfg)
+    }
     const effective = level ? { ...cfg, summarizationLevel: level } : cfg
     return this.manager.process(text, effective)
   }
@@ -34,10 +40,8 @@ export class AIPreprocessingService {
    */
   async processWithStreaming (
     text: string,
-    onToken: (token: string) => void
+    onToken: (token: string) => Promise<void>
   ): Promise<PreprocessingResult> {
-    const { OpenAIProvider } = await import('./providers/openai')
-    const { preprocessingConfigService } = await import('./config')
     const cfg = await preprocessingConfigService.getConfig()
     if (!cfg.enabled) {
       return this.manager.process(text, cfg)
@@ -49,12 +53,13 @@ export class AIPreprocessingService {
     }
 
     // Bridge OpenAI streaming to a simple token callback and collect text
-    let collected = ''
+    const chunks: string[] = []
     const result = await provider.processWithStreaming(text, cfg, async (token: string) => {
-      collected += token
-      onToken(token)
+      chunks.push(token)
+      try { await onToken(token) } catch { /* swallow to keep stream alive */ }
     })
     // If provider didn't return text, use collected
+    const collected = chunks.join('')
     if (!result.text && collected) {
       return { ...result, text: collected }
     }

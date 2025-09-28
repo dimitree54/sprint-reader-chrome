@@ -62,10 +62,10 @@ export class ChromeAdapter {
       const { callArgs, callback } = this.normalizeSendMessageArgs(args)
       return new Promise<unknown>((resolve, reject) => {
         const handler: ResponseCallback = (response) => {
+          const maybeError = this.captureLastError(chromeApi)
           if (callback) {
             try { callback(response) } catch (callbackError) { console.error(callbackError) }
           }
-          const maybeError = this.captureLastError(chromeApi)
           if (maybeError) reject(maybeError)
           else resolve(response)
         }
@@ -178,6 +178,7 @@ export class ChromeAdapter {
       commands: chromeApi.commands
     }
     Object.defineProperty(adapted, '__isChromeAdapter', { value: true })
+    Object.freeze(adapted)
     return adapted
   }
 }

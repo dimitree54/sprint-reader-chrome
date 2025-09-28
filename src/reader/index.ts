@@ -13,14 +13,14 @@ function initializeCSSVariables(): void {
 document.addEventListener('DOMContentLoaded', () => {
   initializeCSSVariables()
   loadSelectionContent().catch(console.error)
-  bindControls()
   registerMessageListener()
   // Initialize store-driven renderer and capture unsubscribe
   const unsubscribe = initRenderer()
+  bindControls()
   // Register beforeunload to cleanup store subscriptions
-  window.addEventListener('beforeunload', unsubscribe)
+  window.addEventListener('beforeunload', () => unsubscribe())
 })
 
-if (typeof globalThis !== 'undefined') {
+if (typeof globalThis !== 'undefined' && process.env.NODE_ENV !== 'production') {
   (globalThis as typeof globalThis & { readerStore?: typeof useReaderStore }).readerStore = useReaderStore
 }

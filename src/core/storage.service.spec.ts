@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { StorageService } from './storage.service'
 
 // Persisted in-memory mock store for true round-trip behavior
@@ -16,6 +16,13 @@ vi.mock('./browser-api.service', () => ({
     })
   }
 }))
+
+beforeEach(() => {
+  Object.keys(mockStorage).forEach((key) => {
+    delete mockStorage[key]
+  })
+  vi.clearAllMocks()
+})
 
 describe('StorageService', () => {
   it('reads reader preferences with defaults fallback', async () => {

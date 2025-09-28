@@ -5,7 +5,7 @@ import { decodeHtml, startStreamingFromTokens } from './text'
 import { browserApi } from '../core/browser-api.service'
 import { DEFAULTS } from '../config/defaults'
 // aiPreprocessingService availability is handled within streaming manager
-import type { BackgroundMessage, BackgroundResponse } from '../common/messages'
+import type { BackgroundMessage } from '../common/messages'
 
 function normaliseText (rawText: string): string {
   return rawText.replace(/\s+/g, ' ').trim()
@@ -31,12 +31,16 @@ function syncControls (): void {
 
 async function getCurrentSelectionFromBackground(): Promise<{ text: string; hasSelection: boolean; isRTL: boolean; timestamp: number } | null> {
   try {
-    const response = await browserApi.sendMessage({
-      target: 'background',
-      type: 'getCurrentSelection'
-    } satisfies BackgroundMessage) as BackgroundResponse
-    if (response && 'selection' in response) {
-      return response.selection
+    const response = await Promise.race([
+      browserApi.sendMessage({
+        target: 'background',
+        type: 'getCurrentSelection'
+      } satisfies BackgroundMessage),
+      new Promise((_resolve, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+    ])
+
+    if (response && typeof response === 'object' && 'selection' in response && response.selection && typeof response.selection === 'object') {
+      return response.selection as { text: string; hasSelection: boolean; isRTL: boolean; timestamp: number };
     }
     return null
   } catch (error) {
@@ -60,11 +64,14 @@ export async function loadSelectionContent (): Promise<void> {
 
   // Guard empty selections: reset store state instead of streaming
   if (tokens.length === 0) {
-    useReaderStore.getState().reset?.()
+    useReaderStore.getState().reset()
     return
   }
 
-  await startStreamingFromTokens(tokens)
+  await startStreamingFromTokens(
+    tokens,
+    selection?.text ? decodeHtml(selection.text) : ''
+  )
 }
 
 // Streaming is always used; availability is handled inside the streaming manager
