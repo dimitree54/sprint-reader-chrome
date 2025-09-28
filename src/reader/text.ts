@@ -1,7 +1,7 @@
 export { decodeHtml } from '../common/html'
 import { preprocessText } from './text-processor'
 import { aiPreprocessingService } from '../preprocessing/ai-preprocessing.service'
-import { initializeStreamingText } from './streaming-text'
+import { initializeStreamingSession } from './streaming-text'
 import type { StreamingTextProcessorInstance } from './streaming-text'
 import { StreamingPreprocessingManager } from '../preprocessing/streaming-manager'
 import { createChunks } from './timing-engine'
@@ -74,8 +74,8 @@ async function rebuildWordItemsWithStreamingFromRawText (originalRawText: string
   // Initialize streaming
   let streamingProcessor: StreamingTextProcessorInstance | null = null
   try {
-    // Initialize without seeding text to avoid duplicate processing
-    streamingProcessor = await initializeStreamingText('')
+    // Initialize a session without auto-start to avoid duplicate processing
+    streamingProcessor = await initializeStreamingSession()
   } catch (error) {
     console.error('Failed to initialize streaming:', error)
     useReaderStore.setState({

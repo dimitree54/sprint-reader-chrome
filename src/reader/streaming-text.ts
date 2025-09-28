@@ -237,6 +237,29 @@ export async function initializeStreamingText(rawText: string): Promise<Streamin
 }
 
 /**
+ * Initialize a new streaming text session without auto-starting processing.
+ * Returns a processor instance; caller is responsible for invoking startStreamingText().
+ */
+export async function initializeStreamingSession(): Promise<StreamingTextProcessorInstance> {
+  // Ensure any previous session is torn down
+  if (streamingOrchestrator) {
+    try { streamingOrchestrator.cancelStreaming() } catch { /* ignore errors during cleanup */ }
+    streamingOrchestrator = null
+  }
+
+  // Create new orchestrator for this session
+  streamingOrchestrator = new StreamingTextOrchestrator()
+
+  // Do not start processing here; return bound methods
+  return {
+    startStreamingText: streamingOrchestrator.startStreamingText.bind(streamingOrchestrator),
+    addStreamingToken: streamingOrchestrator.addStreamingToken.bind(streamingOrchestrator),
+    completeStreamingText: streamingOrchestrator.completeStreamingText.bind(streamingOrchestrator),
+    cancelStreaming: streamingOrchestrator.cancelStreaming.bind(streamingOrchestrator)
+  }
+}
+
+/**
  * Check if we're currently in streaming mode
  */
 export function isCurrentlyStreaming(): boolean {

@@ -37,6 +37,10 @@ export class StreamingPreprocessingManager {
     try {
       options.onStreamingStart?.()
 
+      // Ensure the streaming processor is started with clean UI state.
+      // Start without seeding text to avoid duplicate processing when using streaming providers.
+      await streamingProcessor.startStreamingText('')
+
       // Get preprocessing configuration
       const config = await preprocessingConfigService.getConfig()
 
@@ -48,7 +52,7 @@ export class StreamingPreprocessingManager {
       if (config.enabled && openAiProvider.isAvailable(config)) {
         await this.processWithStreamingProvider(rawText, openAiProvider, config, streamingProcessor)
       } else {
-        // Fall back to non-streaming preprocessing
+        // Fall back to non-streaming preprocessing (simulate streaming)
         await this.processWithNonStreamingProvider(rawText, passthroughProvider, config, streamingProcessor)
       }
 
