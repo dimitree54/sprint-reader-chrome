@@ -1,6 +1,6 @@
 # Default Values Configuration
 
-### Last updated: September 2025
+## Last updated: September 2025
 
 This document describes all default values used throughout the extension and their purposes. All defaults are centralized in `src/config/defaults.ts` to ensure consistency and easy maintenance.
 

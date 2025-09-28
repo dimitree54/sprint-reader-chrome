@@ -145,7 +145,8 @@ export async function startStreamingFromTokens (
     : words.map(w => w.text).join(' ')
   // Seed immediate UI state so the reader shows content before streaming finishes
   const store = useReaderStore.getState()
-  const preprocessedWords = preprocessText(rawText ?? '')
+  const tokenFallback = words.map(w => w.text).join(' ')
+  const preprocessedWords = preprocessText(rawText && rawText.trim() ? rawText : tokenFallback)
   const wordsWithBoldInfo = preprocessedWords.map((word, index) => ({
     text: word.text,
     isBold: words[index]?.isBold || word.isBold
