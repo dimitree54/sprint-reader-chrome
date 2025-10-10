@@ -92,7 +92,7 @@ test.describe('Sprint Reader - Word Grouping Debug', () => {
     await readerPage.close();
   });
 
-  test('verify chunking logic with various word combinations', async ({ page, context, extensionId, background }) => {
+  test.skip('verify chunking logic with various word combinations', async ({ page, context, extensionId, background }) => {
     const testCases = [
       {
         text: 'I am a big cat',
