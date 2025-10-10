@@ -5,9 +5,10 @@ import { preprocessingConfigService } from '../config'
 export class PassthroughProvider implements PreprocessingProvider {
   name = 'passthrough'
 
-  isAvailable(config: PreprocessingConfig): boolean {
-    // Only available when skipping processing is explicitly allowed
-    return preprocessingConfigService.shouldSkipProcessing(config)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  isAvailable(_config: PreprocessingConfig): boolean {
+    // Always available as a safe fallback when AI preprocessing cannot run
+    return true
   }
 
   /**
@@ -16,8 +17,8 @@ export class PassthroughProvider implements PreprocessingProvider {
   async getAvailabilityInfo(config: PreprocessingConfig): Promise<{ isAvailable: boolean; reason?: string }> {
     const shouldSkip = preprocessingConfigService.shouldSkipProcessing(config)
     return {
-      isAvailable: shouldSkip,
-      reason: shouldSkip ? undefined : 'Processing is enabled and other providers should be used'
+      isAvailable: true,
+      reason: shouldSkip ? 'Preprocessing disabled in config' : 'Fallback provider active'
     }
   }
 

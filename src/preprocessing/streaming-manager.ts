@@ -7,6 +7,7 @@
 import { preprocessingConfigService, type PreprocessingConfig } from './config'
 import { OpenAIProvider, type StreamingTokenCallback } from './providers/openai'
 import { PassthroughProvider } from './providers/passthrough'
+import type { PreprocessingResult } from './providers/types'
 import type { StreamingTextProcessorInstance } from '../reader/streaming-text'
 
 export interface StreamingPreprocessingOptions {
@@ -18,6 +19,36 @@ export interface StreamingPreprocessingOptions {
 export class StreamingPreprocessingManager {
   private isStreaming = false
   private currentProcessor: StreamingTextProcessorInstance | null = null
+
+  private logPreprocessingError(source: string, error: NonNullable<PreprocessingResult['error']>): void {
+    const details = (error.details ?? {}) as Record<string, unknown>
+    const summaryParts: string[] = []
+
+    const status = details['status']
+    if (typeof status === 'number') summaryParts.push(`status=${status}`)
+
+    const statusText = details['statusText']
+    if (typeof statusText === 'string' && statusText.length) summaryParts.push(`statusText="${statusText}"`)
+
+    const serverMessage = details['serverMessage']
+    if (typeof serverMessage === 'string' && serverMessage.length) summaryParts.push(`serverMessage="${serverMessage}"`)
+
+    const suggestion = details['suggestion']
+    if (typeof suggestion === 'string' && suggestion.length) summaryParts.push(`suggestion="${suggestion}"`)
+
+    const timeoutMs = details['timeoutMs']
+    if (typeof timeoutMs === 'number') summaryParts.push(`timeoutMs=${timeoutMs}`)
+
+    const summary = summaryParts.length > 0 ? ` (${summaryParts.join(', ')})` : ''
+
+    const baseMessage = `[StreamingPreprocessingManager] ${source} error (${error.type}): ${error.message}${summary}`
+
+    if (Object.keys(details).length > 0) {
+      console.warn(baseMessage, details)
+    } else {
+      console.warn(baseMessage)
+    }
+  }
 
   /**
    * Start streaming preprocessing for the given text
@@ -49,7 +80,7 @@ export class StreamingPreprocessingManager {
       const passthroughProvider = new PassthroughProvider()
 
       // Check if we should use streaming preprocessing (only when enabled and provider is available)
-      if (config.enabled && openAiProvider.isAvailable()) {
+      if (config.enabled && openAiProvider.isAvailable(config)) {
         console.log('[StreamingPreprocessingManager] Using OpenAI streaming provider')
         await this.processWithStreamingProvider(rawText, openAiProvider, config, streamingProcessor)
       } else {
@@ -104,10 +135,11 @@ export class StreamingPreprocessingManager {
 
       // Handle any errors from preprocessing
       if (result.error) {
-        console.warn('[StreamingPreprocessingManager] OpenAI preprocessing error (using original text):', result.error.message)
+        this.logPreprocessingError('OpenAI streaming', result.error)
       }
     } catch (error) {
       // Cancel streaming on error
+      console.error('[StreamingPreprocessingManager] Streaming provider threw error:', error)
       this.currentProcessor?.cancelStreaming()
       throw error
     }
@@ -147,10 +179,11 @@ export class StreamingPreprocessingManager {
 
       // Handle any errors from preprocessing
       if (result.error) {
-        console.warn('[StreamingPreprocessingManager] Passthrough preprocessing error (using original text):', result.error.message)
+        this.logPreprocessingError('Passthrough streaming fallback', result.error)
       }
     } catch (error) {
       // Cancel streaming on error
+      console.error('[StreamingPreprocessingManager] Non-streaming provider threw error:', error)
       this.currentProcessor?.cancelStreaming()
       throw error
     }

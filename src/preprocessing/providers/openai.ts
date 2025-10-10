@@ -20,16 +20,39 @@ interface OpenAIChatCompletionsResponse {
   choices: Array<{ message?: { content?: string }; delta?: { content?: string } }>
 }
 
+async function readResponseTextSafe(response: Response): Promise<string | undefined> {
+  try {
+    return await response.text()
+  } catch (error) {
+    console.warn('[OpenAIProvider] Failed to read error response body:', error)
+    return undefined
+  }
+}
+
 export class OpenAIProvider implements PreprocessingProvider {
   name = 'openai'
 
-  isAvailable(): boolean {
+  isAvailable(config: PreprocessingConfig): boolean {
+    if (!config.enabled) {
+      return false
+    }
+
     // Check for test mode override
     if ((globalThis as any).TEST_MODE) {
       return !!(globalThis as any).TEST_AUTH_TOKEN
     }
 
-    return getAuthState().isAuthenticated
+    const authState = getAuthState()
+    if (!authState.isAuthenticated) {
+      return false
+    }
+
+    const user = authState.user
+    if (!user) {
+      return false
+    }
+
+    return user.subscriptionStatus === 'pro'
   }
 
   /**
@@ -74,6 +97,23 @@ export class OpenAIProvider implements PreprocessingProvider {
           isAvailable: false,
           reason: 'Authentication state invalid'
         }
+      }
+    }
+
+    const user = authState.user
+    if (!user) {
+      return {
+        isAvailable: false,
+        reason: 'Authenticated state without user data'
+      }
+    }
+
+    if (user.subscriptionStatus !== 'pro') {
+      return {
+        isAvailable: false,
+        reason: user.subscriptionStatus
+          ? `User subscription is ${user.subscriptionStatus}, pro subscription required`
+          : 'User subscription status unknown, pro subscription required'
       }
     }
 
@@ -141,7 +181,8 @@ export class OpenAIProvider implements PreprocessingProvider {
       if (timeoutId) clearTimeout(timeoutId)
 
       if (!response.ok) {
-        return handleApiError(response, text)
+        const errorPayload = await readResponseTextSafe(response)
+        return handleApiError(response, text, errorPayload)
       }
 
       const data = await response.json() as OpenAIChatCompletionsResponse
@@ -207,7 +248,8 @@ export class OpenAIProvider implements PreprocessingProvider {
       if (timeoutId) clearTimeout(timeoutId)
 
       if (!response.ok) {
-        return handleApiError(response, text)
+        const errorPayload = await readResponseTextSafe(response)
+        return handleApiError(response, text, errorPayload)
       }
 
       const translatedText = await this.processStreamingResponseWithCallback(response, controller.signal, onToken)

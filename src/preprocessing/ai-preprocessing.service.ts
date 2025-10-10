@@ -8,8 +8,8 @@ import type { SummarizationLevel } from '../common/summarization'
 
 export class AIPreprocessingService {
   private manager = new PreprocessingManager([
-    new PassthroughProvider(),
-    new OpenAIProvider()
+    new OpenAIProvider(),
+    new PassthroughProvider()
   ])
 
   async isAvailable (): Promise<boolean> {
@@ -47,7 +47,7 @@ export class AIPreprocessingService {
       return this.manager.process(text, cfg)
     }
     const provider = new OpenAIProvider()
-    if (!provider.isAvailable()) {
+    if (!provider.isAvailable(cfg)) {
       // Fallback to non-streaming path through manager
       return this.manager.process(text, cfg)
     }
