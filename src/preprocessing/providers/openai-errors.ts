@@ -83,7 +83,7 @@ export function handleProcessingError(error: unknown, originalText: string): Pre
     if (error.name === 'AbortError' || error.message.includes('timeout')) {
       errorType = 'timeout_error'
       errorMessage = 'Request timeout: OpenAI API took too long to respond'
-      errorDetails.timeoutMs = 10000
+      errorDetails.timeoutMs = 30000
     } else if (error.message.includes('fetch') || error.message.includes('network')) {
       errorType = 'network_error'
       errorMessage = 'Network error: Unable to reach OpenAI API'

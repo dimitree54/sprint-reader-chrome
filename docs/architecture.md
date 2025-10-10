@@ -292,7 +292,7 @@ interface PreprocessingResult {
 
 * **`OpenAIProvider`**: Sends text to a Kinde-gated Cloudflare worker for translation and summarization.
   * Requires an authenticated user session.
-  * Includes a 10-second timeout and error handling.
+  * Includes a 30-second timeout and error handling.
 * **`PassthroughProvider`**: Returns text unchanged.
   * Used when AI preprocessing is disabled.
 
