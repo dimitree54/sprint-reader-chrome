@@ -6,7 +6,7 @@ import type { ReaderPreferences, ReaderTheme } from '../common/storage'
 export const DEFAULTS = {
   // Reader preferences defaults
   READER_PREFERENCES: {
-    wordsPerMinute: 400,
+    wordsPerMinute: 350,
     pauseAfterComma: true,
     pauseAfterPeriod: true,
     pauseAfterParagraph: true,

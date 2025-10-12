@@ -174,6 +174,7 @@ async function runBuild(browser) {
     copyDirectory(path.join(repoRoot, 'static', 'pages'), path.join(distDir, 'pages')),
     copyDirectory(path.join(repoRoot, 'static', 'styles'), path.join(distDir, 'styles')),
     copyDirectory(path.join(repoRoot, 'static', 'assets'), path.join(distDir, 'assets')),
+    copyDirectory(path.join(repoRoot, 'static', 'scripts'), path.join(distDir, 'scripts')),
   ]);
 
   // Security check: prevent API key embedding in production builds

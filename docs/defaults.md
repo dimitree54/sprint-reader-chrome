@@ -10,7 +10,7 @@ These values control the initial reading experience when a user first installs t
 
 | Setting | Default Value | Purpose |
 |---------|---------------|---------|
-| `wordsPerMinute` | `400` | Initial reading speed - optimized for average reading comprehension |
+| `wordsPerMinute` | `350` | Initial reading speed - optimized for average reading comprehension |
 | `pauseAfterComma` | `true` | Enables pause after commas for natural reading rhythm |
 | `pauseAfterPeriod` | `true` | Enables pause after periods for sentence boundaries |
 | `pauseAfterParagraph` | `true` | Enables pause after paragraphs for content separation |
@@ -153,7 +153,7 @@ All defaults are defined in `src/config/defaults.ts` using TypeScript's `satisfi
 ```typescript
 export const DEFAULTS = {
   READER_PREFERENCES: {
-    wordsPerMinute: 400,
+    wordsPerMinute: 350,
     chunkSize: 3,
     theme: 'dark' as ReaderTheme
     // ... other preferences

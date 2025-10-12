@@ -2,15 +2,107 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Welcome to 10x your reading speed</title>
+    <title data-app-name-title>Welcome</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="../styles/info.css" />
   </head>
   <body class="info">
-    <main class="info__container">
-      <h1>Welcome to 10x your reading speed</h1>
-      <p>Thanks for installing 10x your reading speed! Select any text on a page and use the shortcut <strong>Ctrl + Shift + E</strong> to start reading instantly.</p>
-      <p>You can also open the popup to configure the reading speed and other preferences.</p>
+    <main class="info__container welcome">
+      <header class="welcome__header">
+        <div class="welcome__brand">
+          <img
+            class="welcome__logo"
+            src="../assets/illustrations/welcome-hamster.webp"
+            alt="10x Reader welcome mascot"
+          />
+          <div>
+            <h1 class="welcome__title">Welcome to <span data-app-name></span></h1>
+            <p class="welcome__subtitle">Let’s learn how to use it.</p>
+          </div>
+        </div>
+      </header>
+
+      <section class="welcome__cards" aria-label="How 10x Reader works">
+        <article class="welcome__card">
+          <header class="welcome__card-header">
+            <p class="welcome__step">Step 1</p>
+            <h2 class="welcome__card-title">Use the context menu</h2>
+            <p class="welcome__card-description">
+              Select the text in the box, right-click it, and choose “<span id="contextMenuEntry"></span>”.
+            </p>
+          </header>
+          <div class="welcome__text-box">
+            <div id="step1Text" class="welcome__text-content" tabindex="0" role="textbox" aria-label="Practice text for Step 1" spellcheck="false">
+              <p>
+                Great! You’re speed reading this text. Most people read around 240 words per minute, but you’re reading at about 350 words per minute right now. Already ~1.5x faster than average. And this isn’t the limit. When you feel comfortable, use the speed slider to go even faster.
+              </p>
+              <p>
+                The method you’re using is Rapid Serial Visual Presentation, in short RSVP. It shows one word or a short phrase at a time in the same spot on the screen so you can read without moving your eyes and scrolling the page. That lets you read much faster with no training.
+              </p>
+              <p>
+                For most of the people this intro would take ~50 seconds, but you finished it in ~35 seconds. You can read any web page this way: select any text and “<span data-app-name></span>” is always right-click away.
+              </p>
+              <p>
+                For now, close this window to return to the onboarding page and learn other ways to use “<span data-app-name></span>”.
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <article class="welcome__card">
+          <header class="welcome__card-header">
+            <p class="welcome__step">Step 2</p>
+            <h2 class="welcome__card-title">Paste any text</h2>
+            <p class="welcome__card-description">
+              Copy the text below, then open the extension: click the Extensions (jigsaw) icon to the right of the address bar, click “<span data-app-name></span>”. In the pop-up, paste the copied text into the box to speed-read it. In future, consider pinning the extension for faster access.
+            </p>
+          </header>
+          <div class="welcome__tools">
+            <button class="welcome__copy-button" type="button" data-copy-target="step2Text">
+              Copy the text below
+            </button>
+            <div class="welcome__copy-toast" role="status" aria-live="polite"></div>
+          </div>
+          <div class="welcome__text-box">
+            <div id="step2Text" class="welcome__text-content" tabindex="0" role="textbox" aria-label="Practice text for Step 2" spellcheck="false">
+              <p>
+                You’re already reading ~1.5x faster than average human. But wait, why the extension is called “<span data-app-name></span>” then?
+              </p>
+              <p>
+                To help you finish pages even faster, we combine RSVP with AI pre-processing:
+              </p>
+              <p>
+                1. <strong>AI summarization.</strong> Many web pages are filled with unnecessary text that just wastes your time. For example, before you finally learn how to cook rice, you might need to scroll through a long story about its history and cultural importance. “<span data-app-name></span>” solves this by pre-processing text with AI to keep only the essential information. You can choose how much summarization you want — from none to keep every detail to strong summarization for just the core meaning.
+                This feature alone can help you finish pages up to 3x faster by reducing the amount of content you need to read.
+              </p>
+              <p>
+                2. <strong>AI translation.</strong> Even if you know several languages, your native language is still your reading superpower — you process it faster and with less effort.
+                “<span data-app-name></span>” uses AI translation to tap into that advantage by instantly converting any content into your native language, so you can read more comfortably and quickly.
+                The exact speed boost depends on your language skills, but here is an example from me: I read English pretty well and use it a lot, yet reading in my native language is still about 1.6x faster for me.
+              </p>
+              <p>
+                3. <strong>AI highlighting.</strong> Our AI automatically highlights key words and phrases, showing them slightly longer during reading so your brain naturally focuses on what matters most.
+              </p>
+              <p>
+                My personal boost vs. the average reader: ~2x from RSVP (I read ~480 wpm), another ~3x from summarization, and ~1.6x from translation ≈ ~10x overall. Your exact numbers may differ, but for me, it adds up to hours saved every month.
+              </p>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <footer class="welcome__footer" aria-label="Account options">
+        <div class="welcome__cta">
+          <button id="ctaSignIn" class="welcome__cta-button welcome__cta-button--primary" type="button">
+            Become a 10x Reader right now
+          </button>
+          <button id="ctaContinue" class="welcome__cta-button welcome__cta-button--secondary" type="button">
+            2x is enough for now (close this window)
+          </button>
+        </div>
+        
+      </footer>
     </main>
+    <script type="module" src="../scripts/welcome.js"></script>
   </body>
 </html>

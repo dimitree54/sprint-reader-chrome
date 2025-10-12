@@ -14,10 +14,8 @@ async function handleInstall (details: chrome.runtime.InstalledDetails): Promise
   const version = browserApi.runtime.getManifest().version
   await setInStorage({ version })
 
-  if (details.reason === 'install') {
+  if (details.reason === 'install' || details.reason === 'update') {
     await browserApi.createTab({ url: browserApi.runtime.getURL('pages/welcome.html') })
-  } else if (details.reason === 'update') {
-    await browserApi.createTab({ url: browserApi.runtime.getURL('pages/updated.html') })
   }
 }
 

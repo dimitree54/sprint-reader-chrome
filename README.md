@@ -39,6 +39,7 @@ Our AI preprocessing, available to authenticated users, optimizes text before pr
 > 47+ translation languages with "no translation" default.
 > Adjustable summarisation depth (literal, 50% reduction, or key-point digest).
 > Keyboard shortcut helper that nudges you to select text when none is highlighted.
+> Playful onboarding coach with interactive copy-ready examples.
 
 ## Table of Contents
 

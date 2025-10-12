@@ -88,7 +88,8 @@ src/
       controls.ts          → Control event bindings
 static/
   assets/          → Icons and imagery shared across contexts.
-  pages/           → HTML documents for popup, reader, settings, welcome, updated pages.
+  pages/           → HTML documents for popup, reader, settings, and the welcome onboarding page.
+    welcome.html      → Interactive onboarding with context-menu walkthrough, copy helpers, and theme-aware CTAs.
   styles/          → Scoped stylesheets injected per context.
 config/
   manifest.base.json       → Canonical extension manifest definition.
@@ -118,7 +119,7 @@ The codebase is fully service‑oriented and store‑driven.
   * Persists reader preferences via `storage.ts` helpers. Text selections are not persisted and each reader session uses fresh input data.
   * Owns the reader window lifecycle (`openReaderWindowSetup`) and exposes the function on `globalThis` for Playwright automation and integration tests.
   * Generates context-menu commands and keyboard shortcuts that route back into the shared open-reader workflow.
-  * Normalises install/update flows by opening the welcome/updated pages from `static/pages`.
+  * Normalises install/update flows by opening the shared welcome onboarding page from `static/pages`.
   * Delegates responsibilities to focused modules: `state.ts` (in-memory selection + prefs), `selection.ts` (state management), `reader-window.ts` (window lifecycle), `message-handler.ts` (runtime messages), and `listeners.ts` (events + commands).
 
 * Key collaborators
