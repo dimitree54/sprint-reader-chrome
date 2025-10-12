@@ -1,5 +1,5 @@
 import { applyThemeToElement } from '../common/theme'
-import type { BackgroundMessage, BackgroundResponse } from '../common/messages'
+import type { BackgroundMessage } from '../common/messages'
 import {
   readReaderPreferences,
   readSummarizationLevel,
@@ -16,6 +16,7 @@ import {
 import { browserApi } from '../core/browser-api.service'
 import { DEFAULTS } from '../config/defaults'
 import { applyExtensionName } from '../common/app-name'
+import { authService, type User } from '../auth'
 
 const THEME_OPTIONS = {
   lightClass: 'popup--light',
@@ -29,6 +30,10 @@ type PopupElements = {
   enablePreprocessingToggle: HTMLInputElement;
   summarizationSlider: HTMLInputElement;
   summarizationLabel: HTMLElement;
+  aiSection: HTMLElement;
+  aiUpsell: HTMLElement;
+  aiUpsellTitle: HTMLElement;
+  aiCtaButton: HTMLButtonElement;
 };
 
 let currentTheme: ReaderTheme = DEFAULTS.READER_PREFERENCES.theme
@@ -47,6 +52,8 @@ async function loadPreferences (elements: PopupElements) {
   const sliderIndex = summarizationLevelToSliderIndex(summarizationLevel)
   elements.summarizationSlider.value = String(sliderIndex)
   elements.summarizationLabel.textContent = getSummarizationLevelLabel(summarizationLevel)
+
+  await loadAuthState(elements)
 }
 
 async function sendOpenReaderMessage (selectionText: string) {
@@ -61,8 +68,6 @@ async function sendOpenReaderMessage (selectionText: string) {
 
   await browserApi.sendMessage(message)
 }
-
-
 
 async function registerEvents (elements: PopupElements) {
   function updateButtonState () {
@@ -127,15 +132,158 @@ async function openSettingsPage (): Promise<void> {
   await browserApi.createTab({ url })
 }
 
+function setAiControlsDisabled (elements: PopupElements, disabled: boolean): void {
+  elements.enablePreprocessingToggle.disabled = disabled
+  elements.summarizationSlider.disabled = disabled
+}
+
+function updateAiPreprocessingAccess (elements: PopupElements, isAuthenticated: boolean, user: User | null): void {
+  const isPro = Boolean(isAuthenticated && user && user.subscriptionStatus === 'pro')
+
+  setAiControlsDisabled(elements, !isPro)
+
+  const title = 'You are 2x reader now.'
+
+  if (isPro) {
+    elements.aiSection.classList.remove('popup__section--ai-locked')
+    elements.aiUpsell.hidden = true
+    elements.aiUpsell.setAttribute('aria-hidden', 'true')
+    elements.aiCtaButton.disabled = false
+    elements.aiCtaButton.onclick = null
+  } else {
+    elements.aiSection.classList.add('popup__section--ai-locked')
+    elements.aiUpsell.hidden = false
+    elements.aiUpsell.removeAttribute('aria-hidden')
+    elements.aiCtaButton.disabled = false
+
+    elements.aiUpsellTitle.innerHTML = title
+
+    if (!isAuthenticated) {
+      elements.aiCtaButton.textContent = 'Become 10x Reader'.toUpperCase()
+      elements.aiCtaButton.onclick = async () => {
+        if (elements.aiCtaButton.disabled) {
+          return
+        }
+        elements.aiCtaButton.disabled = true
+        try {
+          await triggerRegistrationFlow()
+        } catch (error) {
+          console.error('Failed to start registration flow', error)
+        } finally {
+          elements.aiCtaButton.disabled = false
+        }
+      }
+    } else {
+      elements.aiCtaButton.textContent = 'Upgrade to 10x Reader'.toUpperCase()
+      elements.aiCtaButton.onclick = async () => {
+        if (elements.aiCtaButton.disabled) {
+          return
+        }
+
+        elements.aiCtaButton.disabled = true
+        try {
+          const returnUrl = browserApi.runtime.getURL('pages/settings.html')
+          const url = await requestManageSubscriptionUrl(returnUrl)
+          await browserApi.createTab({ url })
+        } catch (error) {
+          console.error('Failed to open subscription management from CTA', error)
+        } finally {
+          elements.aiCtaButton.disabled = false
+        }
+      }
+    }
+  }
+}
+
+async function loadAuthState (elements: PopupElements): Promise<void> {
+  // Initialize auth service
+  await authService.initializeAuth()
+
+  // Get current auth state
+  const authState = authService.getAuthState()
+  updateAiPreprocessingAccess(elements, authState.isAuthenticated, authState.user)
+
+  // Subscribe to auth state changes
+  authService.subscribe((state) => {
+    updateAiPreprocessingAccess(elements, state.isAuthenticated, state.user)
+  })
+}
+
+async function requestManageSubscriptionUrl (returnUrl: string): Promise<string> {
+  const message: BackgroundMessage = {
+    target: 'background',
+    type: 'resolveManageSubscriptionUrl',
+    returnUrl
+  }
+  const response = await browserApi.sendMessage(message)
+
+  if (!response || typeof response !== 'object') {
+    throw new Error('Background did not return subscription details')
+  }
+
+  const { manageSubscriptionUrl, error } = response as { manageSubscriptionUrl?: unknown; error?: unknown }
+
+  if (typeof error === 'string' && error.trim().length > 0) {
+    throw new Error(error)
+  }
+
+  if (typeof manageSubscriptionUrl !== 'string' || manageSubscriptionUrl.trim().length === 0) {
+    throw new Error('Background returned an invalid subscription URL')
+  }
+
+  return manageSubscriptionUrl
+}
+
+async function triggerRegistrationFlow (): Promise<void> {
+  const message: BackgroundMessage = {
+    target: 'background',
+    type: 'triggerAuthFlow',
+    flow: 'register'
+  }
+  const response = await browserApi.sendMessage(message)
+
+  if (!response || typeof response !== 'object') {
+    throw new Error('Background did not acknowledge authentication trigger')
+  }
+
+  const { authStarted, error } = response as { authStarted?: unknown; error?: unknown }
+
+  if (typeof error === 'string' && error.trim().length > 0) {
+    throw new Error(error)
+  }
+
+  if (authStarted !== true) {
+    throw new Error('Authentication flow did not start')
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   applyExtensionName()
+  const aiSectionElement = document.querySelector('[data-ai-section]')
+  const aiUpsellElement = document.querySelector('[data-ai-cta]')
+
+  if (!(aiSectionElement instanceof HTMLElement) || !(aiUpsellElement instanceof HTMLElement)) {
+    throw new Error('AI Pre-processing card elements are missing')
+  }
+
+  const aiUpsellTitleElement = aiUpsellElement.querySelector('[data-ai-cta-title]')
+  const aiCtaButtonElement = aiUpsellElement.querySelector('[data-ai-cta-button]')
+
+  if (!(aiUpsellTitleElement instanceof HTMLElement) || !(aiCtaButtonElement instanceof HTMLButtonElement)) {
+    throw new Error('AI Pre-processing CTA elements are missing')
+  }
+
   const elements: PopupElements = {
     inputText: document.getElementById('inputTextToRead') as HTMLInputElement,
     speedReadButton: document.getElementById('speedReadButton') as HTMLButtonElement,
     settingsButton: document.getElementById('openSettings') as HTMLButtonElement,
     enablePreprocessingToggle: document.getElementById('popupEnableTranslation') as HTMLInputElement,
     summarizationSlider: document.getElementById('popupSummarizationLevel') as HTMLInputElement,
-    summarizationLabel: document.getElementById('popupSummarizationLabel') as HTMLElement
+    summarizationLabel: document.getElementById('popupSummarizationLabel') as HTMLElement,
+    aiSection: aiSectionElement,
+    aiUpsell: aiUpsellElement,
+    aiUpsellTitle: aiUpsellTitleElement,
+    aiCtaButton: aiCtaButtonElement
   }
 
   await loadPreferences(elements)

@@ -43,45 +43,56 @@
         </label>
         <button id="speedReadButton" class="popup__speed-read-button" disabled>Speed read it</button>
       </section>
-      <section class="popup__section">
-        <h2 class="popup__subtitle">AI Pre-processing</h2>
-        <label class="popup__field popup__field--toggle" for="popupEnableTranslation">
-          <span class="popup__field-label">Enable translation</span>
-          <input
-            id="popupEnableTranslation"
-            name="popupEnableTranslation"
-            type="checkbox"
-            class="popup__toggle"
-            role="switch"
-          />
-        </label>
-        <label class="popup__field popup__field--slider" for="popupSummarizationLevel">
-          <span class="popup__field-label">Summarization level</span>
-          <input
-            id="popupSummarizationLevel"
-            name="popupSummarizationLevel"
-            type="range"
-            min="0"
-            max="2"
-            step="1"
-            class="popup__slider"
-          />
-          <div class="popup__slider-ticks" aria-hidden="true">
-            <span class="popup__slider-tick">
-              <span class="popup__slider-tick-icon">📚</span>
-              <span class="popup__slider-tick-label">None</span>
-            </span>
-            <span class="popup__slider-tick">
-              <span class="popup__slider-tick-icon">📄</span>
-              <span class="popup__slider-tick-label">Moderate</span>
-            </span>
-            <span class="popup__slider-tick">
-              <span class="popup__slider-tick-icon">💬</span>
-              <span class="popup__slider-tick-label">Significant</span>
-            </span>
+      <section class="popup__section popup__section--ai" data-ai-section>
+        <div class="popup__ai-body" data-ai-body>
+          <h2 class="popup__subtitle">AI Pre-processing</h2>
+          <label class="popup__field popup__field--toggle" for="popupEnableTranslation">
+            <span class="popup__field-label">Enable translation</span>
+            <input
+              id="popupEnableTranslation"
+              name="popupEnableTranslation"
+              type="checkbox"
+              class="popup__toggle"
+              role="switch"
+            />
+          </label>
+          <label class="popup__field popup__field--slider" for="popupSummarizationLevel">
+            <span class="popup__field-label">Summarization level</span>
+            <input
+              id="popupSummarizationLevel"
+              name="popupSummarizationLevel"
+              type="range"
+              min="0"
+              max="2"
+              step="1"
+              class="popup__slider"
+            />
+            <div class="popup__slider-ticks" aria-hidden="true">
+              <span class="popup__slider-tick">
+                <span class="popup__slider-tick-icon">📚</span>
+                <span class="popup__slider-tick-label">None</span>
+              </span>
+              <span class="popup__slider-tick">
+                <span class="popup__slider-tick-icon">📄</span>
+                <span class="popup__slider-tick-label">Moderate</span>
+              </span>
+              <span class="popup__slider-tick">
+                <span class="popup__slider-tick-icon">💬</span>
+                <span class="popup__slider-tick-label">Significant</span>
+              </span>
+            </div>
+            <span id="popupSummarizationLabel" class="popup__slider-value" aria-live="polite"></span>
+          </label>
+        </div>
+        <div id="aiPreprocessingUpsell" class="popup__ai-lock" data-ai-cta hidden>
+          <div class="popup__ai-lock-content">
+            <p class="popup__ai-lock-title" data-ai-cta-title>You are 2x reader now.</p>
+            <button type="button" class="popup__ai-lock-button" data-ai-cta-button>
+              BECOME 10X READER
+            </button>
+            <p class="popup__ai-lock-title" data-ai-cta-subtitle>To enable<br>ai pre-processing</p>
           </div>
-          <span id="popupSummarizationLabel" class="popup__slider-value" aria-live="polite"></span>
-        </label>
+        </div>
       </section>
     </main>
     <script type="module" src="../scripts/popup.js"></script>
