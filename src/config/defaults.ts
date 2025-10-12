@@ -18,7 +18,7 @@ export const DEFAULTS = {
 
   // Word processing defaults
   WORD_PROCESSING: {
-    maxWordLengthForGrouping: 2
+    maxWordLengthForGrouping: 1
   },
 
   // Selection state defaults

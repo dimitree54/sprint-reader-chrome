@@ -296,6 +296,12 @@ body.info.info--light .welcome__copy-toast {
   line-height: 1.6;
 }
 
+.welcome__note {
+  margin: 12px 0 0;
+  font-size: 0.95rem;
+  color: var(--info-muted);
+}
+
 .welcome__text-content p,
 .welcome__text-content li {
   font-size: 1rem;

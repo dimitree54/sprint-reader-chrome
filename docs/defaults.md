@@ -58,7 +58,7 @@ These values control how text is processed and grouped for optimal reading.
 
 | Setting | Default Value | Purpose |
 |---------|---------------|---------|
-| `maxWordLengthForGrouping` | `2` | Maximum word length (in mini-tokens) for grouping multiple words together |
+| `maxWordLengthForGrouping` | `1` | Maximum word length (in mini-tokens) for grouping multiple words together |
 | `rawText` | `''` | Fallback for empty raw text to prevent errors in preprocessing |
 
 ## Visual Effects Defaults
