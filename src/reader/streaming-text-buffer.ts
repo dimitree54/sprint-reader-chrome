@@ -46,6 +46,14 @@ export class StreamingTextBuffer {
     let lastDelimiterPos = -1
     for (const delimiter of this.sentenceDelimiters) {
       const pos = this.buffer.lastIndexOf(delimiter)
+      if (pos === -1) {
+        continue
+      }
+
+      if (delimiter === '.' && (pos + 1 >= this.buffer.length || this.buffer[pos + 1] !== ' ')) {
+        continue
+      }
+
       if (pos > lastDelimiterPos) {
         lastDelimiterPos = pos
       }
