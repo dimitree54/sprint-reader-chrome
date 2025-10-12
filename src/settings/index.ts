@@ -229,6 +229,7 @@ async function loadInitialState (elements: SettingsElements): Promise<void> {
 
   // Set toggle state
   elements.enablePreprocessingToggle.checked = isPreprocessingEnabled
+  elements.enablePreprocessingToggle.setAttribute('aria-checked', String(isPreprocessingEnabled))
 
   // Set dropdown state
   if (isTranslationLanguage(language)) {
@@ -251,14 +252,14 @@ async function loadInitialState (elements: SettingsElements): Promise<void> {
 }
 
 function buildManageSubscriptionUrl (): string {
-  const env = (import.meta as any).env || {}
-  const domain: string | undefined = env.VITE_KINDE_DOMAIN
-  const orgCode: string | undefined = env.VITE_KINDE_ORG_CODE
+  const rawDomain = process.env.VITE_KINDE_DOMAIN || ''
+  const orgCode = process.env.VITE_KINDE_ORG_CODE || ''
 
-  if (!domain) throw new Error('VITE_KINDE_DOMAIN is not set')
-  if (!orgCode) throw new Error('VITE_KINDE_ORG_CODE is not set')
+  if (!rawDomain.trim()) throw new Error('VITE_KINDE_DOMAIN is not set')
+  if (!orgCode.trim()) throw new Error('VITE_KINDE_ORG_CODE is not set')
 
-  const base = domain.replace(/\/$/, '')
+  const normalizedDomain = rawDomain.startsWith('http') ? rawDomain : `https://${rawDomain}`
+  const base = normalizedDomain.replace(/\/$/, '')
   return `${base}/account/cx/_:nav&m:account::_:submenu&s:plan_selection&org_code:${orgCode}`
 }
 
@@ -290,43 +291,54 @@ function registerEvents (elements: SettingsElements): void {
     elements.summarizationLabel.textContent = getSummarizationLevelLabel(level)
   })
 
+  elements.summarizationSlider.addEventListener('change', async () => {
+    const index = Number.parseInt(elements.summarizationSlider.value, 10) || 0
+    const level = sliderIndexToSummarizationLevel(index)
+
+    try {
+      await writeSummarizationLevel(level)
+      showStatus(elements, 'Settings saved.', 'success')
+    } catch (error) {
+      console.error('Failed to save summarization level', error)
+      showStatus(elements, 'Could not save settings. Try again.', 'error')
+    }
+  })
+
   // Handle preprocessing toggle change to enable/disable language dropdown
-  elements.enablePreprocessingToggle.addEventListener('change', () => {
+  elements.enablePreprocessingToggle.addEventListener('change', async () => {
     const isEnabled = elements.enablePreprocessingToggle.checked
     elements.languageSelect.disabled = !isEnabled
+    elements.enablePreprocessingToggle.setAttribute('aria-checked', String(isEnabled))
+
+    try {
+      await writePreprocessingEnabled(isEnabled)
+      showStatus(elements, 'Settings saved.', 'success')
+    } catch (error) {
+      console.error('Failed to save preprocessing setting', error)
+      showStatus(elements, 'Could not save settings. Try again.', 'error')
+    }
   })
 
   elements.manageSubscriptionButton.addEventListener('click', () => {
     try {
-      window.location.href = buildManageSubscriptionUrl()
+      const url = buildManageSubscriptionUrl()
+      console.info('[settings] Navigating to subscription management', { url })
+      window.location.href = url
     } catch (error) {
       console.error('Failed to open subscription management', error)
       showAuthStatus(elements, 'Unable to open subscription management. Try again later.', 'error')
     }
   })
 
-  elements.form.addEventListener('submit', async (event) => {
-    event.preventDefault()
-
-    // Get preprocessing enabled state
-    const preprocessingEnabled = elements.enablePreprocessingToggle.checked
-
-    // Get language from dropdown
+  elements.languageSelect.addEventListener('change', async () => {
     const selectedLanguage = elements.languageSelect.value
     const language: TranslationLanguage = isTranslationLanguage(selectedLanguage) ? selectedLanguage : 'en'
 
-    const sliderIndex = Number.parseInt(elements.summarizationSlider.value, 10) || 0
-    const summarizationLevel: SummarizationLevel = sliderIndexToSummarizationLevel(sliderIndex)
-
     try {
-      await Promise.all([
-        writePreprocessingEnabled(preprocessingEnabled),
-        writeTranslationLanguage(language),
-        writeSummarizationLevel(summarizationLevel)
-      ])
+      await writeTranslationLanguage(language)
       showStatus(elements, 'Settings saved.', 'success')
-    } catch (error: unknown) {
-      console.error('Failed to save settings', error)
+    } catch (error) {
+      console.error('Failed to save translation language', error)
       showStatus(elements, 'Could not save settings. Try again.', 'error')
     }
   })

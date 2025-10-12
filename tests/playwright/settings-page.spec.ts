@@ -10,29 +10,26 @@ test.describe('Sprint Reader - Settings Page', () => {
     // 2. Modify some settings
     const enableTranslationCheckbox = page.locator('#enableTranslation');
     await enableTranslationCheckbox.check();
+    const statusMessage = page.locator('#settingsStatus');
+    await expect(statusMessage).toHaveText('Settings saved.');
 
     const targetLanguageSelect = page.locator('#targetLanguage');
     await targetLanguageSelect.selectOption('fr');
+    await expect(statusMessage).toHaveText('Settings saved.');
 
     const summarizationSlider = page.locator('#summarizationLevel');
     await summarizationSlider.evaluate((el, value) => {
       const input = el as HTMLInputElement;
       input.value = String(value);
       input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
     }, 2);
 
-
-    // 3. Click the "Save" button
-    const saveButton = page.locator('#saveSettings');
-    await saveButton.click();
-
-    // Wait for the status message to appear and disappear
-    const statusMessage = page.locator('#settingsStatus');
-    await expect(statusMessage).toBeVisible();
     await expect(statusMessage).toHaveText('Settings saved.');
     await expect(statusMessage).toBeHidden({ timeout: 5000 });
 
-    // 4. Validate that the settings were actually saved
+
+    // Validate that the settings were actually saved
     const savedSettings = await background.evaluate(() => {
       return new Promise((resolve) => {
         chrome.storage.local.get([

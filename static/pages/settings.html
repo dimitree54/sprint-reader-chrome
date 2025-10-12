@@ -70,14 +70,21 @@
         </header>
         <form id="settingsForm" class="settings__form" novalidate>
 
-          <label class="settings__field settings__field--checkbox" for="enableTranslation">
-            <input
-              id="enableTranslation"
-              name="enableTranslation"
-              type="checkbox"
-              class="settings__checkbox"
-            />
+          <label class="settings__field settings__field--toggle" for="enableTranslation">
             <span class="settings__field-label">Enable translation</span>
+            <span class="settings__toggle">
+              <input
+                id="enableTranslation"
+                name="enableTranslation"
+                type="checkbox"
+                class="settings__toggle-input"
+                role="switch"
+                aria-checked="false"
+              />
+              <span class="settings__toggle-track" aria-hidden="true">
+                <span class="settings__toggle-thumb"></span>
+              </span>
+            </span>
           </label>
           <label class="settings__field" for="targetLanguage">
             <span class="settings__field-label">Target language</span>
@@ -117,9 +124,6 @@
             <span id="summarizationLabel" class="settings__slider-value" aria-live="polite"></span>
           </label>
           <p class="settings__hint">Adjust how much the AI condenses text while translating. No summarization keeps content verbatim, moderate halves each paragraph, significant extracts only key takeaways.</p>
-          <div class="settings__actions">
-            <button type="submit" id="saveSettings" class="settings__button settings__button--primary">Save changes</button>
-          </div>
           <p id="settingsStatus" class="settings__status" role="status" aria-live="polite" hidden></p>
         </form>
       </section>

@@ -114,6 +114,12 @@ body.settings--light {
   gap: 12px;
 }
 
+.settings__field--toggle {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .settings__field--checkbox {
   flex-direction: row;
   align-items: center;
@@ -141,6 +147,66 @@ body.settings--light {
   height: 18px;
   accent-color: #8b5cf6;
   cursor: pointer;
+}
+
+.settings__toggle {
+  position: relative;
+  width: 54px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.settings__toggle-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.settings__toggle-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 4px;
+  transition: background 0.24s ease, box-shadow 0.24s ease;
+}
+
+.settings__toggle-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  transform: translateX(0);
+  transition: transform 0.24s ease, background 0.24s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.settings__toggle-input:focus-visible + .settings__toggle-track {
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.35);
+}
+
+.settings__toggle-input:checked + .settings__toggle-track {
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+}
+
+.settings__toggle-input:checked + .settings__toggle-track .settings__toggle-thumb {
+  transform: translateX(22px);
+}
+
+body.settings--light .settings__toggle-track {
+  background: rgba(74, 0, 224, 0.18);
+}
+
+body.settings--light .settings__toggle-input:checked + .settings__toggle-track {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
 }
 
 body.settings--light .settings__text-input,
@@ -482,6 +548,10 @@ body.settings--light .settings__theme-switch-input:checked + .settings__theme-sw
 
   .settings__card {
     padding: 24px;
+  }
+
+  .settings__field--slider {
+    padding: 0 20px;
   }
 
   .settings__header {
