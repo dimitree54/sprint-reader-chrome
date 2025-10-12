@@ -318,6 +318,58 @@ async function fetchAuthStatus() {
       });
 }
 
+async function requestManageSubscriptionUrl(returnUrl) {
+  const api = getExtensionApi();
+  if (!api || !api.runtime || typeof api.runtime.sendMessage !== 'function') {
+    throw new Error('Extension messaging API is unavailable');
+  }
+
+  const message = {
+    target: 'background',
+    type: 'resolveManageSubscriptionUrl',
+    returnUrl
+  };
+
+  const result = api.runtime.sendMessage(message);
+
+  let response;
+
+  if (result && typeof result.then === 'function') {
+    response = await result;
+  } else {
+    response = await new Promise((resolve, reject) => {
+      try {
+        api.runtime.sendMessage(message, (value) => {
+          const runtime = api.runtime ?? (typeof chrome !== 'undefined' ? chrome.runtime : undefined);
+          if (runtime && runtime.lastError && runtime.lastError.message) {
+            reject(new Error(runtime.lastError.message));
+            return;
+          }
+          resolve(value);
+        });
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error(String(error)));
+      }
+    });
+  }
+
+  if (!response || typeof response !== 'object') {
+    throw new Error('Background did not provide subscription details');
+  }
+
+  const { manageSubscriptionUrl, error } = response;
+
+  if (typeof error === 'string' && error.trim().length > 0) {
+    throw new Error(error);
+  }
+
+  if (typeof manageSubscriptionUrl !== 'string' || manageSubscriptionUrl.trim().length === 0) {
+    throw new Error('Background returned an invalid subscription URL');
+  }
+
+  return manageSubscriptionUrl;
+}
+
 function resetCtaButtonState(signInButton, continueButton) {
   if (!signInButton.dataset.defaultText) {
     signInButton.dataset.defaultText = signInButton.textContent || '';
@@ -410,10 +462,6 @@ async function configureCtaButtons() {
     const subscriptionStatus = typeof authStatus.subscriptionStatus === 'string'
       ? authStatus.subscriptionStatus
       : null;
-    const planSelectionUrl = typeof authStatus.planSelectionUrl === 'string' && authStatus.planSelectionUrl.trim().length > 0
-      ? authStatus.planSelectionUrl
-      : null;
-
     if (!isAuthenticated) {
       registerHandler(signInButton, () => {
         triggerRegistrationFlow().catch((registerError) => {
@@ -421,14 +469,17 @@ async function configureCtaButtons() {
         });
       });
     } else if (subscriptionStatus !== 'pro') {
-      if (!planSelectionUrl) {
-        throw new Error('Plan selection URL is missing for authenticated non-pro user');
-      }
-
       registerHandler(signInButton, () => {
-        openPlanSelectionPage(planSelectionUrl).catch((upgradeError) => {
-          console.error('Failed to open plan selection page:', upgradeError);
-        });
+        const returnUrl = window.location.origin;
+        requestManageSubscriptionUrl(returnUrl)
+          .then((url) => {
+            openPlanSelectionPage(url).catch((upgradeError) => {
+              console.error('Failed to open plan selection page:', upgradeError);
+            });
+          })
+          .catch((upgradeError) => {
+            console.error('Failed to resolve plan selection URL:', upgradeError);
+          });
       });
     } else {
       signInButton.textContent = 'Start 10x reading (close this window)';

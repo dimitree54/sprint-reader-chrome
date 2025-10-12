@@ -43,6 +43,11 @@ export type BackgroundMessage =
   | {
       target: 'background';
       type: 'getAuthStatus';
+    }
+  | {
+      target: 'background';
+      type: 'resolveManageSubscriptionUrl';
+      returnUrl?: string;
     };
 
 export type ReaderMessage =
@@ -73,6 +78,10 @@ export type BackgroundResponse =
         subscriptionStatus: 'pro' | 'free' | null;
         planSelectionUrl: string | null;
       };
+      error?: string;
+    }
+  | {
+      manageSubscriptionUrl: string;
       error?: string;
     };
 

@@ -251,14 +251,58 @@ async function loadInitialState (elements: SettingsElements): Promise<void> {
   await loadAuthState(elements)
 }
 
-function buildManageSubscriptionUrl (): string {
-  const rawDomain = process.env.VITE_KINDE_DOMAIN || ''
-  const orgCode = process.env.VITE_KINDE_ORG_CODE || ''
+async function requestManageSubscriptionUrl (returnUrl: string): Promise<string> {
+  const globalApi = globalThis as typeof globalThis & { browser?: typeof chrome; chrome?: typeof chrome }
+  const api = globalApi.browser ?? globalApi.chrome ?? null
 
-  if (!rawDomain.trim()) throw new Error('VITE_KINDE_DOMAIN is not set')
-  if (!orgCode.trim()) throw new Error('VITE_KINDE_ORG_CODE is not set')
+  if (!api || !api.runtime || typeof api.runtime.sendMessage !== 'function') {
+    throw new Error('Extension messaging API is unavailable')
+  }
 
-  return `https://${rawDomain}/account/cx/_:nav&m:account::_:submenu&s:plan_selection&org_code:${orgCode}`
+  const message = {
+    target: 'background' as const,
+    type: 'resolveManageSubscriptionUrl' as const,
+    returnUrl
+  }
+
+  const deferredResult = api.runtime.sendMessage(message)
+
+  let response: unknown
+
+  if (deferredResult && typeof (deferredResult as Promise<unknown>).then === 'function') {
+    response = await (deferredResult as Promise<unknown>)
+  } else {
+    response = await new Promise((resolve, reject) => {
+      try {
+        api.runtime.sendMessage(message, (result: unknown) => {
+          const runtime = api.runtime ?? (globalApi.chrome?.runtime ?? undefined)
+          if (runtime && runtime.lastError && runtime.lastError.message) {
+            reject(new Error(runtime.lastError.message))
+            return
+          }
+          resolve(result)
+        })
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error(String(error)))
+      }
+    })
+  }
+
+  if (!response || typeof response !== 'object') {
+    throw new Error('Background did not return subscription details')
+  }
+
+  const { manageSubscriptionUrl, error } = response as { manageSubscriptionUrl?: unknown; error?: unknown }
+
+  if (typeof error === 'string' && error.trim().length > 0) {
+    throw new Error(error)
+  }
+
+  if (typeof manageSubscriptionUrl !== 'string' || manageSubscriptionUrl.trim().length === 0) {
+    throw new Error('Background returned an invalid subscription URL')
+  }
+
+  return manageSubscriptionUrl
 }
 
 function resolvePrivacyPolicyUrl (): string {
@@ -317,14 +361,23 @@ function registerEvents (elements: SettingsElements): void {
     }
   })
 
-  elements.manageSubscriptionButton.addEventListener('click', () => {
+  elements.manageSubscriptionButton.addEventListener('click', async () => {
+    if (elements.manageSubscriptionButton.disabled) {
+      return
+    }
+
+    elements.manageSubscriptionButton.disabled = true
+
     try {
-      const url = buildManageSubscriptionUrl()
+      const returnUrl = window.location.origin
+      const url = await requestManageSubscriptionUrl(returnUrl)
       console.info('[settings] Navigating to subscription management', { url })
       window.location.href = url
     } catch (error) {
       console.error('Failed to open subscription management', error)
       showAuthStatus(elements, 'Unable to open subscription management. Try again later.', 'error')
+    } finally {
+      elements.manageSubscriptionButton.disabled = false
     }
   })
 

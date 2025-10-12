@@ -12,7 +12,10 @@ import {
 } from './preferences'
 import { authService } from '../auth'
 import { storageService } from '../core/storage.service'
-import { getAuthConfig } from '../auth/config/auth.config'
+import {
+  buildManageSubscriptionUrl,
+  resolveManageSubscriptionUrl
+} from '../auth/manage-subscription'
 
 export async function primeBackgroundState (): Promise<void> {
   await ensurePreferencesLoaded()
@@ -102,20 +105,12 @@ export async function handleBackgroundMessage (
         let planSelectionUrl: string | null = null
 
         if (isAuthenticated && subscriptionStatus !== 'pro') {
-          const config = getAuthConfig()
-          const domain = config.kinde.domain
-          const orgCode = config.kinde.orgCode
-
-          if (!domain) {
-            throw new Error('VITE_KINDE_DOMAIN is not set')
+          try {
+            planSelectionUrl = buildManageSubscriptionUrl()
+          } catch (urlError) {
+            console.error('Failed to build manage subscription URL:', urlError)
+            planSelectionUrl = null
           }
-
-          if (!orgCode) {
-            throw new Error('VITE_KINDE_ORG_CODE is not set')
-          }
-
-          const base = domain.replace(/\/$/, '')
-          planSelectionUrl = `${base}/account/cx/_:nav&m:account::_:submenu&s:plan_selection&org_code:${orgCode}`
         }
 
         sendResponse({
@@ -134,6 +129,19 @@ export async function handleBackgroundMessage (
           error: message
         })
       }
+
+      return true
+    }
+    case 'resolveManageSubscriptionUrl': {
+      resolveManageSubscriptionUrl({ returnUrl: message.returnUrl })
+        .then((url) => {
+          sendResponse({ manageSubscriptionUrl: url })
+        })
+        .catch((error) => {
+          const messageText = error instanceof Error ? error.message : 'Unable to open subscription portal'
+          console.error('Failed to resolve manage subscription URL:', error)
+          sendResponse({ manageSubscriptionUrl: '', error: messageText })
+        })
 
       return true
     }
