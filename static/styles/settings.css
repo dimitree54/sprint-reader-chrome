@@ -110,8 +110,14 @@ body.settings--light {
   gap: 8px;
 }
 
+.settings__form .settings__field:not(:first-child) {
+  border-top: 1px solid var(--settings-card-border);
+  padding-top: 16px;
+}
+
 .settings__field--slider {
   gap: 12px;
+  padding: 0 60px;
 }
 
 .settings__field--toggle {
@@ -256,7 +262,7 @@ body.settings--light .settings__checkbox {
   justify-content: space-between;
   font-size: 0.8rem;
   color: var(--settings-muted);
-  margin-top: 8px;
+  margin: 8px -140px 0;
 }
 
 .settings__slider-tick {
@@ -527,6 +533,13 @@ body.settings--light .settings__theme-switch-input:checked + .settings__theme-sw
   font-size: 0.9rem;
 }
 
+.settings__footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
 .settings__footer a {
   color: var(--settings-link-color);
   text-decoration: none;
@@ -534,6 +547,12 @@ body.settings--light .settings__theme-switch-input:checked + .settings__theme-sw
 
 .settings__footer a:hover {
   text-decoration: underline;
+}
+
+.settings__summarization-label-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .settings__footer-note {
@@ -550,9 +569,6 @@ body.settings--light .settings__theme-switch-input:checked + .settings__theme-sw
     padding: 24px;
   }
 
-  .settings__field--slider {
-    padding: 0 20px;
-  }
 
   .settings__header {
     margin-bottom: 24px;

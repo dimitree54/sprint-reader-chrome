@@ -93,9 +93,11 @@
             >
             </select>
           </label>
-          <p class="settings__hint">When "Enable translation" is checked, translation output will use the selected language. Otherwise, translation is disabled.</p>
           <label class="settings__field settings__field--slider" for="summarizationLevel">
-            <span class="settings__field-label">Summarization level</span>
+            <div class="settings__summarization-label-container">
+              <span class="settings__field-label">Summarization level: </span>
+              <span id="summarizationLabel" class="settings__slider-value" aria-live="polite"></span>
+            </div>
             <input
               id="summarizationLevel"
               name="summarizationLevel"
@@ -119,23 +121,29 @@
                 <span class="settings__slider-tick-label">Significant</span>
               </span>
             </div>
-            <span id="summarizationLabel" class="settings__slider-value" aria-live="polite"></span>
           </label>
-          <p class="settings__hint">Adjust how much the AI condenses text while translating. No summarization keeps content verbatim, moderate halves each paragraph, significant extracts only key takeaways.</p>
           <p id="settingsStatus" class="settings__status" role="status" aria-live="polite" hidden></p>
         </form>
       </section>
     </main>
     <footer class="settings__footer">
-      <a
-        id="privacyPolicyLink"
-        class="settings__footer-link"
-        data-privacy-policy-link
-        rel="noreferrer"
-        target="_blank"
-      >Check Privacy Policy</a>
-      <p class="settings__footer-note">Disclaimer: Pre-processing AI can make mistakes. Check important info.</p>
-      <p class="settings__footer-note">Extension provided by "Path2Dream" company registered in Netherlands. Contact info: developer@petprojectcofounder.ai</p>
+      <div class="settings__footer-links">
+        <a
+          id="privacyPolicyLink"
+          class="settings__footer-link"
+          data-privacy-policy-link
+          rel="noreferrer"
+          target="_blank"
+        >Read Privacy Policy</a>
+        <a
+          id="acknowledgementsLink"
+          class="settings__footer-link"
+          rel="noreferrer"
+          target="_blank"
+        >Read acknowledgements and license</a>
+      </div>
+      <p class="settings__footer-note">Pre-processing AI can make mistakes. Check important info.</p>
+        <p class="settings__footer-note">Developed by "Path2Dream". Contact info: ${CONTACT_EMAIL}</p>
     </footer>
     <script type="module" src="../scripts/settings.js"></script>
   </body>

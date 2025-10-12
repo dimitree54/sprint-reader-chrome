@@ -312,6 +312,16 @@ function resolvePrivacyPolicyUrl (): string {
   return url
 }
 
+function resolveAcknowledgementsUrl (): string {
+  const url = process.env.ACKNOWLEDGEMENTS_URL || ''
+
+  if (typeof url !== 'string' || url.trim().length === 0) {
+    throw new Error('ACKNOWLEDGEMENTS_URL is not set')
+  }
+
+  return url
+}
+
 function initializePrivacyPolicyLink (): void {
   const link = document.getElementById('privacyPolicyLink') as HTMLAnchorElement | null
   if (!link) {
@@ -320,7 +330,18 @@ function initializePrivacyPolicyLink (): void {
 
   const url = resolvePrivacyPolicyUrl()
   link.href = url
-  link.textContent = 'Check Privacy Policy'
+  link.textContent = 'Read Privacy Policy'
+}
+
+function initializeAcknowledgementsLink (): void {
+  const link = document.getElementById('acknowledgementsLink') as HTMLAnchorElement | null
+  if (!link) {
+    throw new Error('Acknowledgements link element is missing')
+  }
+
+  const url = resolveAcknowledgementsUrl()
+  link.href = url
+  link.textContent = 'Read acknowledgements and license'
 }
 
 function registerEvents (elements: SettingsElements): void {
@@ -420,6 +441,7 @@ function registerEvents (elements: SettingsElements): void {
 document.addEventListener('DOMContentLoaded', () => {
   applyExtensionName()
   initializePrivacyPolicyLink()
+  initializeAcknowledgementsLink()
   const elements: SettingsElements = {
     form: document.getElementById('settingsForm') as HTMLFormElement,
     enablePreprocessingToggle: document.getElementById('enableTranslation') as HTMLInputElement,

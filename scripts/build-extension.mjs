@@ -7,6 +7,15 @@ import dotenv from 'dotenv';
 // Load environment variables from .env file
 dotenv.config();
 
+const envMapping = {
+  VITE_KINDE_CLIENT_ID: process.env.VITE_KINDE_CLIENT_ID || '',
+  VITE_KINDE_DOMAIN: process.env.VITE_KINDE_DOMAIN || '',
+  VITE_KINDE_REDIRECT_URL: process.env.VITE_KINDE_REDIRECT_URL || '',
+  NODE_ENV: process.env.NODE_ENV || 'development',
+  CONTACT_EMAIL: process.env.CONTACT_EMAIL || '',
+  ACKNOWLEDGEMENTS_URL: process.env.ACKNOWLEDGEMENTS_URL || '',
+};
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
@@ -104,6 +113,33 @@ async function copyDirectory(source, destination) {
   );
 }
 
+async function processAndCopyStaticFiles(source, destination, envMapping) {
+  if (!(await pathExists(source))) {
+    return;
+  }
+
+  await fs.mkdir(destination, { recursive: true });
+  const entries = await fs.readdir(source, { withFileTypes: true });
+  await Promise.all(
+    entries.map(async (entry) => {
+      const sourcePath = path.join(source, entry.name);
+      const destinationPath = path.join(destination, entry.name);
+
+      if (entry.isDirectory()) {
+        await processAndCopyStaticFiles(sourcePath, destinationPath, envMapping);
+      } else if (entry.isFile()) {
+        if (path.extname(entry.name) === '.html') {
+          const content = await fs.readFile(sourcePath, 'utf8');
+          const processedContent = processString(content, envMapping);
+          await fs.writeFile(destinationPath, processedContent, 'utf8');
+        } else {
+          await fs.copyFile(sourcePath, destinationPath);
+        }
+      }
+    }),
+  );
+}
+
 async function writeManifest(browser) {
   const baseManifestPath = path.join(repoRoot, 'config', 'manifest.base.json');
   const overridePath = path.join(repoRoot, 'config', `manifest.${browser}.json`);
@@ -120,50 +156,34 @@ async function writeManifest(browser) {
   manifest = removeNullValues(manifest);
 
   // Inject environment variables into manifest
-  manifest = injectEnvironmentVariables(manifest);
+  manifest = processString(manifest, envMapping);
 
   const distPath = path.join(repoRoot, 'dist', browser);
   await fs.mkdir(distPath, { recursive: true });
   await fs.writeFile(path.join(distPath, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 }
 
-function injectEnvironmentVariables(manifest) {
-  // Deep clone the manifest to avoid modifying the original
-  const processedManifest = JSON.parse(JSON.stringify(manifest));
-
-  // Environment variable substitution mapping
-  const envMapping = {
-    'VITE_KINDE_CLIENT_ID': process.env.VITE_KINDE_CLIENT_ID || '',
-    'VITE_KINDE_DOMAIN': process.env.VITE_KINDE_DOMAIN || '',
-    'VITE_KINDE_REDIRECT_URL': process.env.VITE_KINDE_REDIRECT_URL || '',
-    'NODE_ENV': process.env.NODE_ENV || 'development'
-  };
-
-  // Function to recursively process strings in the manifest
-  function processValue(value) {
-    if (typeof value === 'string') {
-      // Replace ${ENV_VAR} patterns with actual values
-      return value.replace(/\$\{([^}]+)\}/g, (match, envVar) => {
-        if (envVar in envMapping) {
-          return envMapping[envVar];
-        }
-        console.warn(`Warning: Environment variable ${envVar} not found, keeping placeholder`);
-        return match;
-      });
-    } else if (Array.isArray(value)) {
-      return value.map(processValue);
-    } else if (typeof value === 'object' && value !== null) {
-      const result = {};
-      for (const [key, val] of Object.entries(value)) {
-        result[key] = processValue(val);
+function processString(value, envMapping) {
+  if (typeof value === 'string') {
+    return value.replace(/\$\{([^}]+)\}/g, (match, envVar) => {
+      if (envVar in envMapping) {
+        return envMapping[envVar];
       }
-      return result;
+      console.warn(`Warning: Environment variable ${envVar} not found, keeping placeholder`);
+      return match;
+    });
+  } else if (Array.isArray(value)) {
+    return value.map(item => processString(item, envMapping));
+  } else if (isPlainObject(value)) {
+    const result = {};
+    for (const [key, val] of Object.entries(value)) {
+      result[key] = processString(val, envMapping);
     }
-    return value;
+    return result;
   }
-
-  return processValue(processedManifest);
+  return value;
 }
+
 
 async function runBuild(browser) {
   const distDir = path.join(repoRoot, 'dist', browser);
@@ -171,7 +191,7 @@ async function runBuild(browser) {
   await fs.mkdir(distDir, { recursive: true });
 
   await Promise.all([
-    copyDirectory(path.join(repoRoot, 'static', 'pages'), path.join(distDir, 'pages')),
+    processAndCopyStaticFiles(path.join(repoRoot, 'static', 'pages'), path.join(distDir, 'pages'), envMapping),
     copyDirectory(path.join(repoRoot, 'static', 'styles'), path.join(distDir, 'styles')),
     copyDirectory(path.join(repoRoot, 'static', 'assets'), path.join(distDir, 'assets')),
     copyDirectory(path.join(repoRoot, 'static', 'scripts'), path.join(distDir, 'scripts')),
@@ -204,6 +224,7 @@ async function runBuild(browser) {
       'process.env.VITE_KINDE_REDIRECT_URL': JSON.stringify(process.env.VITE_KINDE_REDIRECT_URL || ''),
       'process.env.VITE_DEV_PRO_TOKEN': JSON.stringify(process.env.VITE_DEV_PRO_TOKEN || ''),
       'process.env.PRIVACY_POLICY_URL': JSON.stringify(process.env.PRIVACY_POLICY_URL || ''),
+      'process.env.ACKNOWLEDGEMENTS_URL': JSON.stringify(process.env.ACKNOWLEDGEMENTS_URL || ''),
     },
   });
 
