@@ -166,7 +166,10 @@ function updateAiPreprocessingAccess (elements: PopupElements, isAuthenticated: 
         }
         elements.aiCtaButton.disabled = true
         try {
-          await triggerRegistrationFlow()
+          const result = await authService.login()
+          if (!result.success) {
+            console.error('[popup] Registration flow failed to start', result.error)
+          }
         } catch (error) {
           console.error('Failed to start registration flow', error)
         } finally {
@@ -232,29 +235,6 @@ async function requestManageSubscriptionUrl (returnUrl: string): Promise<string>
   }
 
   return manageSubscriptionUrl
-}
-
-async function triggerRegistrationFlow (): Promise<void> {
-  const message: BackgroundMessage = {
-    target: 'background',
-    type: 'triggerAuthFlow',
-    flow: 'register'
-  }
-  const response = await browserApi.sendMessage(message)
-
-  if (!response || typeof response !== 'object') {
-    throw new Error('Background did not acknowledge authentication trigger')
-  }
-
-  const { authStarted, error } = response as { authStarted?: unknown; error?: unknown }
-
-  if (typeof error === 'string' && error.trim().length > 0) {
-    throw new Error(error)
-  }
-
-  if (authStarted !== true) {
-    throw new Error('Authentication flow did not start')
-  }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

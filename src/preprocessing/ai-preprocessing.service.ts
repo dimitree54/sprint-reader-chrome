@@ -14,12 +14,12 @@ export class AIPreprocessingService {
 
   async isAvailable (): Promise<boolean> {
     const cfg = await preprocessingConfigService.getConfig()
-    return !!cfg.enabled
+    return !preprocessingConfigService.shouldSkipProcessing(cfg)
   }
 
   async translateText (text: string, targetLanguage?: TranslationLanguage): Promise<PreprocessingResult> {
     const cfg = await preprocessingConfigService.getConfig()
-    if (!cfg.enabled) {
+    if (preprocessingConfigService.shouldSkipProcessing(cfg)) {
       return this.manager.process(text, cfg)
     }
     const effective = targetLanguage ? { ...cfg, targetLanguage } : cfg
@@ -28,7 +28,7 @@ export class AIPreprocessingService {
 
   async summarizeText (text: string, level?: SummarizationLevel): Promise<PreprocessingResult> {
     const cfg = await preprocessingConfigService.getConfig()
-    if (!cfg.enabled) {
+    if (preprocessingConfigService.shouldSkipProcessing(cfg)) {
       return this.manager.process(text, cfg)
     }
     const effective = level ? { ...cfg, summarizationLevel: level } : cfg
@@ -43,7 +43,7 @@ export class AIPreprocessingService {
     onToken: (token: string) => Promise<void>
   ): Promise<PreprocessingResult> {
     const cfg = await preprocessingConfigService.getConfig()
-    if (!cfg.enabled) {
+    if (preprocessingConfigService.shouldSkipProcessing(cfg)) {
       return this.manager.process(text, cfg)
     }
     const provider = new OpenAIProvider()

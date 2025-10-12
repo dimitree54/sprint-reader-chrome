@@ -41,6 +41,7 @@ type SettingsElements = {
   summarizationLabel: HTMLElement;
   status: HTMLElement;
   aiCard: HTMLElement;
+  aiBody: HTMLElement;
   aiUpsell: HTMLElement;
   aiUpsellTitle: HTMLElement;
   aiCtaButton: HTMLButtonElement;
@@ -97,6 +98,10 @@ function showAuthStatus (elements: SettingsElements, message: string, variant: '
 }
 
 function renderUserProfile (elements: SettingsElements, user: User): void {
+  console.info('[settings] renderUserProfile', {
+    subscriptionStatus: user.subscriptionStatus,
+    badgeLabel: getSubscriptionBadgeLabel(user.subscriptionStatus)
+  })
   const namePlaceholder = elements.userProfile.querySelector('.js-user-name') as HTMLElement
   const avatarPlaceholder = elements.userProfile.querySelector('.js-user-avatar') as HTMLElement
   const avatarPicturePlaceholder = elements.userProfile.querySelector('.js-user-avatar-picture') as HTMLImageElement
@@ -192,26 +197,84 @@ function setAiControlsDisabled (elements: SettingsElements, disabled: boolean): 
   elements.summarizationSlider.disabled = disabled
 }
 
-function updateAiPreprocessingAccess (elements: SettingsElements, isAuthenticated: boolean, user: User | null): void {
-  const isPro = Boolean(isAuthenticated && user && user.subscriptionStatus === 'pro')
+function normalizeSubscriptionStatus (value: unknown): User['subscriptionStatus'] {
+  if (typeof value !== 'string') {
+    return null
+  }
 
-  setAiControlsDisabled(elements, !isPro)
+  const normalized = value.trim().toLowerCase()
+  if (normalized === 'pro' || normalized === 'free') {
+    return normalized
+  }
+
+  return null
+}
+
+function getBadgeDatasetValue (elements: SettingsElements): User['subscriptionStatus'] {
+  const badge = elements.userProfile.querySelector('.js-user-subscription-status')
+  if (!(badge instanceof HTMLElement)) {
+    return null
+  }
+
+  return normalizeSubscriptionStatus(badge.dataset.status)
+}
+
+function resolveSubscriptionStatus (elements: SettingsElements, user: User | null): User['subscriptionStatus'] {
+  const datasetStatus = getBadgeDatasetValue(elements)
+
+  if (datasetStatus) {
+    return datasetStatus
+  }
+
+  return normalizeSubscriptionStatus(user?.subscriptionStatus)
+}
+
+function updateAiPreprocessingAccess (elements: SettingsElements, isAuthenticated: boolean, user: User | null): void {
+  const subscriptionStatus = resolveSubscriptionStatus(elements, user)
+  const badgeLabel = getSubscriptionBadgeLabel(subscriptionStatus)
+  const hasProBadge = subscriptionStatus === 'pro'
+
+  console.info('[settings] updateAiPreprocessingAccess', {
+    isAuthenticated,
+    subscriptionStatus,
+    badgeLabel,
+    hasProBadge,
+    badgeDataset: getBadgeDatasetValue(elements)
+  })
+
+  setAiControlsDisabled(elements, !hasProBadge)
 
   const title = 'You are 2x reader now.'
 
-  if (isPro) {
+  if (hasProBadge) {
     elements.aiCard.classList.remove('settings__card--ai-locked')
+    elements.aiBody.style.filter = ''
+    elements.aiBody.style.opacity = ''
     elements.aiUpsell.hidden = true
     elements.aiUpsell.setAttribute('aria-hidden', 'true')
+    elements.aiUpsell.style.display = 'none'
     elements.aiCtaButton.disabled = false
     elements.aiCtaButton.onclick = null
+    console.info('[settings] updateAiPreprocessingAccess -> unlocked', {
+      cardLocked: elements.aiCard.classList.contains('settings__card--ai-locked'),
+      upsellHidden: elements.aiUpsell.hidden,
+      toggleDisabled: elements.enablePreprocessingToggle.disabled
+    })
   } else {
     elements.aiCard.classList.add('settings__card--ai-locked')
+    elements.aiBody.style.filter = 'blur(6px)'
+    elements.aiBody.style.opacity = '0.35'
     elements.aiUpsell.hidden = false
     elements.aiUpsell.removeAttribute('aria-hidden')
+    elements.aiUpsell.style.display = ''
     elements.aiCtaButton.disabled = false
 
     elements.aiUpsellTitle.innerHTML = title
+    console.info('[settings] updateAiPreprocessingAccess -> locked', {
+      cardLocked: elements.aiCard.classList.contains('settings__card--ai-locked'),
+      upsellHidden: elements.aiUpsell.hidden,
+      toggleDisabled: elements.enablePreprocessingToggle.disabled
+    })
 
     if (!isAuthenticated) {
       elements.aiCtaButton.textContent = 'Become 10x Reader'.toUpperCase()
@@ -221,8 +284,12 @@ function updateAiPreprocessingAccess (elements: SettingsElements, isAuthenticate
         }
         elements.aiCtaButton.disabled = true
         try {
-          await triggerRegistrationFlow()
-          showAuthStatus(elements, 'Opening registration. Complete sign-up in the new tab.', 'success')
+          const result = await authService.login()
+          if (result.success) {
+            showAuthStatus(elements, 'Registration initiated. Complete sign-up in the new tab.', 'success')
+          } else {
+            showAuthStatus(elements, result.error || 'Could not start registration. Try again.', 'error')
+          }
         } catch (error) {
           console.error('Failed to start registration flow', error)
           showAuthStatus(elements, 'Could not start registration. Try again.', 'error')
@@ -254,8 +321,6 @@ function updateAiPreprocessingAccess (elements: SettingsElements, isAuthenticate
 }
 
 function updateAuthUI (elements: SettingsElements, isAuthenticated: boolean, user: User | null): void {
-  updateAiPreprocessingAccess(elements, isAuthenticated, user)
-
   if (isAuthenticated && user) {
     elements.loginButton.hidden = true
     elements.logoutButton.hidden = false
@@ -267,6 +332,8 @@ function updateAuthUI (elements: SettingsElements, isAuthenticated: boolean, use
     hideUserProfile(elements)
     elements.manageSubscriptionButton.hidden = true
   }
+
+  updateAiPreprocessingAccess(elements, isAuthenticated, user)
 }
 
 async function loadAuthState (elements: SettingsElements): Promise<void> {
@@ -280,6 +347,37 @@ async function loadAuthState (elements: SettingsElements): Promise<void> {
   // Subscribe to auth state changes
   authService.subscribe((state) => {
     updateAuthUI(elements, state.isAuthenticated, state.user)
+  })
+}
+
+function registerAuthRefreshHandlers (): void {
+  let isRefreshing = false
+
+  const refreshAuthState = async (): Promise<void> => {
+    if (isRefreshing) {
+      return
+    }
+
+    isRefreshing = true
+    try {
+      await authService.refreshUserData()
+    } catch (error) {
+      console.error('[settings] Failed to refresh auth state after visibility change', error)
+    } finally {
+      isRefreshing = false
+    }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      void refreshAuthState()
+    }
+  })
+
+  window.addEventListener('focus', () => {
+    if (!document.hidden) {
+      void refreshAuthState()
+    }
   })
 }
 
@@ -379,58 +477,6 @@ async function requestManageSubscriptionUrl (returnUrl: string): Promise<string>
   }
 
   return manageSubscriptionUrl
-}
-
-async function triggerRegistrationFlow (): Promise<void> {
-  const globalApi = globalThis as typeof globalThis & { browser?: typeof chrome; chrome?: typeof chrome }
-  const api = globalApi.browser ?? globalApi.chrome ?? null
-
-  if (!api || !api.runtime || typeof api.runtime.sendMessage !== 'function') {
-    throw new Error('Extension messaging API is unavailable')
-  }
-
-  const message = {
-    target: 'background' as const,
-    type: 'triggerAuthFlow' as const,
-    flow: 'register' as const
-  }
-
-  const deferredResult = api.runtime.sendMessage(message)
-
-  let response: unknown
-
-  if (deferredResult && typeof (deferredResult as Promise<unknown>).then === 'function') {
-    response = await (deferredResult as Promise<unknown>)
-  } else {
-    response = await new Promise((resolve, reject) => {
-      try {
-        api.runtime.sendMessage(message, (result: unknown) => {
-          const runtime = api.runtime ?? (globalApi.chrome?.runtime ?? undefined)
-          if (runtime && runtime.lastError && runtime.lastError.message) {
-            reject(new Error(runtime.lastError.message))
-            return
-          }
-          resolve(result)
-        })
-      } catch (error) {
-        reject(error instanceof Error ? error : new Error(String(error)))
-      }
-    })
-  }
-
-  if (!response || typeof response !== 'object') {
-    throw new Error('Background did not acknowledge authentication trigger')
-  }
-
-  const { authStarted, error } = response as { authStarted?: unknown; error?: unknown }
-
-  if (typeof error === 'string' && error.trim().length > 0) {
-    throw new Error(error)
-  }
-
-  if (authStarted !== true) {
-    throw new Error('Authentication flow did not start')
-  }
 }
 
 function resolvePrivacyPolicyUrl (): string {
@@ -592,6 +638,12 @@ document.addEventListener('DOMContentLoaded', () => {
     throw new Error('AI Pre-processing card elements are missing')
   }
 
+  const aiBodyElement = aiCardElement.querySelector('[data-ai-body]')
+
+  if (!(aiBodyElement instanceof HTMLElement)) {
+    throw new Error('AI Pre-processing body element is missing')
+  }
+
   const aiUpsellTitleElement = aiUpsellElement.querySelector('[data-ai-cta-title]')
   const aiCtaButtonElement = aiUpsellElement.querySelector('[data-ai-cta-button]')
 
@@ -607,6 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
     summarizationLabel: document.getElementById('summarizationLabel') as HTMLElement,
     status: document.getElementById('settingsStatus') as HTMLElement,
     aiCard: aiCardElement,
+    aiBody: aiBodyElement,
     aiUpsell: aiUpsellElement,
     aiUpsellTitle: aiUpsellTitleElement,
     aiCtaButton: aiCtaButtonElement,
@@ -625,4 +678,5 @@ document.addEventListener('DOMContentLoaded', () => {
     showStatus(elements, 'Could not load settings.', 'error')
   })
   registerEvents(elements)
+  registerAuthRefreshHandlers()
 })

@@ -27,7 +27,7 @@ export class PreprocessingConfigService {
    * Check if preprocessing should be skipped entirely
    */
   shouldSkipProcessing(config: PreprocessingConfig): boolean {
-    return !config.enabled
+    return !config.enabled && config.summarizationLevel === 'none'
   }
 }
 

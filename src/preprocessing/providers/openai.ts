@@ -1,6 +1,6 @@
 import { buildChatCompletionPayload } from '../../reader/openai-prompt'
 import type { PreprocessingProvider, PreprocessingResult } from './types'
-import type { PreprocessingConfig } from '../config'
+import { preprocessingConfigService, type PreprocessingConfig } from '../config'
 import { authService } from '../../auth'
 import { getAuthState } from '../../auth/state/auth.store'
 
@@ -33,7 +33,7 @@ export class OpenAIProvider implements PreprocessingProvider {
   name = 'openai'
 
   isAvailable(config: PreprocessingConfig): boolean {
-    if (!config.enabled) {
+    if (preprocessingConfigService.shouldSkipProcessing(config)) {
       return false
     }
 
@@ -166,7 +166,7 @@ export class OpenAIProvider implements PreprocessingProvider {
     try {
       timeoutId = setTimeout(() => controller.abort(), 30000)
 
-      const payload = buildChatCompletionPayload(text, config.targetLanguage, config.summarizationLevel)
+      const payload = buildChatCompletionPayload(text, config.targetLanguage, config.summarizationLevel, config.enabled)
 
       const response = await fetch(KINDE_GATED_WORKER_URL, {
         method: 'POST',
@@ -231,7 +231,7 @@ export class OpenAIProvider implements PreprocessingProvider {
     try {
       timeoutId = setTimeout(() => controller.abort(), 30000)
 
-      const payload = buildChatCompletionPayload(text, config.targetLanguage, config.summarizationLevel)
+      const payload = buildChatCompletionPayload(text, config.targetLanguage, config.summarizationLevel, config.enabled)
       const streamingPayload = { ...payload, stream: true }
 
       const response = await fetch(KINDE_GATED_WORKER_URL, {
