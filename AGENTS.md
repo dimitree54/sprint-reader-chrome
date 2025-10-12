@@ -9,8 +9,3 @@ Avoid fallbacks and default behaviours in case of problems - really try to fix p
 Do not keep any legacy code - everything should be up-to-date. Remove all not needed code.
 
 After implementing signinficant changes, make sure to update README.md and docs/*.md - they should always stay up-to-date
-
-After edit checks:
-npm run lint
-npm run typecheck
-npm test
