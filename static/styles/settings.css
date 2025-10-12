@@ -82,6 +82,99 @@ body.settings--light {
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25);
 }
 
+.settings__card + .settings__card {
+  margin-top: 28px;
+}
+
+.settings__card--ai {
+  position: relative;
+  overflow: hidden;
+}
+
+.settings__ai-body {
+  position: relative;
+  transition: filter 0.25s ease, opacity 0.25s ease;
+  z-index: 0;
+}
+
+.settings__card--ai-locked .settings__ai-body {
+  filter: blur(6px);
+  opacity: 0.35;
+  pointer-events: none;
+  user-select: none;
+}
+
+.settings__ai-lock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+  background: rgba(8, 11, 18, 0.6);
+  color: #f5f6f7;
+  backdrop-filter: blur(2px);
+  z-index: 1;
+}
+
+body.settings--light .settings__ai-lock {
+  background: rgba(248, 249, 255, 0.72);
+  color: #161b26;
+}
+
+.settings__ai-lock-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  max-width: 360px;
+}
+
+.settings__ai-lock-title {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.settings__ai-lock-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  color: #ffffff;
+  box-shadow: 0 16px 34px rgba(236, 72, 153, 0.35);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.settings__ai-lock-button:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #7c3aed, #db2777);
+}
+
+body.settings--light .settings__ai-lock-button {
+  color: #ffffff;
+  background: linear-gradient(135deg, #7c3aed, #ec4899);
+}
+
+body.settings--light .settings__ai-lock-button:hover {
+  background: linear-gradient(135deg, #5b21b6, #db2777);
+}
+
 .settings__card-header {
   margin-bottom: 20px;
 }

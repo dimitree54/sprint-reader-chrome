@@ -40,6 +40,10 @@ type SettingsElements = {
   summarizationSlider: HTMLInputElement;
   summarizationLabel: HTMLElement;
   status: HTMLElement;
+  aiCard: HTMLElement;
+  aiUpsell: HTMLElement;
+  aiUpsellTitle: HTMLElement;
+  aiCtaButton: HTMLButtonElement;
   // Authentication elements
   userProfile: HTMLElement;
   loginButton: HTMLButtonElement;
@@ -176,7 +180,83 @@ function hideUserProfile (elements: SettingsElements): void {
   clearUserProfile(elements)
 }
 
+function setAiControlsDisabled (elements: SettingsElements, disabled: boolean): void {
+  elements.enablePreprocessingToggle.disabled = disabled
+  if (disabled) {
+    elements.enablePreprocessingToggle.setAttribute('aria-disabled', 'true')
+  } else {
+    elements.enablePreprocessingToggle.removeAttribute('aria-disabled')
+  }
+
+  elements.languageSelect.disabled = disabled
+  elements.summarizationSlider.disabled = disabled
+}
+
+function updateAiPreprocessingAccess (elements: SettingsElements, isAuthenticated: boolean, user: User | null): void {
+  const isPro = Boolean(isAuthenticated && user && user.subscriptionStatus === 'pro')
+
+  setAiControlsDisabled(elements, !isPro)
+
+  const defaultTitle = 'Become 10x Reader<br />to enable AI Pre-processing'
+  const upgradeTitle = 'Upgrade to 10x Reader<br />to enable AI Pre-processing'
+
+  if (isPro) {
+    elements.aiCard.classList.remove('settings__card--ai-locked')
+    elements.aiUpsell.hidden = true
+    elements.aiUpsell.setAttribute('aria-hidden', 'true')
+    elements.aiCtaButton.disabled = false
+    elements.aiCtaButton.onclick = null
+  } else {
+    elements.aiCard.classList.add('settings__card--ai-locked')
+    elements.aiUpsell.hidden = false
+    elements.aiUpsell.removeAttribute('aria-hidden')
+    elements.aiCtaButton.disabled = false
+
+    if (!isAuthenticated) {
+      elements.aiUpsellTitle.innerHTML = defaultTitle
+      elements.aiCtaButton.textContent = 'Become 10x Reader'
+      elements.aiCtaButton.onclick = async () => {
+        if (elements.aiCtaButton.disabled) {
+          return
+        }
+        elements.aiCtaButton.disabled = true
+        try {
+          await triggerRegistrationFlow()
+          showAuthStatus(elements, 'Opening registration. Complete sign-up in the new tab.', 'success')
+        } catch (error) {
+          console.error('Failed to start registration flow', error)
+          showAuthStatus(elements, 'Could not start registration. Try again.', 'error')
+        } finally {
+          elements.aiCtaButton.disabled = false
+        }
+      }
+    } else {
+      elements.aiUpsellTitle.innerHTML = upgradeTitle
+      elements.aiCtaButton.textContent = 'Manage subscription'
+      elements.aiCtaButton.onclick = async () => {
+        if (elements.aiCtaButton.disabled) {
+          return
+        }
+
+        elements.aiCtaButton.disabled = true
+        try {
+          const returnUrl = window.location.origin
+          const url = await requestManageSubscriptionUrl(returnUrl)
+          window.location.href = url
+        } catch (error) {
+          console.error('Failed to open subscription management from CTA', error)
+          showAuthStatus(elements, 'Unable to open subscription management. Try again later.', 'error')
+        } finally {
+          elements.aiCtaButton.disabled = false
+        }
+      }
+    }
+  }
+}
+
 function updateAuthUI (elements: SettingsElements, isAuthenticated: boolean, user: User | null): void {
+  updateAiPreprocessingAccess(elements, isAuthenticated, user)
+
   if (isAuthenticated && user) {
     elements.loginButton.hidden = true
     elements.logoutButton.hidden = false
@@ -302,6 +382,58 @@ async function requestManageSubscriptionUrl (returnUrl: string): Promise<string>
   return manageSubscriptionUrl
 }
 
+async function triggerRegistrationFlow (): Promise<void> {
+  const globalApi = globalThis as typeof globalThis & { browser?: typeof chrome; chrome?: typeof chrome }
+  const api = globalApi.browser ?? globalApi.chrome ?? null
+
+  if (!api || !api.runtime || typeof api.runtime.sendMessage !== 'function') {
+    throw new Error('Extension messaging API is unavailable')
+  }
+
+  const message = {
+    target: 'background' as const,
+    type: 'triggerAuthFlow' as const,
+    flow: 'register' as const
+  }
+
+  const deferredResult = api.runtime.sendMessage(message)
+
+  let response: unknown
+
+  if (deferredResult && typeof (deferredResult as Promise<unknown>).then === 'function') {
+    response = await (deferredResult as Promise<unknown>)
+  } else {
+    response = await new Promise((resolve, reject) => {
+      try {
+        api.runtime.sendMessage(message, (result: unknown) => {
+          const runtime = api.runtime ?? (globalApi.chrome?.runtime ?? undefined)
+          if (runtime && runtime.lastError && runtime.lastError.message) {
+            reject(new Error(runtime.lastError.message))
+            return
+          }
+          resolve(result)
+        })
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error(String(error)))
+      }
+    })
+  }
+
+  if (!response || typeof response !== 'object') {
+    throw new Error('Background did not acknowledge authentication trigger')
+  }
+
+  const { authStarted, error } = response as { authStarted?: unknown; error?: unknown }
+
+  if (typeof error === 'string' && error.trim().length > 0) {
+    throw new Error(error)
+  }
+
+  if (authStarted !== true) {
+    throw new Error('Authentication flow did not start')
+  }
+}
+
 function resolvePrivacyPolicyUrl (): string {
   const url = process.env.PRIVACY_POLICY_URL || ''
 
@@ -352,6 +484,10 @@ function registerEvents (elements: SettingsElements): void {
   })
 
   elements.summarizationSlider.addEventListener('change', async () => {
+    if (elements.summarizationSlider.disabled) {
+      return
+    }
+
     const index = Number.parseInt(elements.summarizationSlider.value, 10) || 0
     const level = sliderIndexToSummarizationLevel(index)
 
@@ -366,6 +502,10 @@ function registerEvents (elements: SettingsElements): void {
 
   // Handle preprocessing toggle state changes
   elements.enablePreprocessingToggle.addEventListener('change', async () => {
+    if (elements.enablePreprocessingToggle.disabled) {
+      return
+    }
+
     const isEnabled = elements.enablePreprocessingToggle.checked
     elements.enablePreprocessingToggle.setAttribute('aria-checked', String(isEnabled))
 
@@ -399,6 +539,10 @@ function registerEvents (elements: SettingsElements): void {
   })
 
   elements.languageSelect.addEventListener('change', async () => {
+    if (elements.languageSelect.disabled) {
+      return
+    }
+
     const selectedLanguage = elements.languageSelect.value
     const language: TranslationLanguage = isTranslationLanguage(selectedLanguage) ? selectedLanguage : 'en'
 
@@ -442,6 +586,20 @@ document.addEventListener('DOMContentLoaded', () => {
   applyExtensionName()
   initializePrivacyPolicyLink()
   initializeAcknowledgementsLink()
+  const aiCardElement = document.querySelector('[data-ai-card]')
+  const aiUpsellElement = document.querySelector('[data-ai-cta]')
+
+  if (!(aiCardElement instanceof HTMLElement) || !(aiUpsellElement instanceof HTMLElement)) {
+    throw new Error('AI Pre-processing card elements are missing')
+  }
+
+  const aiUpsellTitleElement = aiUpsellElement.querySelector('[data-ai-cta-title]')
+  const aiCtaButtonElement = aiUpsellElement.querySelector('[data-ai-cta-button]')
+
+  if (!(aiUpsellTitleElement instanceof HTMLElement) || !(aiCtaButtonElement instanceof HTMLButtonElement)) {
+    throw new Error('AI Pre-processing CTA elements are missing')
+  }
+
   const elements: SettingsElements = {
     form: document.getElementById('settingsForm') as HTMLFormElement,
     enablePreprocessingToggle: document.getElementById('enableTranslation') as HTMLInputElement,
@@ -449,6 +607,10 @@ document.addEventListener('DOMContentLoaded', () => {
     summarizationSlider: document.getElementById('summarizationLevel') as HTMLInputElement,
     summarizationLabel: document.getElementById('summarizationLabel') as HTMLElement,
     status: document.getElementById('settingsStatus') as HTMLElement,
+    aiCard: aiCardElement,
+    aiUpsell: aiUpsellElement,
+    aiUpsellTitle: aiUpsellTitleElement,
+    aiCtaButton: aiCtaButtonElement,
     // Authentication elements
     userProfile: document.getElementById('userProfile') as HTMLElement,
     loginButton: document.getElementById('loginButton') as HTMLButtonElement,
@@ -456,6 +618,8 @@ document.addEventListener('DOMContentLoaded', () => {
     manageSubscriptionButton: document.getElementById('manageSubscription') as HTMLButtonElement,
     authStatus: document.getElementById('authStatus') as HTMLElement
   }
+
+  updateAiPreprocessingAccess(elements, false, null)
 
   loadInitialState(elements).catch((error: unknown) => {
     console.error('Failed to initialize settings page', error)

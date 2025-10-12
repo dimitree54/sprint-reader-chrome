@@ -62,11 +62,12 @@
         </div>
       </section>
 
-      <section class="settings__card">
+      <section class="settings__card settings__card--ai" data-ai-card>
         <header class="settings__card-header">
           <h2 class="settings__card-title">AI Pre-processing</h2>
         </header>
-        <form id="settingsForm" class="settings__form" novalidate>
+        <div class="settings__ai-body" data-ai-body>
+          <form id="settingsForm" class="settings__form" novalidate>
 
           <label class="settings__field settings__field--toggle" for="enableTranslation">
             <span class="settings__field-label">Enable translation</span>
@@ -123,7 +124,25 @@
             </div>
           </label>
           <p id="settingsStatus" class="settings__status" role="status" aria-live="polite" hidden></p>
-        </form>
+          </form>
+        </div>
+        <div
+          id="aiPreprocessingUpsell"
+          class="settings__ai-lock"
+          data-ai-cta
+          hidden
+        >
+          <div class="settings__ai-lock-content">
+            <p class="settings__ai-lock-title" data-ai-cta-title>Become 10x Reader<br />to enable AI Pre-processing</p>
+            <button
+              type="button"
+              class="settings__ai-lock-button"
+              data-ai-cta-button
+            >
+              Become 10x Reader
+            </button>
+          </div>
+        </div>
       </section>
     </main>
     <footer class="settings__footer">

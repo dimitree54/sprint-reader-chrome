@@ -181,6 +181,7 @@ The reader implementation follows a modular architecture with clear separation o
 * Applies the persisted reader theme so the experience matches the active light or dark mode.
 * Manages Kinde authentication, allowing users to sign in, sign out, and jump to Kinde billing via the dedicated **Manage subscription** button; the button now calls the shared background helper that primes the Kinde portal through `/account_api/v1/portal_link` before redirecting so cookies are in place for the plan-selection page.
 * Displays user profile information and subscription status with status-specific badges ("10x Reader" for pro plans, "2x Reader" for free plans).
+* Blurs AI pre-processing controls and overlays a centered "Become 10x Reader" CTA until the authenticated user has an active pro subscription; the button routes guests to registration and free users to subscription management so upgrade paths stay explicit without silent fallbacks.
 * Surfaces compliance details in the footer: the privacy policy link resolves from `PRIVACY_POLICY_URL` at build time, followed by mandatory disclaimers and company contact information.
 * Loads preferred translation language and summarisation level from storage, lets users update or clear them, and surfaces inline success or error feedback; every control auto-saves as soon as it changes, while reading speed adjustments now live directly in the reader UI.
 

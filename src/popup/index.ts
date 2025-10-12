@@ -25,7 +25,6 @@ const THEME_OPTIONS = {
 type PopupElements = {
   inputText: HTMLInputElement;
   speedReadButton: HTMLButtonElement;
-  menuEntryTextSpan: HTMLSpanElement;
   settingsButton: HTMLButtonElement;
   enablePreprocessingToggle: HTMLInputElement;
   summarizationSlider: HTMLInputElement;
@@ -63,19 +62,7 @@ async function sendOpenReaderMessage (selectionText: string) {
   await browserApi.sendMessage(message)
 }
 
-async function loadMenuEntryText (elements: PopupElements) {
-  try {
-    const response = await browserApi.sendMessage({
-      target: 'background',
-      type: 'getMenuEntryText'
-    } satisfies BackgroundMessage) as BackgroundResponse
-    if (response && 'menuEntryText' in response) {
-      elements.menuEntryTextSpan.textContent = response.menuEntryText
-    }
-  } catch (error) {
-    console.warn('Failed to load menu entry text:', error)
-  }
-}
+
 
 async function registerEvents (elements: PopupElements) {
   function updateButtonState () {
@@ -145,7 +132,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const elements: PopupElements = {
     inputText: document.getElementById('inputTextToRead') as HTMLInputElement,
     speedReadButton: document.getElementById('speedReadButton') as HTMLButtonElement,
-    menuEntryTextSpan: document.getElementById('menuEntryText') as HTMLSpanElement,
     settingsButton: document.getElementById('openSettings') as HTMLButtonElement,
     enablePreprocessingToggle: document.getElementById('popupEnableTranslation') as HTMLInputElement,
     summarizationSlider: document.getElementById('popupSummarizationLevel') as HTMLInputElement,
@@ -153,6 +139,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   await loadPreferences(elements)
-  await loadMenuEntryText(elements)
   await registerEvents(elements)
 })
