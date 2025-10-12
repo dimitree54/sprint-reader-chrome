@@ -41,7 +41,6 @@ type SettingsElements = {
   summarizationLabel: HTMLElement;
   status: HTMLElement;
   aiCard: HTMLElement;
-  aiBody: HTMLElement;
   aiUpsell: HTMLElement;
   aiUpsellTitle: HTMLElement;
   aiCtaButton: HTMLButtonElement;
@@ -98,10 +97,6 @@ function showAuthStatus (elements: SettingsElements, message: string, variant: '
 }
 
 function renderUserProfile (elements: SettingsElements, user: User): void {
-  console.info('[settings] renderUserProfile', {
-    subscriptionStatus: user.subscriptionStatus,
-    badgeLabel: getSubscriptionBadgeLabel(user.subscriptionStatus)
-  })
   const namePlaceholder = elements.userProfile.querySelector('.js-user-name') as HTMLElement
   const avatarPlaceholder = elements.userProfile.querySelector('.js-user-avatar') as HTMLElement
   const avatarPicturePlaceholder = elements.userProfile.querySelector('.js-user-avatar-picture') as HTMLImageElement
@@ -234,47 +229,25 @@ function updateAiPreprocessingAccess (elements: SettingsElements, isAuthenticate
   const badgeLabel = getSubscriptionBadgeLabel(subscriptionStatus)
   const hasProBadge = subscriptionStatus === 'pro'
 
-  console.info('[settings] updateAiPreprocessingAccess', {
-    isAuthenticated,
-    subscriptionStatus,
-    badgeLabel,
-    hasProBadge,
-    badgeDataset: getBadgeDatasetValue(elements)
-  })
-
   setAiControlsDisabled(elements, !hasProBadge)
 
   const title = 'You are 2x reader now.'
 
   if (hasProBadge) {
     elements.aiCard.classList.remove('settings__card--ai-locked')
-    elements.aiBody.style.filter = ''
-    elements.aiBody.style.opacity = ''
     elements.aiUpsell.hidden = true
     elements.aiUpsell.setAttribute('aria-hidden', 'true')
     elements.aiUpsell.style.display = 'none'
     elements.aiCtaButton.disabled = false
     elements.aiCtaButton.onclick = null
-    console.info('[settings] updateAiPreprocessingAccess -> unlocked', {
-      cardLocked: elements.aiCard.classList.contains('settings__card--ai-locked'),
-      upsellHidden: elements.aiUpsell.hidden,
-      toggleDisabled: elements.enablePreprocessingToggle.disabled
-    })
   } else {
     elements.aiCard.classList.add('settings__card--ai-locked')
-    elements.aiBody.style.filter = 'blur(6px)'
-    elements.aiBody.style.opacity = '0.35'
     elements.aiUpsell.hidden = false
     elements.aiUpsell.removeAttribute('aria-hidden')
     elements.aiUpsell.style.display = ''
     elements.aiCtaButton.disabled = false
 
     elements.aiUpsellTitle.innerHTML = title
-    console.info('[settings] updateAiPreprocessingAccess -> locked', {
-      cardLocked: elements.aiCard.classList.contains('settings__card--ai-locked'),
-      upsellHidden: elements.aiUpsell.hidden,
-      toggleDisabled: elements.enablePreprocessingToggle.disabled
-    })
 
     if (!isAuthenticated) {
       elements.aiCtaButton.textContent = 'Become 10x Reader'.toUpperCase()
@@ -638,12 +611,6 @@ document.addEventListener('DOMContentLoaded', () => {
     throw new Error('AI Pre-processing card elements are missing')
   }
 
-  const aiBodyElement = aiCardElement.querySelector('[data-ai-body]')
-
-  if (!(aiBodyElement instanceof HTMLElement)) {
-    throw new Error('AI Pre-processing body element is missing')
-  }
-
   const aiUpsellTitleElement = aiUpsellElement.querySelector('[data-ai-cta-title]')
   const aiCtaButtonElement = aiUpsellElement.querySelector('[data-ai-cta-button]')
 
@@ -659,7 +626,6 @@ document.addEventListener('DOMContentLoaded', () => {
     summarizationLabel: document.getElementById('summarizationLabel') as HTMLElement,
     status: document.getElementById('settingsStatus') as HTMLElement,
     aiCard: aiCardElement,
-    aiBody: aiBodyElement,
     aiUpsell: aiUpsellElement,
     aiUpsellTitle: aiUpsellTitleElement,
     aiCtaButton: aiCtaButtonElement,
