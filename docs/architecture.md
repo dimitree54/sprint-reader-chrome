@@ -235,6 +235,7 @@ The extension uses Kinde for authentication, enabling access to premium AI-power
 7.  The provider exchanges the code for an access token by calling Kinde's token endpoint.
 8.  The user profile and token are stored securely in `chrome.storage.local`.
 9.  The `useAuthStore` is updated, and the UI reacts to show the authenticated state.
+10. The welcome onboarding page listens to `chrome.storage.onChanged`, so its CTAs update automatically when the cached auth snapshot changes.
 
 ### 7.3 State Management
 - The `AuthService` initializes on browser startup, checking for a valid session in storage and updating the `useAuthStore` accordingly.

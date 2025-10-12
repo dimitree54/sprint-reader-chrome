@@ -1,11 +1,15 @@
 'use strict';
 
 const STORAGE_KEY = 'sprintReader.readerPrefs';
+const AUTH_USER_STORAGE_KEY = 'sprintReader.auth.user';
 const THEME_CLASSES = {
   light: 'info--light',
   dark: 'info--dark'
 };
 const THEME_DATA_ATTRIBUTE = 'theme';
+let teardownCtaHandlers = null;
+let isConfiguringCtas = false;
+let needsCtaRefresh = false;
 
 function getExtensionApi() {
   if (typeof browser !== 'undefined') {
@@ -314,6 +318,17 @@ async function fetchAuthStatus() {
       });
 }
 
+function resetCtaButtonState(signInButton, continueButton) {
+  if (!signInButton.dataset.defaultText) {
+    signInButton.dataset.defaultText = signInButton.textContent || '';
+  }
+
+  signInButton.textContent = signInButton.dataset.defaultText || '';
+  if (continueButton) {
+    continueButton.hidden = false;
+  }
+}
+
 async function openPlanSelectionPage(url) {
   if (typeof url !== 'string' || url.trim().length === 0) {
     throw new Error('Invalid plan selection URL');
@@ -354,64 +369,138 @@ async function configureCtaButtons() {
   }
 
   const continueButton = document.getElementById('ctaContinue');
+
+  if (typeof teardownCtaHandlers === 'function') {
+    teardownCtaHandlers();
+    teardownCtaHandlers = null;
+  }
+
+  resetCtaButtonState(signInButton, continueButton || null);
+
+  const cleanupFns = [];
+  const registerHandler = (element, handler) => {
+    element.addEventListener('click', handler);
+    cleanupFns.push(() => {
+      element.removeEventListener('click', handler);
+    });
+  };
+
   if (continueButton) {
-    continueButton.addEventListener('click', () => {
+    registerHandler(continueButton, () => {
       window.close();
     });
   }
 
-  const response = await fetchAuthStatus();
-  if (!response || typeof response !== 'object' || !('authStatus' in response)) {
-    throw new Error('Background did not return authStatus');
-  }
+  try {
+    const response = await fetchAuthStatus();
+    if (!response || typeof response !== 'object' || !('authStatus' in response)) {
+      throw new Error('Background did not return authStatus');
+    }
 
-  const { authStatus, error } = response;
-  if (!authStatus || typeof authStatus !== 'object') {
-    throw new Error('Invalid authStatus payload');
-  }
+    const { authStatus, error } = response;
+    if (!authStatus || typeof authStatus !== 'object') {
+      throw new Error('Invalid authStatus payload');
+    }
 
-  if (typeof error === 'string' && error.trim().length > 0) {
-    console.error('Background reported auth status error:', error);
-  }
+    if (typeof error === 'string' && error.trim().length > 0) {
+      console.error('Background reported auth status error:', error);
+    }
 
-  const isAuthenticated = authStatus.isAuthenticated === true;
-  const subscriptionStatus = typeof authStatus.subscriptionStatus === 'string'
-    ? authStatus.subscriptionStatus
-    : null;
-  const planSelectionUrl = typeof authStatus.planSelectionUrl === 'string' && authStatus.planSelectionUrl.trim().length > 0
-    ? authStatus.planSelectionUrl
-    : null;
+    const isAuthenticated = authStatus.isAuthenticated === true;
+    const subscriptionStatus = typeof authStatus.subscriptionStatus === 'string'
+      ? authStatus.subscriptionStatus
+      : null;
+    const planSelectionUrl = typeof authStatus.planSelectionUrl === 'string' && authStatus.planSelectionUrl.trim().length > 0
+      ? authStatus.planSelectionUrl
+      : null;
 
-  if (!isAuthenticated) {
-    signInButton.addEventListener('click', () => {
+    if (!isAuthenticated) {
+      registerHandler(signInButton, () => {
+        triggerRegistrationFlow().catch((registerError) => {
+          console.error('Unable to start registration flow:', registerError);
+        });
+      });
+    } else if (subscriptionStatus !== 'pro') {
+      if (!planSelectionUrl) {
+        throw new Error('Plan selection URL is missing for authenticated non-pro user');
+      }
+
+      registerHandler(signInButton, () => {
+        openPlanSelectionPage(planSelectionUrl).catch((upgradeError) => {
+          console.error('Failed to open plan selection page:', upgradeError);
+        });
+      });
+    } else {
+      signInButton.textContent = 'Start 10x reading (close this window)';
+      registerHandler(signInButton, () => {
+        window.close();
+      });
+
+      if (continueButton) {
+        continueButton.hidden = true;
+      }
+    }
+  } catch (error) {
+    registerHandler(signInButton, () => {
       triggerRegistrationFlow().catch((registerError) => {
         console.error('Unable to start registration flow:', registerError);
       });
     });
+    teardownCtaHandlers = () => {
+      cleanupFns.forEach((fn) => fn());
+    };
+    throw error;
+  }
+
+  teardownCtaHandlers = () => {
+    cleanupFns.forEach((fn) => fn());
+  };
+}
+
+async function refreshCtaButtons() {
+  if (isConfiguringCtas) {
+    needsCtaRefresh = true;
     return;
   }
 
-  if (subscriptionStatus !== 'pro') {
-    if (!planSelectionUrl) {
-      throw new Error('Plan selection URL is missing for authenticated non-pro user');
+  isConfiguringCtas = true;
+
+  do {
+    needsCtaRefresh = false;
+    try {
+      await configureCtaButtons();
+    } catch (error) {
+      console.error('CTA initialisation failed:', error);
+    }
+  } while (needsCtaRefresh);
+
+  isConfiguringCtas = false;
+}
+
+function subscribeToAuthStatusChanges() {
+  const api = getExtensionApi();
+  const storage = api?.storage;
+  const onChanged = storage?.onChanged;
+
+  if (!api || !storage || !onChanged || typeof onChanged.addListener !== 'function') {
+    return;
+  }
+
+  const listener = (changes, areaName) => {
+    if (areaName !== 'local' || typeof changes !== 'object' || changes === null) {
+      return;
     }
 
-    signInButton.addEventListener('click', () => {
-      openPlanSelectionPage(planSelectionUrl).catch((upgradeError) => {
-        console.error('Failed to open plan selection page:', upgradeError);
-      });
+    if (!(AUTH_USER_STORAGE_KEY in changes)) {
+      return;
+    }
+
+    refreshCtaButtons().catch((error) => {
+      console.error('CTA refresh failed after auth change:', error);
     });
-    return;
-  }
+  };
 
-  signInButton.textContent = 'Start 10x reading (close this window)';
-  signInButton.addEventListener('click', () => {
-    window.close();
-  });
-
-  if (continueButton) {
-    continueButton.hidden = true;
-  }
+  onChanged.addListener(listener);
 }
 
 async function initialiseTheme() {
@@ -441,8 +530,6 @@ document.addEventListener('DOMContentLoaded', () => {
     throw error;
   });
   setupCopyButtons();
-  configureCtaButtons().catch((error) => {
-    console.error('CTA initialisation failed:', error);
-    throw error;
-  });
+  subscribeToAuthStatusChanges();
+  refreshCtaButtons();
 });

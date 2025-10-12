@@ -6,7 +6,7 @@
 
 Simply select text on a webpage, right-click and select `10x your reading speed - read selected text` from the menu. This launches the reader window where selected text is displayed word-by-word in a fixed focal position. The duration of each slide is calculated based on your word-per-minute (WPM) setting.
 
-Prefer to paste something manually? Click the extension icon, drop your text into the popup, and then press **Speed read it** to open the reader with that content. Use the gear icon in the popup or reader to manage your Kinde account. The welcome onboarding CTA now mirrors your account state: guests launch the registration-first flow, authenticated free users jump straight to Kinde’s plan-selection page, and pro users get a quick "Start 10x reading" button that closes the window so they can get back to reading faster.
+Prefer to paste something manually? Click the extension icon, drop your text into the popup, and then press **Speed read it** to open the reader with that content. Use the gear icon in the popup or reader to manage your Kinde account. The welcome onboarding CTA now mirrors your account state in real time: guests launch the registration-first flow, authenticated free users jump straight to Kinde’s plan-selection page, and pro users get a quick "Start 10x reading" button that closes the window so they can get back to reading faster.
 
 **New in 3.1.0**: AI-powered features are now available to authenticated users. Sign in to get access to translation and summarization, powered by a Kinde-gated backend.
 
