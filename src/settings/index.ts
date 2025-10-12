@@ -197,8 +197,7 @@ function updateAiPreprocessingAccess (elements: SettingsElements, isAuthenticate
 
   setAiControlsDisabled(elements, !isPro)
 
-  const defaultTitle = 'Become 10x Reader<br />to enable AI Pre-processing'
-  const upgradeTitle = 'Upgrade to 10x Reader<br />to enable AI Pre-processing'
+  const title = 'You are 2x reader now.'
 
   if (isPro) {
     elements.aiCard.classList.remove('settings__card--ai-locked')
@@ -212,9 +211,10 @@ function updateAiPreprocessingAccess (elements: SettingsElements, isAuthenticate
     elements.aiUpsell.removeAttribute('aria-hidden')
     elements.aiCtaButton.disabled = false
 
+    elements.aiUpsellTitle.innerHTML = title
+
     if (!isAuthenticated) {
-      elements.aiUpsellTitle.innerHTML = defaultTitle
-      elements.aiCtaButton.textContent = 'Become 10x Reader'
+      elements.aiCtaButton.textContent = 'Become 10x Reader'.toUpperCase()
       elements.aiCtaButton.onclick = async () => {
         if (elements.aiCtaButton.disabled) {
           return
@@ -231,8 +231,7 @@ function updateAiPreprocessingAccess (elements: SettingsElements, isAuthenticate
         }
       }
     } else {
-      elements.aiUpsellTitle.innerHTML = upgradeTitle
-      elements.aiCtaButton.textContent = 'Manage subscription'
+      elements.aiCtaButton.textContent = 'Upgrade to 10x Reader'.toUpperCase()
       elements.aiCtaButton.onclick = async () => {
         if (elements.aiCtaButton.disabled) {
           return
