@@ -10,6 +10,7 @@ import {
   ensurePreferencesLoaded,
   persistPreferences
 } from './preferences'
+import { authService } from '../auth'
 
 export async function primeBackgroundState (): Promise<void> {
   await ensurePreferencesLoaded()
@@ -69,6 +70,21 @@ export async function handleBackgroundMessage (
       sendResponse({ selection: getSelectionState() })
       // Informational: current selection requested
       return true
+    case 'triggerAuthFlow': {
+      if (message.flow !== 'register') {
+        sendResponse({ authStarted: false, error: `Unsupported auth flow: ${message.flow}` })
+        return true
+      }
+
+      authService
+        .login()
+        .catch((error) => {
+          console.error('Background failed to trigger registration flow:', error)
+        })
+
+      sendResponse({ authStarted: true })
+      return true
+    }
     default:
       // Informational: unknown message type
       return undefined

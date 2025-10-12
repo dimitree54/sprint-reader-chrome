@@ -34,6 +34,11 @@ export type BackgroundMessage =
   | {
       target: 'background';
       type: 'getCurrentSelection';
+    }
+  | {
+      target: 'background';
+      type: 'triggerAuthFlow';
+      flow: 'register';
     };
 
 export type ReaderMessage =
@@ -53,6 +58,10 @@ export type BackgroundResponse =
         isRTL: boolean;
         timestamp: number;
       };
+    }
+  | {
+      authStarted: boolean;
+      error?: string;
     };
 
 export type ContentRequest = never;

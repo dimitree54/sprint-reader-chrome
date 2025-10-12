@@ -239,50 +239,48 @@ function setupCopyButtons() {
   });
 }
 
-function getRuntimeUrl(path) {
+async function triggerRegistrationFlow() {
   const api = getExtensionApi();
-  if (api && api.runtime && typeof api.runtime.getURL === 'function') {
-    return api.runtime.getURL(path);
-  }
-  return path;
-}
-
-async function openTab(url) {
-  const api = getExtensionApi();
-  if (!api || !url) {
-    window.open(url, '_blank', 'noopener');
-    return;
+  if (!api || !api.runtime || typeof api.runtime.sendMessage !== 'function') {
+    throw new Error('Extension messaging API is unavailable');
   }
 
-  if (api.tabs && typeof api.tabs.create === 'function') {
-    try {
-      const result = api.tabs.create({ url });
-      if (result && typeof result.then === 'function') {
-        await result;
-        return;
-      }
+  const message = {
+    target: 'background',
+    type: 'triggerAuthFlow',
+    flow: 'register'
+  };
 
-      await new Promise((resolve, reject) => {
+  const isBrowserApi = typeof browser !== 'undefined' && api === browser;
+
+  const result = isBrowserApi
+    ? await api.runtime.sendMessage(message)
+    : await new Promise((resolve, reject) => {
         try {
-          api.tabs.create({ url }, (tab) => {
+          api.runtime.sendMessage(message, (value) => {
             const runtime = api.runtime ?? (typeof chrome !== 'undefined' ? chrome.runtime : undefined);
             if (runtime && runtime.lastError && runtime.lastError.message) {
               reject(new Error(runtime.lastError.message));
               return;
             }
-            resolve(tab);
+            resolve(value);
           });
         } catch (error) {
           reject(error instanceof Error ? error : new Error(String(error)));
         }
       });
-      return;
-    } catch (error) {
-      console.warn('tabs.create failed, falling back to window.open:', error);
-    }
+
+  if (!result || typeof result !== 'object') {
+    throw new Error('Background did not acknowledge authentication trigger');
   }
 
-  window.open(url, '_blank', 'noopener');
+  if ('error' in result && result.error) {
+    throw new Error(typeof result.error === 'string' ? result.error : 'Failed to trigger authentication');
+  }
+
+  if (!('authStarted' in result) || result.authStarted !== true) {
+    throw new Error('Authentication flow did not start as expected');
+  }
 }
 
 function setupCtaButtons() {
@@ -291,9 +289,8 @@ function setupCtaButtons() {
 
   if (signInButton) {
     signInButton.addEventListener('click', () => {
-      const url = getRuntimeUrl('pages/settings.html?auth=login');
-      openTab(url).catch((error) => {
-        console.error('Unable to open sign-in page:', error);
+      triggerRegistrationFlow().catch((error) => {
+        console.error('Unable to start registration flow:', error);
       });
     });
   }

@@ -161,6 +161,7 @@ export class KindeProvider implements AuthProvider {
       redirect_uri: config.kinde.redirectUri,
       response_type: 'code',
       scope: 'openid profile email',
+      prompt: 'create',
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
       state
