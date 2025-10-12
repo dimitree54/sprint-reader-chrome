@@ -36,7 +36,7 @@
   "permissions": ["contextMenus", "activeTab", "tabs", "storage", "clipboardRead", "identity"],
   "host_permissions": [
     "https://kinde-gated-openai-responses-api.path2dream.workers.dev/*",
-    "https://*.kinde.com/*"
+    "https://reader10x.kinde.com/*"
   ],
   "oauth2": {
     "client_id": "${VITE_KINDE_CLIENT_ID}",

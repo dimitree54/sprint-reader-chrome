@@ -29,6 +29,12 @@ export class KindeProvider implements AuthProvider {
 
       const authUrl = await this.buildAuthUrl(config)
 
+      console.info('[auth:kinde] Launching web auth flow', {
+        domain: config.kinde.domain,
+        redirectUri: config.kinde.redirectUri,
+        authUrl
+      })
+
       if (!chrome?.identity?.launchWebAuthFlow) {
         return {
           success: false,
@@ -173,10 +179,17 @@ export class KindeProvider implements AuthProvider {
         },
         (redirectUrl) => {
           if (chrome.runtime.lastError) {
+            console.error('[auth:kinde] launchWebAuthFlow error', {
+              message: chrome.runtime.lastError.message,
+              authUrl
+            })
             reject(new Error(chrome.runtime.lastError.message))
           } else if (redirectUrl) {
             resolve(redirectUrl)
           } else {
+            console.error('[auth:kinde] launchWebAuthFlow missing redirect', {
+              authUrl
+            })
             reject(new Error('No redirect URL received'))
           }
         }
