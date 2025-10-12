@@ -5,6 +5,7 @@ import { useReaderStore } from './state/reader.store'
 import { DEFAULTS } from '../config/defaults'
 import { initRenderer } from './ui/renderer'
 import { authService } from '../auth'
+import { applyExtensionName } from '../common/app-name'
 
 function initializeCSSVariables(): void {
   const root = document.documentElement
@@ -12,6 +13,7 @@ function initializeCSSVariables(): void {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  applyExtensionName()
   initializeCSSVariables()
   // Initialize authentication state in reader context
   authService.initializeAuth().catch(console.error)

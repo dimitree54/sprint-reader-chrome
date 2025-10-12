@@ -15,6 +15,7 @@ import {
 } from '../common/summarization'
 import { browserApi } from '../core/browser-api.service'
 import { DEFAULTS } from '../config/defaults'
+import { applyExtensionName } from '../common/app-name'
 
 const THEME_OPTIONS = {
   lightClass: 'popup--light',
@@ -140,6 +141,7 @@ async function openSettingsPage (): Promise<void> {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  applyExtensionName()
   const elements: PopupElements = {
     inputText: document.getElementById('inputTextToRead') as HTMLInputElement,
     speedReadButton: document.getElementById('speedReadButton') as HTMLButtonElement,

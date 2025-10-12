@@ -2,21 +2,67 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Extension Settings • 10x your reading speed</title>
+    <title data-app-name-template="Extension Settings • {{appName}}">Extension Settings</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="../styles/settings.css" />
   </head>
   <body>
     <header class="settings__header">
       <div class="settings__header-brand">
-        <img src="../assets/icons/icon48.png" alt="10x your reading speed" width="40" height="40" />
+        <img
+          src="../assets/icons/icon48.png"
+          width="40"
+          height="40"
+          alt=""
+          data-app-name-attr="alt"
+          data-app-name-template="{{appName}} icon"
+        />
         <div>
           <h1 class="settings__title">Extension Settings</h1>
-          <p class="settings__subtitle">Manage advanced preferences for the RSVP reader.</p>
         </div>
       </div>
       </header>
     <main class="settings__main" role="main">
+      <section class="settings__card">
+        <header class="settings__card-header">
+          <h2 class="settings__card-title">Authentication</h2>
+          <p class="settings__card-subtitle">Manage your account and authentication settings.</p>
+        </header>
+
+        <div class="settings__auth-section">
+          <!-- User Profile (when authenticated) -->
+          <div id="userProfile" class="settings__user-profile" hidden>
+            <div class="settings__user-avatar">
+              <img class="js-user-avatar-picture settings__user-avatar-img" hidden />
+              <span class="js-user-avatar settings__user-avatar-text" hidden></span>
+            </div>
+            <div class="settings__user-info">
+              <div class="settings__user-name-container">
+                <span class="js-user-name settings__user-name"></span>
+                <span class="js-user-subscription-status settings__user-subscription-status"></span>
+              </div>
+              <span class="settings__user-status">Authenticated</span>
+            </div>
+          </div>
+
+          <!-- Authentication Actions -->
+          <div class="settings__auth-actions">
+            <button type="button" id="loginButton" class="settings__button settings__button--primary">
+              Sign In
+            </button>
+            <button type="button" id="manageSubscription" class="settings__button settings__button--secondary" hidden>
+              Manage subscription
+            </button>
+            <button type="button" id="logoutButton" class="settings__button settings__button--ghost" hidden>
+              Sign Out
+            </button>
+          </div>
+
+          <!-- Authentication Status -->
+          <p id="authStatus" class="settings__status" role="status" aria-live="polite" hidden></p>
+        </div>
+      </section>
+
       <section class="settings__card">
         <header class="settings__card-header">
           <h2 class="settings__card-title">AI Translation</h2>
@@ -43,20 +89,6 @@
             </select>
           </label>
           <p class="settings__hint">When "Enable translation" is checked, translation output will use the selected language. Otherwise, translation is disabled.</p>
-          <label class="settings__field settings__field--slider" for="wordsPerMinute">
-            <span class="settings__field-label">Words per minute</span>
-            <input
-              id="wordsPerMinute"
-              name="wordsPerMinute"
-              type="range"
-              min="200"
-              max="500"
-              step="25"
-              class="settings__slider"
-            />
-            <span id="wpmValue" class="settings__slider-value" aria-live="polite"></span>
-          </label>
-          <p class="settings__hint">Control reading speed. Higher values show words faster.</p>
           <label class="settings__field settings__field--slider" for="summarizationLevel">
             <span class="settings__field-label">Summarization level</span>
             <input
@@ -91,46 +123,17 @@
           <p id="settingsStatus" class="settings__status" role="status" aria-live="polite" hidden></p>
         </form>
       </section>
-
-      <section class="settings__card">
-        <header class="settings__card-header">
-          <h2 class="settings__card-title">Authentication</h2>
-          <p class="settings__card-subtitle">Manage your account and authentication settings.</p>
-        </header>
-
-        <div class="settings__auth-section">
-          <!-- User Profile (when authenticated) -->
-          <div id="userProfile" class="settings__user-profile" hidden>
-            <div class="settings__user-avatar">
-              <img class="js-user-avatar-picture settings__user-avatar-img" hidden />
-              <span class="js-user-avatar settings__user-avatar-text" hidden></span>
-            </div>
-            <div class="settings__user-info">
-              <div class="settings__user-name-container">
-                <span class="js-user-name settings__user-name"></span>
-                <span class="js-user-subscription-status settings__user-subscription-status"></span>
-              </div>
-              <span class="settings__user-status">Authenticated</span>
-            </div>
-          </div>
-
-          <!-- Authentication Actions -->
-          <div class="settings__auth-actions">
-            <button type="button" id="loginButton" class="settings__button settings__button--primary">
-              Sign In
-            </button>
-            <button type="button" id="logoutButton" class="settings__button settings__button--ghost" hidden>
-              Sign Out
-            </button>
-          </div>
-
-          <!-- Authentication Status -->
-          <p id="authStatus" class="settings__status" role="status" aria-live="polite" hidden></p>
-        </div>
-      </section>
     </main>
     <footer class="settings__footer">
-      <a href="https://speed-reader.com" target="_blank" rel="noreferrer">Visit support site</a>
+      <a
+        id="privacyPolicyLink"
+        class="settings__footer-link"
+        data-privacy-policy-link
+        rel="noreferrer"
+        target="_blank"
+      >Check Privacy Policy</a>
+      <p class="settings__footer-note">Disclaimer: Pre-processing AI can make mistakes. Check important info.</p>
+      <p class="settings__footer-note">Extension provided by "Path2Dream" company registered in Netherlands. Contact info: developer@petprojectcofounder.ai</p>
     </footer>
     <script type="module" src="../scripts/settings.js"></script>
   </body>

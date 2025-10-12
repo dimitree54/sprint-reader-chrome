@@ -2,15 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>10x your reading speed</title>
+    <title data-app-name-template="{{appName}}">Extension popup</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="../styles/popup.css" />
   </head>
   <body>
     <header class="popup__header">
       <div class="popup__brand">
-        <img src="../assets/icons/icon48.png" alt="10x your reading speed" class="popup__logo" width="32" height="32" />
-        <h1 class="popup__title">10x your reading speed</h1>
+        <img
+          src="../assets/icons/icon48.png"
+          alt=""
+          class="popup__logo"
+          width="32"
+          height="32"
+          data-app-name-attr="alt"
+          data-app-name-template="{{appName}} icon"
+        />
+        <h1 class="popup__title" data-app-name></h1>
       </div>
       <button id="openSettings" class="popup__icon-button" type="button" aria-label="Open settings">
         <span aria-hidden="true">&#9881;</span>

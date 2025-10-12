@@ -8,17 +8,18 @@ test.describe('Sprint Reader - Settings Page', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // 2. Modify some settings
-    const wpmSlider = page.locator('#wordsPerMinute');
-    await wpmSlider.evaluate((el, value) => {
-      const input = el as HTMLInputElement;
-      input.value = String(value);
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-    }, 450);
     const enableTranslationCheckbox = page.locator('#enableTranslation');
     await enableTranslationCheckbox.check();
 
     const targetLanguageSelect = page.locator('#targetLanguage');
     await targetLanguageSelect.selectOption('fr');
+
+    const summarizationSlider = page.locator('#summarizationLevel');
+    await summarizationSlider.evaluate((el, value) => {
+      const input = el as HTMLInputElement;
+      input.value = String(value);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }, 2);
 
 
     // 3. Click the "Save" button
@@ -38,14 +39,15 @@ test.describe('Sprint Reader - Settings Page', () => {
           'sprintReader.readerPrefs',
           'sprintReader.translationLanguage',
           'sprintReader.preprocessingEnabled',
+          'sprintReader.summarizationLevel',
         ], (result) => {
           resolve(result);
         });
       });
     }) as Record<string, any>;
 
-    expect(savedSettings['sprintReader.readerPrefs'].wordsPerMinute).toBe(450);
     expect(savedSettings['sprintReader.translationLanguage']).toBe('fr');
     expect(savedSettings['sprintReader.preprocessingEnabled']).toBe(true);
+    expect(savedSettings['sprintReader.summarizationLevel']).toBe('aggressive');
   });
 });

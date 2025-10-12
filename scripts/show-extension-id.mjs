@@ -10,7 +10,27 @@
  * 4. Run: node scripts/show-extension-id.mjs <your-extension-id>
  */
 
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
+
 const [,, extensionId] = process.argv;
+
+const manifestPath = resolve(dirname(fileURLToPath(import.meta.url)), '../config/manifest.base.json')
+
+let extensionName
+
+try {
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+  const name = manifest?.name
+  if (typeof name !== 'string' || name.trim().length === 0) {
+    throw new Error('Extension manifest name is empty')
+  }
+  extensionName = name
+} catch (error) {
+  console.error('Unable to read extension name from manifest:', error)
+  process.exit(1)
+}
 
 if (!extensionId) {
   console.log(`
@@ -18,7 +38,7 @@ if (!extensionId) {
 
 1. Open Chrome and go to: chrome://extensions
 2. Enable "Developer mode" (top right toggle)
-3. Find "10x your reading speed" extension
+3. Find "${extensionName}" extension
 4. Copy the ID (looks like: cpgcobbgobpoogfnggbfeepicamemlak)
 5. Run: node scripts/show-extension-id.mjs <your-id>
 

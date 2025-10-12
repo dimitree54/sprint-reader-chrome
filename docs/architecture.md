@@ -179,9 +179,10 @@ The reader implementation follows a modular architecture with clear separation o
 
 * Exposed via the gear icon in the popup and reader footer as well as the extension options entry.
 * Applies the persisted reader theme so the experience matches the active light or dark mode.
-* Manages Kinde authentication, allowing users to sign in and out.
-* Displays user profile information and subscription status.
-* Loads preferred translation language and summarisation level from storage, lets users update or clear them, and surfaces inline success or error feedback.
+* Manages Kinde authentication, allowing users to sign in, sign out, and jump to Kinde billing via the dedicated **Manage subscription** button once authenticated.
+* Displays user profile information and subscription status with status-specific badges ("10x Reader" for pro plans, "2x Reader" for free plans).
+* Surfaces compliance details in the footer: the privacy policy link resolves from `PRIVACY_POLICY_URL` at build time, followed by mandatory disclaimers and company contact information.
+* Loads preferred translation language and summarisation level from storage, lets users update or clear them, and surfaces inline success or error feedback; reading speed adjustments now live directly in the reader UI.
 
 ## 4. Cross-Cutting Modules
 

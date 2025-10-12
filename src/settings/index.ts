@@ -2,7 +2,6 @@
 import { applyThemeToElement } from '../common/theme'
 import {
   readReaderPreferences,
-  writeReaderPreferences,
   readTranslationLanguage,
   writeTranslationLanguage,
   readSummarizationLevel,
@@ -10,7 +9,6 @@ import {
   readPreprocessingEnabled,
   writePreprocessingEnabled
 } from '../common/storage'
-import { DEFAULTS } from '../config/defaults'
 import {
   TRANSLATION_LANGUAGES,
   isTranslationLanguage,
@@ -23,6 +21,7 @@ import {
   type SummarizationLevel
 } from '../common/summarization'
 import { authService, type User } from '../auth/index'
+import { applyExtensionName } from '../common/app-name'
 
 // Import debug utilities in development
 if (process.env.NODE_ENV === 'development') {
@@ -38,8 +37,6 @@ type SettingsElements = {
   form: HTMLFormElement;
   enablePreprocessingToggle: HTMLInputElement;
   languageSelect: HTMLSelectElement;
-  wpmSlider: HTMLInputElement;
-  wpmValue: HTMLElement;
   summarizationSlider: HTMLInputElement;
   summarizationLabel: HTMLElement;
   status: HTMLElement;
@@ -47,10 +44,21 @@ type SettingsElements = {
   userProfile: HTMLElement;
   loginButton: HTMLButtonElement;
   logoutButton: HTMLButtonElement;
+  manageSubscriptionButton: HTMLButtonElement;
   authStatus: HTMLElement;
 };
 
 let statusTimeout: ReturnType<typeof setTimeout> | undefined
+
+function getSubscriptionBadgeLabel (status: User['subscriptionStatus']): string | null {
+  if (status === 'pro') {
+    return '10x Reader'
+  }
+  if (status === 'free') {
+    return '2x Reader'
+  }
+  return null
+}
 
 function showStatus (elements: SettingsElements, message: string, variant: 'success' | 'error'): void {
   if (statusTimeout) {
@@ -89,6 +97,7 @@ function renderUserProfile (elements: SettingsElements, user: User): void {
   const avatarPlaceholder = elements.userProfile.querySelector('.js-user-avatar') as HTMLElement
   const avatarPicturePlaceholder = elements.userProfile.querySelector('.js-user-avatar-picture') as HTMLImageElement
   const subscriptionStatusPlaceholder = elements.userProfile.querySelector('.js-user-subscription-status') as HTMLElement
+  const statusLabel = elements.userProfile.querySelector('.settings__user-status') as HTMLElement
 
   if (namePlaceholder) {
     namePlaceholder.textContent = `${user.given_name || ''} ${user.family_name || ''}`.trim() || user.email || 'User'
@@ -110,13 +119,20 @@ function renderUserProfile (elements: SettingsElements, user: User): void {
   }
 
   if (subscriptionStatusPlaceholder) {
-    if (user.subscriptionStatus) {
-      subscriptionStatusPlaceholder.textContent = user.subscriptionStatus
+    const badgeLabel = getSubscriptionBadgeLabel(user.subscriptionStatus)
+    if (badgeLabel && user.subscriptionStatus) {
+      subscriptionStatusPlaceholder.textContent = badgeLabel
       subscriptionStatusPlaceholder.dataset.status = user.subscriptionStatus
       subscriptionStatusPlaceholder.hidden = false
     } else {
+      subscriptionStatusPlaceholder.textContent = ''
       subscriptionStatusPlaceholder.hidden = true
+      subscriptionStatusPlaceholder.removeAttribute('data-status')
     }
+  }
+
+  if (statusLabel) {
+    statusLabel.textContent = 'Authenticated'
   }
 }
 
@@ -125,6 +141,7 @@ function clearUserProfile (elements: SettingsElements): void {
   const avatarPlaceholder = elements.userProfile.querySelector('.js-user-avatar') as HTMLElement
   const avatarPicturePlaceholder = elements.userProfile.querySelector('.js-user-avatar-picture') as HTMLImageElement
   const subscriptionStatusPlaceholder = elements.userProfile.querySelector('.js-user-subscription-status') as HTMLElement
+  const statusLabel = elements.userProfile.querySelector('.settings__user-status') as HTMLElement
 
   if (namePlaceholder) {
     namePlaceholder.textContent = ''
@@ -140,20 +157,36 @@ function clearUserProfile (elements: SettingsElements): void {
   if (subscriptionStatusPlaceholder) {
     subscriptionStatusPlaceholder.textContent = ''
     subscriptionStatusPlaceholder.hidden = true
+    subscriptionStatusPlaceholder.removeAttribute('data-status')
   }
+  if (statusLabel) {
+    statusLabel.textContent = ''
+  }
+}
+
+function showUserProfile (elements: SettingsElements, user: User): void {
+  elements.userProfile.classList.add('settings__user-profile--visible')
+  elements.userProfile.hidden = false
+  renderUserProfile(elements, user)
+}
+
+function hideUserProfile (elements: SettingsElements): void {
+  elements.userProfile.classList.remove('settings__user-profile--visible')
+  elements.userProfile.hidden = true
+  clearUserProfile(elements)
 }
 
 function updateAuthUI (elements: SettingsElements, isAuthenticated: boolean, user: User | null): void {
   if (isAuthenticated && user) {
     elements.loginButton.hidden = true
     elements.logoutButton.hidden = false
-    elements.userProfile.hidden = false
-    renderUserProfile(elements, user)
+    showUserProfile(elements, user)
+    elements.manageSubscriptionButton.hidden = false
   } else {
     elements.loginButton.hidden = false
     elements.logoutButton.hidden = true
-    elements.userProfile.hidden = true
-    clearUserProfile(elements)
+    hideUserProfile(elements)
+    elements.manageSubscriptionButton.hidden = true
   }
 }
 
@@ -208,10 +241,6 @@ async function loadInitialState (elements: SettingsElements): Promise<void> {
   // Enable/disable dropdown based on preprocessing toggle
   elements.languageSelect.disabled = !isPreprocessingEnabled
 
-  // Set WPM slider
-  elements.wpmSlider.value = String(prefs.wordsPerMinute)
-  elements.wpmValue.textContent = String(prefs.wordsPerMinute)
-
   const summarizationLevel = await readSummarizationLevel()
   const sliderIndex = summarizationLevelToSliderIndex(summarizationLevel)
   elements.summarizationSlider.value = String(sliderIndex)
@@ -221,12 +250,40 @@ async function loadInitialState (elements: SettingsElements): Promise<void> {
   await loadAuthState(elements)
 }
 
-function registerEvents (elements: SettingsElements): void {
-  elements.wpmSlider.addEventListener('input', () => {
-    const value = Number.parseInt(elements.wpmSlider.value, 10) || DEFAULTS.READER_PREFERENCES.wordsPerMinute
-    elements.wpmValue.textContent = String(value)
-  })
+function buildManageSubscriptionUrl (): string {
+  const env = (import.meta as any).env || {}
+  const domain: string | undefined = env.VITE_KINDE_DOMAIN
+  const orgCode: string | undefined = env.VITE_KINDE_ORG_CODE
 
+  if (!domain) throw new Error('VITE_KINDE_DOMAIN is not set')
+  if (!orgCode) throw new Error('VITE_KINDE_ORG_CODE is not set')
+
+  const base = domain.replace(/\/$/, '')
+  return `${base}/account/cx/_:nav&m:account::_:submenu&s:plan_selection&org_code:${orgCode}`
+}
+
+function resolvePrivacyPolicyUrl (): string {
+  const url = process.env.PRIVACY_POLICY_URL || ''
+
+  if (typeof url !== 'string' || url.trim().length === 0) {
+    throw new Error('PRIVACY_POLICY_URL is not set')
+  }
+
+  return url
+}
+
+function initializePrivacyPolicyLink (): void {
+  const link = document.getElementById('privacyPolicyLink') as HTMLAnchorElement | null
+  if (!link) {
+    throw new Error('Privacy policy link element is missing')
+  }
+
+  const url = resolvePrivacyPolicyUrl()
+  link.href = url
+  link.textContent = 'Check Privacy Policy'
+}
+
+function registerEvents (elements: SettingsElements): void {
   elements.summarizationSlider.addEventListener('input', () => {
     const index = Number.parseInt(elements.summarizationSlider.value, 10) || 0
     const level = sliderIndexToSummarizationLevel(index)
@@ -239,7 +296,15 @@ function registerEvents (elements: SettingsElements): void {
     elements.languageSelect.disabled = !isEnabled
   })
 
-  
+  elements.manageSubscriptionButton.addEventListener('click', () => {
+    try {
+      window.location.href = buildManageSubscriptionUrl()
+    } catch (error) {
+      console.error('Failed to open subscription management', error)
+      showAuthStatus(elements, 'Unable to open subscription management. Try again later.', 'error')
+    }
+  })
+
   elements.form.addEventListener('submit', async (event) => {
     event.preventDefault()
 
@@ -250,22 +315,14 @@ function registerEvents (elements: SettingsElements): void {
     const selectedLanguage = elements.languageSelect.value
     const language: TranslationLanguage = isTranslationLanguage(selectedLanguage) ? selectedLanguage : 'en'
 
-    // Get WPM value
-    const wpmValue = Number.parseInt(elements.wpmSlider.value, 10) || DEFAULTS.READER_PREFERENCES.wordsPerMinute
-
     const sliderIndex = Number.parseInt(elements.summarizationSlider.value, 10) || 0
     const summarizationLevel: SummarizationLevel = sliderIndexToSummarizationLevel(sliderIndex)
 
     try {
-      // Update reader preferences with new WPM value
-      const currentPrefs = await readReaderPreferences()
-      const updatedPrefs = { ...currentPrefs, wordsPerMinute: wpmValue }
-
       await Promise.all([
         writePreprocessingEnabled(preprocessingEnabled),
         writeTranslationLanguage(language),
-        writeSummarizationLevel(summarizationLevel),
-        writeReaderPreferences(updatedPrefs)
+        writeSummarizationLevel(summarizationLevel)
       ])
       showStatus(elements, 'Settings saved.', 'success')
     } catch (error: unknown) {
@@ -302,12 +359,12 @@ function registerEvents (elements: SettingsElements): void {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  applyExtensionName()
+  initializePrivacyPolicyLink()
   const elements: SettingsElements = {
     form: document.getElementById('settingsForm') as HTMLFormElement,
     enablePreprocessingToggle: document.getElementById('enableTranslation') as HTMLInputElement,
     languageSelect: document.getElementById('targetLanguage') as HTMLSelectElement,
-    wpmSlider: document.getElementById('wordsPerMinute') as HTMLInputElement,
-    wpmValue: document.getElementById('wpmValue') as HTMLElement,
     summarizationSlider: document.getElementById('summarizationLevel') as HTMLInputElement,
     summarizationLabel: document.getElementById('summarizationLabel') as HTMLElement,
     status: document.getElementById('settingsStatus') as HTMLElement,
@@ -315,6 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
     userProfile: document.getElementById('userProfile') as HTMLElement,
     loginButton: document.getElementById('loginButton') as HTMLButtonElement,
     logoutButton: document.getElementById('logoutButton') as HTMLButtonElement,
+    manageSubscriptionButton: document.getElementById('manageSubscription') as HTMLButtonElement,
     authStatus: document.getElementById('authStatus') as HTMLElement
   }
 

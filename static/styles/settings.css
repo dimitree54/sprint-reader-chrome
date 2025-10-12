@@ -470,6 +470,11 @@ body.settings--light .settings__theme-switch-input:checked + .settings__theme-sw
   text-decoration: underline;
 }
 
+.settings__footer-note {
+  margin: 8px 0 0;
+  color: var(--settings-muted);
+}
+
 @media (max-width: 600px) {
   body {
     padding: 24px 12px 32px;
@@ -496,13 +501,17 @@ body.settings--light .settings__theme-switch-input:checked + .settings__theme-sw
 }
 
 .settings__user-profile {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 16px;
   padding: 16px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
+}
+
+.settings__user-profile--visible {
+  display: flex;
 }
 
 body.settings--light .settings__user-profile {
