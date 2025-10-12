@@ -258,9 +258,7 @@ function buildManageSubscriptionUrl (): string {
   if (!rawDomain.trim()) throw new Error('VITE_KINDE_DOMAIN is not set')
   if (!orgCode.trim()) throw new Error('VITE_KINDE_ORG_CODE is not set')
 
-  const normalizedDomain = rawDomain.startsWith('http') ? rawDomain : `https://${rawDomain}`
-  const base = normalizedDomain.replace(/\/$/, '')
-  return `${base}/account/cx/_:nav&m:account::_:submenu&s:plan_selection&org_code:${orgCode}`
+  return `https://${rawDomain}/account/cx/_:nav&m:account::_:submenu&s:plan_selection&org_code:${orgCode}`
 }
 
 function resolvePrivacyPolicyUrl (): string {
