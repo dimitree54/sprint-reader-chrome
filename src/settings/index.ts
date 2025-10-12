@@ -239,9 +239,6 @@ async function loadInitialState (elements: SettingsElements): Promise<void> {
     elements.languageSelect.value = 'en'
   }
 
-  // Enable/disable dropdown based on preprocessing toggle
-  elements.languageSelect.disabled = !isPreprocessingEnabled
-
   const summarizationLevel = await readSummarizationLevel()
   const sliderIndex = summarizationLevelToSliderIndex(summarizationLevel)
   elements.summarizationSlider.value = String(sliderIndex)
@@ -346,10 +343,9 @@ function registerEvents (elements: SettingsElements): void {
     }
   })
 
-  // Handle preprocessing toggle change to enable/disable language dropdown
+  // Handle preprocessing toggle state changes
   elements.enablePreprocessingToggle.addEventListener('change', async () => {
     const isEnabled = elements.enablePreprocessingToggle.checked
-    elements.languageSelect.disabled = !isEnabled
     elements.enablePreprocessingToggle.setAttribute('aria-checked', String(isEnabled))
 
     try {
