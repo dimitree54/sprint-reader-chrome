@@ -226,7 +226,7 @@ The extension uses Kinde for authentication, enabling access to premium AI-power
 - **`useAuthStore` (`src/auth/state/auth.store.ts`)**: A Zustand store that serves as the single source of truth for authentication state (user, token, loading status, etc.) across the extension.
 
 ### 7.2 Authentication Flow
-1.  User clicks "Sign In" on the settings page or the welcome CTA.
+1.  User clicks the appropriate CTA: guests use the registration-first welcome button or settings sign-in, authenticated free users select the welcome upgrade CTA, and pro users get a close-window button once they are already subscribed.
 2.  `AuthService.login()` is called, which delegates to `KindeProvider.login()`.
 3.  The provider constructs the Kinde authorization URL with PKCE parameters and `prompt=create` so the hosted UI opens on the registration screen (users can still switch to sign-in from there).
 4.  `chrome.identity.launchWebAuthFlow` opens a new window for Kinde authentication.

@@ -19,6 +19,7 @@ export class AuthDebugger {
     console.log('📋 Configuration:')
     console.log('  Client ID:', config.kinde.clientId ? '✅ Set' : '❌ Missing')
     console.log('  Domain:', config.kinde.domain || '❌ Missing')
+    console.log('  Org code:', config.kinde.orgCode || '❌ Missing')
     console.log('  Redirect URI:', config.kinde.redirectUri)
 
     // Log validation

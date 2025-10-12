@@ -76,9 +76,31 @@ function registerInstallListener (): void {
 
 function registerMessageListener (): void {
   browserApi.runtime.onMessage.addListener((message: unknown, sender: chrome.runtime.MessageSender, sendResponse: (response?: unknown) => void) => {
-    // Fire-and-forget: handle message asynchronously without keeping channel open
-    handleBackgroundMessage(message as RuntimeMessage, sender, sendResponse).catch(console.error)
-    return false
+    try {
+      const result = handleBackgroundMessage(message as RuntimeMessage, sender, sendResponse)
+
+      if (result instanceof Promise) {
+        result.catch((error) => {
+          console.error('Failed to handle background message:', error)
+          try {
+            sendResponse({ error: error instanceof Error ? error.message : String(error) })
+          } catch (sendError) {
+            console.error('Unable to send error response:', sendError)
+          }
+        })
+        return true
+      }
+
+      return result === true
+    } catch (error) {
+      console.error('Synchronous error handling background message:', error)
+      try {
+        sendResponse({ error: error instanceof Error ? error.message : String(error) })
+      } catch (sendError) {
+        console.error('Unable to send synchronous error response:', sendError)
+      }
+      return false
+    }
   })
 }
 

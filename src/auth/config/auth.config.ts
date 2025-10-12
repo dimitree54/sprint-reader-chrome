@@ -20,6 +20,7 @@ export const AUTH_CONFIG = {
   kinde: {
     clientId: process.env.VITE_KINDE_CLIENT_ID || '',
     domain: process.env.VITE_KINDE_DOMAIN || '',
+    orgCode: process.env.VITE_KINDE_ORG_CODE || '',
     getRedirectUri: getExtensionRedirectUri
   }
 } as const
@@ -28,6 +29,7 @@ export const getAuthConfig = () => ({
   kinde: {
     clientId: AUTH_CONFIG.kinde.clientId,
     domain: AUTH_CONFIG.kinde.domain,
+    orgCode: AUTH_CONFIG.kinde.orgCode,
     redirectUri: AUTH_CONFIG.kinde.getRedirectUri()
   }
 })
@@ -35,7 +37,8 @@ export const getAuthConfig = () => ({
 export const getKindeConfig = (): KindeConfig => ({
   clientId: AUTH_CONFIG.kinde.clientId,
   domain: AUTH_CONFIG.kinde.domain,
-  redirectUri: AUTH_CONFIG.kinde.getRedirectUri()
+  redirectUri: AUTH_CONFIG.kinde.getRedirectUri(),
+  orgCode: AUTH_CONFIG.kinde.orgCode
 })
 
 export const validateAuthConfig = () => {
@@ -48,6 +51,10 @@ export const validateAuthConfig = () => {
 
   if (!config.kinde.domain) {
     missingFields.push('VITE_KINDE_DOMAIN')
+  }
+
+  if (!config.kinde.orgCode) {
+    missingFields.push('VITE_KINDE_ORG_CODE')
   }
 
   return {

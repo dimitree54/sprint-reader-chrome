@@ -200,6 +200,7 @@ async function runBuild(browser) {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
       'process.env.VITE_KINDE_CLIENT_ID': JSON.stringify(process.env.VITE_KINDE_CLIENT_ID || ''),
       'process.env.VITE_KINDE_DOMAIN': JSON.stringify(process.env.VITE_KINDE_DOMAIN || ''),
+      'process.env.VITE_KINDE_ORG_CODE': JSON.stringify(process.env.VITE_KINDE_ORG_CODE || ''),
       'process.env.VITE_KINDE_REDIRECT_URL': JSON.stringify(process.env.VITE_KINDE_REDIRECT_URL || ''),
       'process.env.VITE_DEV_PRO_TOKEN': JSON.stringify(process.env.VITE_DEV_PRO_TOKEN || ''),
     },

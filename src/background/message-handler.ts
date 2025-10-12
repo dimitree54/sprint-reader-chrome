@@ -11,6 +11,8 @@ import {
   persistPreferences
 } from './preferences'
 import { authService } from '../auth'
+import { storageService } from '../core/storage.service'
+import { getAuthConfig } from '../auth/config/auth.config'
 
 export async function primeBackgroundState (): Promise<void> {
   await ensurePreferencesLoaded()
@@ -83,6 +85,56 @@ export async function handleBackgroundMessage (
         })
 
       sendResponse({ authStarted: true })
+      return true
+    }
+    case 'getAuthStatus': {
+      const defaultStatus = () => ({
+        isAuthenticated: false,
+        subscriptionStatus: null,
+        planSelectionUrl: null
+      })
+
+      try {
+        const user = await storageService.readAuthUser()
+        const isAuthenticated = user !== null
+        const subscriptionStatus = user?.subscriptionStatus ?? null
+
+        let planSelectionUrl: string | null = null
+
+        if (isAuthenticated && subscriptionStatus !== 'pro') {
+          const config = getAuthConfig()
+          const domain = config.kinde.domain
+          const orgCode = config.kinde.orgCode
+
+          if (!domain) {
+            throw new Error('VITE_KINDE_DOMAIN is not set')
+          }
+
+          if (!orgCode) {
+            throw new Error('VITE_KINDE_ORG_CODE is not set')
+          }
+
+          const base = domain.replace(/\/$/, '')
+          planSelectionUrl = `${base}/account/cx/_:nav&m:account::_:submenu&s:plan_selection&org_code:${orgCode}`
+        }
+
+        sendResponse({
+          authStatus: {
+            ...defaultStatus(),
+            isAuthenticated,
+            subscriptionStatus,
+            planSelectionUrl
+          }
+        })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error resolving auth status'
+        console.error('Failed to resolve auth status for welcome CTA:', error)
+        sendResponse({
+          authStatus: defaultStatus(),
+          error: message
+        })
+      }
+
       return true
     }
     default:

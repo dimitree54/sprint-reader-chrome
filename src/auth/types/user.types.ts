@@ -19,4 +19,5 @@ export interface KindeConfig {
   clientId: string
   domain: string
   redirectUri: string
+  orgCode?: string
 }

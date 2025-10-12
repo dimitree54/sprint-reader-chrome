@@ -39,6 +39,10 @@ export type BackgroundMessage =
       target: 'background';
       type: 'triggerAuthFlow';
       flow: 'register';
+    }
+  | {
+      target: 'background';
+      type: 'getAuthStatus';
     };
 
 export type ReaderMessage =
@@ -61,6 +65,14 @@ export type BackgroundResponse =
     }
   | {
       authStarted: boolean;
+      error?: string;
+    }
+  | {
+      authStatus: {
+        isAuthenticated: boolean;
+        subscriptionStatus: 'pro' | 'free' | null;
+        planSelectionUrl: string | null;
+      };
       error?: string;
     };
 

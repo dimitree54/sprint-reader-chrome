@@ -283,22 +283,134 @@ async function triggerRegistrationFlow() {
   }
 }
 
-function setupCtaButtons() {
-  const signInButton = document.getElementById('ctaSignIn');
-  const continueButton = document.getElementById('ctaContinue');
-
-  if (signInButton) {
-    signInButton.addEventListener('click', () => {
-      triggerRegistrationFlow().catch((error) => {
-        console.error('Unable to start registration flow:', error);
-      });
-    });
+async function fetchAuthStatus() {
+  const api = getExtensionApi();
+  if (!api || !api.runtime || typeof api.runtime.sendMessage !== 'function') {
+    throw new Error('Extension messaging API is unavailable');
   }
 
+  const message = {
+    target: 'background',
+    type: 'getAuthStatus'
+  };
+
+  const isBrowserApi = typeof browser !== 'undefined' && api === browser;
+
+  return isBrowserApi
+    ? api.runtime.sendMessage(message)
+    : new Promise((resolve, reject) => {
+        try {
+          api.runtime.sendMessage(message, (value) => {
+            const runtime = api.runtime ?? (typeof chrome !== 'undefined' ? chrome.runtime : undefined);
+            if (runtime && runtime.lastError && runtime.lastError.message) {
+              reject(new Error(runtime.lastError.message));
+              return;
+            }
+            resolve(value);
+          });
+        } catch (error) {
+          reject(error instanceof Error ? error : new Error(String(error)));
+        }
+      });
+}
+
+async function openPlanSelectionPage(url) {
+  if (typeof url !== 'string' || url.trim().length === 0) {
+    throw new Error('Invalid plan selection URL');
+  }
+
+  const api = getExtensionApi();
+  if (!api || !api.tabs || typeof api.tabs.create !== 'function') {
+    throw new Error('Extension tabs API is unavailable');
+  }
+
+  const isBrowserApi = typeof browser !== 'undefined' && api === browser;
+
+  if (isBrowserApi) {
+    await api.tabs.create({ url });
+    return;
+  }
+
+  await new Promise((resolve, reject) => {
+    try {
+      api.tabs.create({ url }, () => {
+        const runtime = api.runtime ?? (typeof chrome !== 'undefined' ? chrome.runtime : undefined);
+        if (runtime && runtime.lastError && runtime.lastError.message) {
+          reject(new Error(runtime.lastError.message));
+          return;
+        }
+        resolve();
+      });
+    } catch (error) {
+      reject(error instanceof Error ? error : new Error(String(error)));
+    }
+  });
+}
+
+async function configureCtaButtons() {
+  const signInButton = document.getElementById('ctaSignIn');
+  if (!signInButton) {
+    throw new Error('Sign-in CTA button is missing');
+  }
+
+  const continueButton = document.getElementById('ctaContinue');
   if (continueButton) {
     continueButton.addEventListener('click', () => {
       window.close();
     });
+  }
+
+  const response = await fetchAuthStatus();
+  if (!response || typeof response !== 'object' || !('authStatus' in response)) {
+    throw new Error('Background did not return authStatus');
+  }
+
+  const { authStatus, error } = response;
+  if (!authStatus || typeof authStatus !== 'object') {
+    throw new Error('Invalid authStatus payload');
+  }
+
+  if (typeof error === 'string' && error.trim().length > 0) {
+    console.error('Background reported auth status error:', error);
+  }
+
+  const isAuthenticated = authStatus.isAuthenticated === true;
+  const subscriptionStatus = typeof authStatus.subscriptionStatus === 'string'
+    ? authStatus.subscriptionStatus
+    : null;
+  const planSelectionUrl = typeof authStatus.planSelectionUrl === 'string' && authStatus.planSelectionUrl.trim().length > 0
+    ? authStatus.planSelectionUrl
+    : null;
+
+  if (!isAuthenticated) {
+    signInButton.addEventListener('click', () => {
+      triggerRegistrationFlow().catch((registerError) => {
+        console.error('Unable to start registration flow:', registerError);
+      });
+    });
+    return;
+  }
+
+  if (subscriptionStatus !== 'pro') {
+    if (!planSelectionUrl) {
+      throw new Error('Plan selection URL is missing for authenticated non-pro user');
+    }
+
+    signInButton.addEventListener('click', () => {
+      openPlanSelectionPage(planSelectionUrl).catch((upgradeError) => {
+        console.error('Failed to open plan selection page:', upgradeError);
+      });
+    });
+    return;
+  }
+
+  signInButton.textContent = 'Start 10x reading (close this window)';
+  signInButton.addEventListener('click', () => {
+    window.close();
+  });
+
+  if (continueButton) {
+    continueButton.hidden = true;
   }
 }
 
@@ -329,5 +441,8 @@ document.addEventListener('DOMContentLoaded', () => {
     throw error;
   });
   setupCopyButtons();
-  setupCtaButtons();
+  configureCtaButtons().catch((error) => {
+    console.error('CTA initialisation failed:', error);
+    throw error;
+  });
 });
