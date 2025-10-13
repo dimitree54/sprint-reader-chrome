@@ -148,6 +148,7 @@ function updateAiPreprocessingAccess (elements: PopupElements, isAuthenticated: 
     elements.aiSection.classList.remove('popup__section--ai-locked')
     elements.aiUpsell.hidden = true
     elements.aiUpsell.setAttribute('aria-hidden', 'true')
+    elements.aiUpsell.style.display = 'none'
     elements.aiCtaButton.disabled = false
     elements.aiCtaButton.onclick = null
   } else {
