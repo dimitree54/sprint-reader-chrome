@@ -4,6 +4,7 @@
  * Coordinates streaming preprocessing with the OpenAI provider and text processor
  */
 
+import { useReaderStore } from '../reader/state/reader.store';
 import { preprocessingConfigService, type PreprocessingConfig } from './config'
 import { OpenAIProvider, type StreamingTokenCallback } from './providers/openai'
 import { PassthroughProvider } from './providers/passthrough'
@@ -79,6 +80,8 @@ export class StreamingPreprocessingManager {
       const openAiProvider = new OpenAIProvider()
       const passthroughProvider = new PassthroughProvider()
 
+
+
       // Check if we should use streaming preprocessing
       if (!preprocessingConfigService.shouldSkipProcessing(config) && openAiProvider.isAvailable(config)) {
         console.log('[StreamingPreprocessingManager] Using OpenAI streaming provider')
@@ -90,7 +93,10 @@ export class StreamingPreprocessingManager {
           reason = 'preprocessing skipped by config (no translation and no summarization)'
         } else {
           const availabilityInfo = await openAiProvider.getAvailabilityInfo()
-          reason = `OpenAI provider not available: ${availabilityInfo.reason || 'unknown reason'}`
+          reason = availabilityInfo.reason || 'unknown reason'
+          if (reason === 'No internet connection') {
+            useReaderStore.getState().setPreprocessingError(`AI pre-processing skipped: ${reason}`)
+          }
         }
         console.log(`[StreamingPreprocessingManager] Falling back to passthrough provider: ${reason}`)
         await this.processWithNonStreamingProvider(rawText, passthroughProvider, config, streamingProcessor)

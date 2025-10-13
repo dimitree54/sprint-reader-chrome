@@ -52,6 +52,16 @@ export class PreprocessingManager {
           }
         }
         console.log(`[PreprocessingManager] Provider ${provider.name} not available (${reason}), trying next provider`)
+
+        if (provider.name === 'openai') {
+          return {
+            text,
+            error: {
+              type: 'network_error',
+              message: `AI pre-processing skipped: ${reason}`
+            }
+          }
+        }
       }
     }
 
