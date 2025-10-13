@@ -89,7 +89,9 @@ export class PlaybackService {
       if (store.isStreaming && !store.streamingComplete) {
         // Keep playing state; poll until new items arrive
         this.clearTimer()
-        this.timerId = setTimeout(this.scheduleNextWord, DEFAULTS.TIMING.minimumDelayMs)
+        const wpm = Math.max(DEFAULTS.TIMING.minimumWpmForCalculation, store.wordsPerMinute)
+        const delay = Math.max(60_000 / wpm, DEFAULTS.TIMING.minimumDelayMs)
+        this.timerId = setTimeout(this.scheduleNextWord, delay)
         return
       } else {
         // Streaming finished or not streaming: pause at the end

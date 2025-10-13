@@ -173,7 +173,6 @@ export async function startStreamingFromTokens (
     isStreaming: true
   })
   await rebuildWordItemsWithStreamingFromRawText(inputText)
-  useReaderStore.setState({ index: 0 })
 }
 
 export function updateOptimalFontSize (): void {
