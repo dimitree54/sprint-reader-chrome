@@ -177,7 +177,7 @@ export class OpenAIProvider implements PreprocessingProvider {
     let timeoutId: ReturnType<typeof setTimeout> | undefined
     const controller = new AbortController()
     try {
-      timeoutId = setTimeout(() => controller.abort(), 30000)
+      timeoutId = setTimeout(() => controller.abort(), 10000)
 
       const payload = buildChatCompletionPayload(text, config.targetLanguage, config.summarizationLevel, config.enabled)
 
@@ -247,7 +247,7 @@ export class OpenAIProvider implements PreprocessingProvider {
     let timeoutId: ReturnType<typeof setTimeout> | undefined
     const controller = new AbortController()
     try {
-      timeoutId = setTimeout(() => controller.abort(), 30000)
+      timeoutId = setTimeout(() => controller.abort(), 10000)
 
       const payload = buildChatCompletionPayload(text, config.targetLanguage, config.summarizationLevel, config.enabled)
       const streamingPayload = { ...payload, stream: true }

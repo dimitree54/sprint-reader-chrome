@@ -137,11 +137,18 @@ export class StreamingPreprocessingManager {
       const result = await provider.processWithStreaming(rawText, config, onToken)
 
       // Complete the streaming
-      await streamingProcessor.completeStreamingText()
+      if (!result.error) {
+        await streamingProcessor.completeStreamingText()
+      }
 
       // Handle any errors from preprocessing
       if (result.error) {
         this.logPreprocessingError('OpenAI streaming', result.error)
+        if (result.error.type === 'timeout_error') {
+          useReaderStore.getState().setPreprocessingError('Skipping AI Preprocesssing: AI server is not available right now, sorry')
+          const passthroughProvider = new PassthroughProvider()
+          await this.processWithNonStreamingProvider(rawText, passthroughProvider, config, streamingProcessor)
+        }
       }
     } catch (error) {
       // Cancel streaming on error
