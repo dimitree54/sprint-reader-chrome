@@ -53,6 +53,7 @@ function renderWordContent(wordElement: HTMLElement, state: ReturnType<typeof us
 
   const currentWordItem = state.wordItems[state.index]
   if (currentWordItem) {
+    wordElement.style.fontWeight = currentWordItem.isBold ? '800' : '600'
     wordElement.style.fontSize = state.optimalFontSize
     const wrappedText = wrapLettersInSpans(currentWordItem.text)
     wordElement.innerHTML = wrappedText

@@ -133,34 +133,72 @@ export function extractBoldWords(text: string): { processedText: string; boldWor
 }
 
 export function preprocessText (text: string): WordInfo[] {
-  // Step 0: Extract bold words and clean the text
-  const { processedText, boldWords } = extractBoldWords(text)
-
   // Step 1: Preserve paragraph breaks, then normalize other whitespace
   const PARA = '¶¶'
-  const preserved = processedText.replace(/(?:\r?\n){2,}/g, ` ${PARA} `)
+  const preserved = text.replace(/(?:\r?\n){2,}/g, ` ${PARA} `)
   const normalized = preserved.replace(/\s+/g, ' ').trim()
-  let words = normalized.length > 0 ? normalized.split(' ') : []
-  // Restore paragraph markers as actual double newlines so downstream can detect
-  words = words.map(w => (w === PARA ? '\n\n' : w))
+  const words = normalized.length > 0 ? normalized.split(' ') : []
 
-  // Step 2: Consolidate acronyms
-  words = consolidateAcronyms(words)
+  // Step 2: Process words to handle bolding and create WordInfo tokens
+  const tokens: WordInfo[] = []
+  let isBoldSection = false
+  for (let word of words) {
+    if (word.length === 0) continue
 
-  // Step 3: Preserve numbers with decimals/commas
-  words = preserveNumbersDecimals(words)
+    let isBold = isBoldSection
 
-  // Step 4: Split very long words
+    // Detach leading punctuation (anything not a letter, number, or asterisk)
+    let leadingPunct = ''
+    const leadingMatch = word.match(/^[^'p{L}\p{N}*]+/u)
+    if (leadingMatch) {
+        leadingPunct = leadingMatch[0]
+        word = word.slice(leadingPunct.length)
+    }
+
+    // Detach trailing punctuation
+    let trailingPunct = ''
+    const trailingMatch = word.match(/[^'p{L}\p{N}*]+$/u)
+    if (trailingMatch) {
+        trailingPunct = trailingMatch[0]
+        word = word.slice(0, -trailingPunct.length)
+    }
+
+    const startsWithBold = word.startsWith('**')
+    const endsWithBold = word.endsWith('**')
+
+    if (startsWithBold && endsWithBold && word.length > 4) {
+      word = word.substring(2, word.length - 2)
+      isBold = true
+      isBoldSection = false
+    } else if (startsWithBold) {
+      word = word.substring(2)
+      isBold = true
+      isBoldSection = true
+    } else if (endsWithBold) {
+      word = word.substring(0, word.length - 2)
+      isBold = true
+      isBoldSection = false
+    }
+
+    if (word) {
+      tokens.push({ text: leadingPunct + word + trailingPunct, isBold: isBold })
+    } else if (leadingPunct || trailingPunct) {
+      tokens.push({ text: leadingPunct + trailingPunct, isBold: false })
+    }
+  }
+
+  // Step 3: Restore paragraph markers
+  const tokensWithParagraphs = tokens.map(t => (t.text === PARA ? { text: '\n\n', isBold: false } : t)).filter(t => t.text);
+
+  // Step 4 & 5: Consolidate acronyms and numbers, then split long words
+  let finalTokens = consolidateAcronymsTokens(tokensWithParagraphs)
+  finalTokens = preserveNumbersDecimalsTokens(finalTokens)
+
   const finalWords: WordInfo[] = []
-  words.forEach(word => {
-    const splitWords = splitLongWords(word)
-    // Determine boldness at original word level; propagate to splits
-    const baseClean = cleanForMatch(word)
-    const baseIsBold = !!baseClean && boldWords.has(baseClean.toLowerCase())
+  finalTokens.forEach(token => {
+    const splitWords = splitLongWords(token.text)
     splitWords.forEach(splitWord => {
-      const partClean = cleanForMatch(splitWord)
-      const isBold = baseIsBold || (!!partClean && boldWords.has(partClean.toLowerCase()))
-      finalWords.push({ text: splitWord, isBold })
+      finalWords.push({ text: splitWord, isBold: token.isBold })
     })
   })
 

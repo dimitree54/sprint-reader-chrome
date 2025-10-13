@@ -83,6 +83,7 @@ class StreamingTextOrchestrator {
     if (store.isPreprocessing) {
       store.setIsPreprocessing(false)
     }
+    console.log('Streaming complete. Full set of tokens:', store.tokens)
     // Renderer will react to store changes automatically
   }
 

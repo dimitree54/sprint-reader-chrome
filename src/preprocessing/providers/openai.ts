@@ -344,6 +344,8 @@ export class OpenAIProvider implements PreprocessingProvider {
       reader.releaseLock()
     }
 
+    console.log('Raw text from streaming endpoint:', collectedText)
+
     return collectedText || 'No text received from stream'
   }
 }
