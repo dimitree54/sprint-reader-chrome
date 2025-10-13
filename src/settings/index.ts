@@ -645,4 +645,15 @@ document.addEventListener('DOMContentLoaded', () => {
   })
   registerEvents(elements)
   registerAuthRefreshHandlers()
+
+  // Handle incoming actions from other extension pages
+  const urlParams = new URLSearchParams(window.location.search)
+  const action = urlParams.get('action')
+
+  if (action === 'register') {
+    // Use a small timeout to ensure the UI is ready before initiating login
+    setTimeout(() => {
+      elements.loginButton.click()
+    }, 100)
+  }
 })

@@ -167,12 +167,10 @@ function updateAiPreprocessingAccess (elements: PopupElements, isAuthenticated: 
         }
         elements.aiCtaButton.disabled = true
         try {
-          const result = await authService.login()
-          if (!result.success) {
-            console.error('[popup] Registration flow failed to start', result.error)
-          }
+          const url = browserApi.runtime.getURL('pages/settings.html?action=register')
+          await browserApi.createTab({ url })
         } catch (error) {
-          console.error('Failed to start registration flow', error)
+          console.error('Failed to open settings page for registration', error)
         } finally {
           elements.aiCtaButton.disabled = false
         }
