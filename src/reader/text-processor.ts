@@ -149,7 +149,7 @@ export function preprocessText (text: string): WordInfo[] {
 
     // Detach leading punctuation (anything not a letter, number, or asterisk)
     let leadingPunct = ''
-    const leadingMatch = word.match(/^[^'p{L}\p{N}*]+/u)
+    const leadingMatch = word.match(/^[^\p{L}\p{N}*]+/u)
     if (leadingMatch) {
         leadingPunct = leadingMatch[0]
         word = word.slice(leadingPunct.length)
@@ -157,7 +157,7 @@ export function preprocessText (text: string): WordInfo[] {
 
     // Detach trailing punctuation
     let trailingPunct = ''
-    const trailingMatch = word.match(/[^'p{L}\p{N}*]+$/u)
+    const trailingMatch = word.match(/[^\p{L}\p{N}*]+$/u)
     if (trailingMatch) {
         trailingPunct = trailingMatch[0]
         word = word.slice(0, -trailingPunct.length)
@@ -169,6 +169,7 @@ export function preprocessText (text: string): WordInfo[] {
     if (startsWithBold && endsWithBold && word.length > 4) {
       word = word.substring(2, word.length - 2)
       isBold = true
+      // This is a self-contained bold phrase, so it doesn't affect the next words.
       isBoldSection = false
     } else if (startsWithBold) {
       word = word.substring(2)

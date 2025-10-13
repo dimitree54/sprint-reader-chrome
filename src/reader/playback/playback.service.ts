@@ -69,8 +69,18 @@ export class PlaybackService {
         chunkSize: s.chunkSize
       }
       const [withTiming] = timingService.calculateChunkDurations([current], prefs)
-      const duration = (withTiming.duration ?? 0) + (withTiming.postdelay ?? 0)
-      return Math.max(duration, DEFAULTS.TIMING.minimumDelayMs)
+
+      // Start with the recalculated base duration
+      let duration = withTiming.duration ?? 0
+
+      // Re-apply the bold multiplier, which was the missing step
+      if (current.isBold) {
+        duration *= DEFAULTS.TIMING.MULTIPLIERS.bold
+      }
+
+      // Add punctuation delay and return
+      const totalDelay = duration + (withTiming.postdelay ?? 0)
+      return Math.max(totalDelay, DEFAULTS.TIMING.minimumDelayMs)
     }
     // Fallback when no current item available
     const wpm = Math.max(DEFAULTS.TIMING.minimumWpmForCalculation, wordsPerMinute)

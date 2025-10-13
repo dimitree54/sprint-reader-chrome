@@ -33,7 +33,14 @@ export const DEFAULTS = {
   TIMING: {
     minimumDelayMs: 20,
     minimumWpmForCalculation: 100,
-    selectionCaptureDelayMs: 120
+    selectionCaptureDelayMs: 120,
+    MULTIPLIERS: {
+      bold: 1.5,
+      commaPause: 0.5,
+      periodPause: 1.0,
+      paragraphPause: 2.5,
+      groupedChunk: 0.9
+    }
   },
 
   // UI and positioning defaults

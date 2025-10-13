@@ -47,15 +47,15 @@ export function calculatePunctuationTiming (
   let postdelay = 0
 
   if (settings.pauseAfterComma && punctuation.hasComma) {
-    postdelay += baseDuration * 0.5
+    postdelay += baseDuration * DEFAULTS.TIMING.MULTIPLIERS.commaPause
   }
 
   if (settings.pauseAfterPeriod && punctuation.hasPeriod) {
-    postdelay += baseDuration * 1.0
+    postdelay += baseDuration * DEFAULTS.TIMING.MULTIPLIERS.periodPause
   }
 
   if (settings.pauseAfterParagraph && punctuation.isParagraph) {
-    postdelay += baseDuration * 2.5
+    postdelay += baseDuration * DEFAULTS.TIMING.MULTIPLIERS.paragraphPause
   }
 
   return { predelay, postdelay }

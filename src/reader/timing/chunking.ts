@@ -19,8 +19,8 @@ export function createWordItem (wordInfo: WordInfo, settings: TimingSettings): W
   const duration = calculateWordTiming({ text, wordLength, frequency } as WordItem, settings)
   const timing = calculatePunctuationTiming({ text, wordLength } as WordItem, settings)
 
-  // Apply 1.5x timing multiplier for bold words
-  const adjustedDuration = wordInfo.isBold ? duration * 1.5 : duration
+  // Apply 5x timing multiplier for bold words
+  const adjustedDuration = wordInfo.isBold ? duration * DEFAULTS.TIMING.MULTIPLIERS.bold : duration
 
   return {
     text,
@@ -73,11 +73,11 @@ function groupWordsIntoChunks (words: WordInfo[], settings: TimingSettings): Wor
     wordItem.originalText = chunkWords.map(w => w.text).join(' ')
 
     if (wordItem.isGrouped) {
-      wordItem.duration *= 0.9
+      wordItem.duration *= DEFAULTS.TIMING.MULTIPLIERS.groupedChunk
     }
 
     if (hasBoldWords) {
-      wordItem.duration *= 1.5
+      wordItem.duration *= DEFAULTS.TIMING.MULTIPLIERS.bold
       wordItem.isBold = true
     }
 
