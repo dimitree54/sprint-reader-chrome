@@ -75,6 +75,8 @@ function renderWordContent(wordElement: HTMLElement, state: ReturnType<typeof us
   }
 }
 
+let errorTimeout: number | undefined
+
 function updateDOM(elements: RenderElements, state: ReturnType<typeof useReaderStore.getState>): void {
   // Update word content
   renderWordContent(elements.wordElement, state)
@@ -104,8 +106,19 @@ function updateDOM(elements: RenderElements, state: ReturnType<typeof useReaderS
   if (state.preprocessingError) {
     elements.errorBubbleElement.textContent = state.preprocessingError
     elements.errorBubbleElement.hidden = false
+
+    if (errorTimeout) {
+      clearTimeout(errorTimeout)
+    }
+
+    errorTimeout = window.setTimeout(() => {
+      elements.errorBubbleElement.hidden = true
+    }, 5000)
   } else {
     elements.errorBubbleElement.hidden = true
+    if (errorTimeout) {
+      clearTimeout(errorTimeout)
+    }
   }
 
   // Update control disabled states and WPM value display
