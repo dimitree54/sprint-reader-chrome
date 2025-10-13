@@ -1,4 +1,4 @@
-import { buildChatCompletionPayload } from '../../reader/openai-prompt'
+import { buildChatCompletionPayload } from '../openai-prompts'
 import type { PreprocessingProvider, PreprocessingResult } from './types'
 import { preprocessingConfigService, type PreprocessingConfig } from '../config'
 import { authService } from '../../auth'
@@ -42,6 +42,10 @@ export class OpenAIProvider implements PreprocessingProvider {
       return !!(globalThis as any).TEST_AUTH_TOKEN
     }
 
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return false
+    }
+
     const authState = getAuthState()
     if (!authState.isAuthenticated) {
       return false
@@ -58,7 +62,7 @@ export class OpenAIProvider implements PreprocessingProvider {
   /**
    * Get detailed availability information with reasons for non-availability
    */
-  async getAvailabilityInfo(): Promise<{ isAvailable: boolean; reason?: string }> {
+  async getAvailabilityInfo(config?: PreprocessingConfig): Promise<{ isAvailable: boolean; reason?: string }> {
     // Check for test mode override
     if ((globalThis as any).TEST_MODE) {
       const hasTestToken = !!(globalThis as any).TEST_AUTH_TOKEN
@@ -109,6 +113,15 @@ export class OpenAIProvider implements PreprocessingProvider {
     }
 
     if (user.subscriptionStatus !== 'pro') {
+      const finalConfig = config ?? (await preprocessingConfigService.getConfig())
+      if (finalConfig.enabled) {
+        return {
+          isAvailable: false,
+          reason: `AI preprocessing is enabled, but a pro subscription is required (current: '${
+            user.subscriptionStatus || 'none'
+          }'). Falling back to standard processing.`
+        }
+      }
       return {
         isAvailable: false,
         reason: user.subscriptionStatus
@@ -167,6 +180,11 @@ export class OpenAIProvider implements PreprocessingProvider {
       timeoutId = setTimeout(() => controller.abort(), 30000)
 
       const payload = buildChatCompletionPayload(text, config.targetLanguage, config.summarizationLevel, config.enabled)
+
+      console.log(
+        '[OpenAIProvider] Sending request to AI endpoint with payload:',
+        JSON.stringify(payload, null, 2)
+      )
 
       const response = await fetch(KINDE_GATED_WORKER_URL, {
         method: 'POST',
@@ -233,6 +251,11 @@ export class OpenAIProvider implements PreprocessingProvider {
 
       const payload = buildChatCompletionPayload(text, config.targetLanguage, config.summarizationLevel, config.enabled)
       const streamingPayload = { ...payload, stream: true }
+
+      console.log(
+        '[OpenAIProvider] Sending streaming request to AI endpoint with payload:',
+        JSON.stringify(streamingPayload, null, 2)
+      )
 
       const response = await fetch(KINDE_GATED_WORKER_URL, {
         method: 'POST',

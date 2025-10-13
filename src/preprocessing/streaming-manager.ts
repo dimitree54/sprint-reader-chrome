@@ -79,15 +79,15 @@ export class StreamingPreprocessingManager {
       const openAiProvider = new OpenAIProvider()
       const passthroughProvider = new PassthroughProvider()
 
-      // Check if we should use streaming preprocessing (only when enabled and provider is available)
-      if (config.enabled && openAiProvider.isAvailable(config)) {
+      // Check if we should use streaming preprocessing
+      if (!preprocessingConfigService.shouldSkipProcessing(config) && openAiProvider.isAvailable(config)) {
         console.log('[StreamingPreprocessingManager] Using OpenAI streaming provider')
         await this.processWithStreamingProvider(rawText, openAiProvider, config, streamingProcessor)
       } else {
         // Fall back to non-streaming preprocessing (simulate streaming)
         let reason: string
-        if (!config.enabled) {
-          reason = 'preprocessing disabled in config'
+        if (preprocessingConfigService.shouldSkipProcessing(config)) {
+          reason = 'preprocessing skipped by config (no translation and no summarization)'
         } else {
           const availabilityInfo = await openAiProvider.getAvailabilityInfo()
           reason = `OpenAI provider not available: ${availabilityInfo.reason || 'unknown reason'}`

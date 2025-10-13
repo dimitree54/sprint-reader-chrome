@@ -9,8 +9,10 @@ import italianPrompts from './prompts/italian.json'
 import polishPrompts from './prompts/polish.json'
 import ukrainianPrompts from './prompts/ukrainian.json'
 import dutchPrompts from './prompts/dutch.json'
+import noTranslationPrompts from './prompts/no-translation.json'
 import { SUMMARIZATION_LEVELS, type SummarizationLevel } from '../common/summarization'
 import { getSupportedPromptLanguages, getPromptFilename, type TranslationLanguage } from '../common/translation'
+import { DEFAULTS } from '../config/defaults'
 
 // Extract the values array for iteration
 const SUMMARIZATION_LEVEL_VALUES = SUMMARIZATION_LEVELS.map(s => s.value)
@@ -47,12 +49,15 @@ const rawLanguagePrompts: Record<SupportedLanguage, unknown> = Object.fromEntrie
   })
 ) as Record<SupportedLanguage, unknown>
 
-function isLanguagePromptSet (value: unknown): value is LanguagePromptSet {
+function isLanguagePromptSet (value: unknown, checkNone = true): value is LanguagePromptSet {
   if (typeof value !== 'object' || value === null) {
     return false
   }
 
   for (const level of SUMMARIZATION_LEVEL_VALUES) {
+    if (!checkNone && level === 'none') {
+      continue
+    }
     if (typeof (value as Record<string, unknown>)[level] !== 'string') {
       return false
     }
@@ -70,8 +75,54 @@ const promptsByLanguage: Record<SupportedLanguage, LanguagePromptSet> = Object.f
   })
 ) as Record<SupportedLanguage, LanguagePromptSet>
 
+if (!isLanguagePromptSet(noTranslationPrompts, false)) {
+  throw new Error('Invalid prompt configuration for no-translation prompts')
+}
+const NO_TRANSLATION_PROMPTS: LanguagePromptSet = noTranslationPrompts
+
 export const LANGUAGE_PROMPTS = promptsByLanguage
 
-export function getSystemPrompt (language: SupportedLanguage, level: SummarizationLevel): string {
-  return LANGUAGE_PROMPTS[language][level]
+export function getSystemPrompt (
+  language: TranslationLanguage,
+  level: SummarizationLevel,
+  translationEnabled: boolean
+): string {
+  if (!translationEnabled) {
+    return NO_TRANSLATION_PROMPTS[level]
+  }
+
+  if (language === 'none') {
+    return LANGUAGE_PROMPTS.en[level]
+  }
+
+  if (SUPPORTED_LANGUAGES.includes(language)) {
+    return LANGUAGE_PROMPTS[language as SupportedLanguage][level]
+  }
+
+  return LANGUAGE_PROMPTS.en[level]
+}
+
+export type OpenAIChatCompletionsPayload = {
+  model: string;
+  messages: Array<{ role: 'system' | 'user'; content: string }>;
+  temperature?: number;
+}
+
+export function buildChatCompletionPayload (
+  text: string,
+  targetLanguage: TranslationLanguage,
+  summarizationLevel: SummarizationLevel,
+  enabled: boolean
+): OpenAIChatCompletionsPayload {
+  const normalizedText = text.trim()
+
+  const systemContent = getSystemPrompt(targetLanguage, summarizationLevel, enabled)
+
+  return {
+    model: DEFAULTS.OPENAI.model,
+    messages: [
+      { role: 'system', content: systemContent },
+      { role: 'user', content: normalizedText }
+    ]
+  }
 }
