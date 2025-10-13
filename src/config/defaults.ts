@@ -70,11 +70,9 @@ export const DEFAULTS = {
 
   // OpenAI API defaults
   OPENAI: {
-    model: 'gpt-5-mini',
-    service_tier: 'priority',
-    reasoning: {
-      effort: 'minimal'
-    }
+    model: 'gpt-4.1-mini',
+    service_tier: 'priority', // from 'flex', 'auto', 'priority'
+    // reasoning_effort: 'minimal' // from 'minimal', 'low', 'medium', 'high'
   },
 
   // Preprocessing defaults

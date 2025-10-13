@@ -106,6 +106,7 @@ export type OpenAIChatCompletionsPayload = {
   model: string;
   messages: Array<{ role: 'system' | 'user'; content: string }>;
   temperature?: number;
+  service_tier?: 'flex' | 'auto' | 'default' | 'priority';
 }
 
 export function buildChatCompletionPayload (
@@ -119,7 +120,7 @@ export function buildChatCompletionPayload (
   const systemContent = getSystemPrompt(targetLanguage, summarizationLevel, enabled)
 
   return {
-    model: DEFAULTS.OPENAI.model,
+    ...DEFAULTS.OPENAI,
     messages: [
       { role: 'system', content: systemContent },
       { role: 'user', content: normalizedText }
