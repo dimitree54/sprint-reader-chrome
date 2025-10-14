@@ -6,6 +6,7 @@ import { DEFAULTS } from '../config/defaults'
 import { initRenderer } from './ui/renderer'
 import { authService } from '../auth'
 import { applyExtensionName } from '../common/app-name'
+import { initCtaButton } from './ui/cta';
 
 function initializeCSSVariables(): void {
   const root = document.documentElement
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize store-driven renderer and capture unsubscribe
   const unsubscribe = initRenderer()
   bindControls()
+  initCtaButton()
   // Register beforeunload to cleanup store subscriptions
   window.addEventListener('beforeunload', () => unsubscribe())
 })
