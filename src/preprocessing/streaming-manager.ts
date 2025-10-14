@@ -144,11 +144,23 @@ export class StreamingPreprocessingManager {
       // Handle any errors from preprocessing
       if (result.error) {
         this.logPreprocessingError('OpenAI streaming', result.error)
-        if (result.error.type === 'timeout_error') {
-          useReaderStore.getState().setPreprocessingError('Skipping AI Preprocesssing: AI server is not available right now, sorry')
-          const passthroughProvider = new PassthroughProvider()
-          await this.processWithNonStreamingProvider(rawText, passthroughProvider, config, streamingProcessor)
+        const readerStore = useReaderStore.getState()
+        switch (result.error.type) {
+          case 'timeout_error':
+            readerStore.setPreprocessingError('Skipping AI Preprocessing: AI server is not available right now, sorry')
+            break
+          case 'network_error':
+            readerStore.setPreprocessingError(`Skipping AI Preprocessing: ${result.error.message}`)
+            break
+          case 'api_error':
+            readerStore.setPreprocessingError(`Skipping AI Preprocessing because of error: ${result.error.message}`)
+            break
+          default:
+            readerStore.setPreprocessingError('An unknown error occurred during AI preprocessing.')
+            break
         }
+        const passthroughProvider = new PassthroughProvider()
+        await this.processWithNonStreamingProvider(rawText, passthroughProvider, config, streamingProcessor)
       }
     } catch (error) {
       // Cancel streaming on error
