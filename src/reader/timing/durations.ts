@@ -7,7 +7,8 @@ const MAX_DELAY_MS = 2000
 const MIN_DELAY_MS = 50
 
 const baseDurationFor = (settings: TimingSettings): number => {
-  return Math.max(60_000 / Math.max(MIN_WPM, settings.wordsPerMinute), DEFAULTS.TIMING.minimumDelayMs)
+  const modifiedWpm = settings.wordsPerMinute * DEFAULTS.TIMING.wpmModifier
+  return Math.max(60_000 / Math.max(MIN_WPM, modifiedWpm), DEFAULTS.TIMING.minimumDelayMs)
 }
 
 export function calculateWordTiming (wordItem: WordItem, settings: TimingSettings): number {

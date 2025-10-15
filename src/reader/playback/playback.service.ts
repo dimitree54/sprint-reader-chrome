@@ -83,7 +83,8 @@ export class PlaybackService {
       return Math.max(totalDelay, DEFAULTS.TIMING.minimumDelayMs)
     }
     // Fallback when no current item available
-    const wpm = Math.max(DEFAULTS.TIMING.minimumWpmForCalculation, wordsPerMinute)
+    const modifiedWpm = wordsPerMinute * DEFAULTS.TIMING.wpmModifier
+    const wpm = Math.max(DEFAULTS.TIMING.minimumWpmForCalculation, modifiedWpm)
     return Math.max(60_000 / wpm, DEFAULTS.TIMING.minimumDelayMs)
   }
 
@@ -99,7 +100,8 @@ export class PlaybackService {
       if (store.isStreaming && !store.streamingComplete) {
         // Keep playing state; poll until new items arrive
         this.clearTimer()
-        const wpm = Math.max(DEFAULTS.TIMING.minimumWpmForCalculation, store.wordsPerMinute)
+        const modifiedWpm = store.wordsPerMinute * DEFAULTS.TIMING.wpmModifier
+        const wpm = Math.max(DEFAULTS.TIMING.minimumWpmForCalculation, modifiedWpm)
         const delay = Math.max(60_000 / wpm, DEFAULTS.TIMING.minimumDelayMs)
         this.timerId = setTimeout(this.scheduleNextWord, delay)
         return
