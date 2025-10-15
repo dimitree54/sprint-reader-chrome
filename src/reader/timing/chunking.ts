@@ -20,7 +20,13 @@ export function createWordItem (wordInfo: WordInfo, settings: TimingSettings): W
   const timing = calculatePunctuationTiming({ text, wordLength } as WordItem, settings)
 
   // Apply 5x timing multiplier for bold words
-  const adjustedDuration = wordInfo.isBold ? duration * DEFAULTS.TIMING.MULTIPLIERS.bold : duration
+  let adjustedDuration = wordInfo.isBold ? duration * DEFAULTS.TIMING.MULTIPLIERS.bold : duration
+
+  // Apply multiplier for chunks with non-letter characters
+  const hasNonLetter = /[^a-zA-Z\s]/.test(wordInfo.text)
+  if (hasNonLetter) {
+    adjustedDuration *= DEFAULTS.TIMING.MULTIPLIERS.nonLetterChunk
+  }
 
   return {
     text,

@@ -39,7 +39,8 @@ export const DEFAULTS = {
       commaPause: 0.5,
       periodPause: 1.0,
       paragraphPause: 2.5,
-      groupedChunk: 0.9
+      groupedChunk: 1.3,
+      nonLetterChunk: 1.2
     }
   },
 
