@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "10x your reading speed with AI",
   "version": "3.0.3",
-  "description": "10x your reading speed with RSVP and AI-powered preprocessing: translation, summarization, and highlighting.",
+  "description": "10x your reading speed with RSVP method and AI-powered text pre-processing: translation, summarization and keywords highlighting.",
   "icons": {
     "16": "assets/icons/icon16.png",
     "48": "assets/icons/icon48.png",

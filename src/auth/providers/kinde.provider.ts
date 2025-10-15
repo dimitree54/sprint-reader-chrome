@@ -66,7 +66,7 @@ export class KindeProvider implements AuthProvider {
         token: tokens.access_token
       }
     } catch (error) {
-      console.error('Kinde login error:', error)
+      console.warn('Kinde login error:', error)
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Login failed'
@@ -180,7 +180,7 @@ export class KindeProvider implements AuthProvider {
         },
         (redirectUrl) => {
           if (chrome.runtime.lastError) {
-            console.error('[auth:kinde] launchWebAuthFlow error', {
+            console.warn('[auth:kinde] launchWebAuthFlow error', {
               message: chrome.runtime.lastError.message,
               authUrl
             })

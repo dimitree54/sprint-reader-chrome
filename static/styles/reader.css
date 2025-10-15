@@ -82,6 +82,12 @@ body.reader--light {
   gap: 16px;
 }
 
+.reader__header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .reader__cta-button {
   border: 1px solid var(--reader-accent);
   background: transparent;

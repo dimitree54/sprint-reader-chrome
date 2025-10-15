@@ -199,7 +199,7 @@ function updateAiPreprocessingAccess (elements: PopupElements, isAuthenticated: 
 
 async function loadAuthState (elements: PopupElements): Promise<void> {
   // Initialize auth service
-  await authService.initializeAuth()
+  await authService.initializeAuth('popup')
 
   // Get current auth state
   const authState = authService.getAuthState()

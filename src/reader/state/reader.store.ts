@@ -4,7 +4,7 @@ import { DEFAULTS } from '../../config/defaults'
 import type { WordItem } from '../timing-engine'
 import type { ReaderToken } from '../text-types'
 
-export type ReaderStatus = 'idle' | 'playing' | 'paused' | 'loading'
+export type ReaderStatus = 'paused' | 'playing' | 'paused' | 'loading'
 
 export type ReaderStoreState = {
   // Status / playback
@@ -55,7 +55,7 @@ export type ReaderStoreState = {
 }
 
 export const useReaderStore = create<ReaderStoreState>()((set) => ({
-  status: 'idle',
+  status: 'paused',
   index: 0,
   wordsPerMinute: DEFAULTS.READER_PREFERENCES.wordsPerMinute,
 
@@ -105,7 +105,7 @@ export const useReaderStore = create<ReaderStoreState>()((set) => ({
   setPreprocessingError: (error) => set({ preprocessingError: error }),
   updatePreferences: (prefs) => set((s) => ({ ...s, ...prefs })),
   reset: () => set(() => ({
-    status: 'idle',
+    status: 'paused',
     index: 0,
     wordsPerMinute: DEFAULTS.READER_PREFERENCES.wordsPerMinute,
     tokens: [],

@@ -5,7 +5,7 @@ describe('reader.store (Zustand)', () => {
   it('toggles play/pause status', () => {
     const get = useReaderStore.getState
     const set = useReaderStore.getState().togglePlay
-    expect(get().status).toBe('idle')
+    expect(get().status).toBe('paused')
     set()
     expect(get().status).toBe('playing')
     set()

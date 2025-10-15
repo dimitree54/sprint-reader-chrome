@@ -311,7 +311,7 @@ function updateAuthUI (elements: SettingsElements, isAuthenticated: boolean, use
 
 async function loadAuthState (elements: SettingsElements): Promise<void> {
   // Initialize auth service
-  await authService.initializeAuth()
+  await authService.initializeAuth('settings')
 
   // Get current auth state
   const authState = authService.getAuthState()
@@ -333,7 +333,7 @@ function registerAuthRefreshHandlers (): void {
 
     isRefreshing = true
     try {
-      await authService.refreshUserData()
+      await authService.refreshUserData('settings')
     } catch (error) {
       console.error('[settings] Failed to refresh auth state after visibility change', error)
     } finally {

@@ -8,6 +8,6 @@ registerBackgroundListeners()
 // Then prime background state (preferences, etc.)
 primeBackgroundState().catch(console.error)
 // Initialize authentication state
-authService.initializeAuth().catch(console.error)
+authService.initializeAuth('background').catch(console.error)
 // Expose testing hooks after initialization
 exposeTestingHooks()

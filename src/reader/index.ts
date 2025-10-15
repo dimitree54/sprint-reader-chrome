@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   applyExtensionName()
   initializeCSSVariables()
   // Initialize authentication state in reader context
-  authService.initializeAuth().catch(console.error)
+  authService.initializeAuth('reader').catch(console.error)
   loadSelectionContent().catch(console.error)
   registerMessageListener()
   // Initialize store-driven renderer and capture unsubscribe

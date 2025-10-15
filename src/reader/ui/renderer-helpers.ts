@@ -82,5 +82,5 @@ export function computeStatus(state: ReturnType<typeof useReaderStore.getState>)
     return { text: LOADING_TEXT }
   }
 
-  return { text: state.status === 'playing' ? 'Playing' : (state.status === 'idle' ? 'Idle' : 'Paused') }
+  return { text: state.status === 'playing' ? 'Playing' : 'Paused' }
 }

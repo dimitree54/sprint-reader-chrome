@@ -22,7 +22,7 @@ export class AuthService {
 
       const result = await this.provider.login()
       if (result.success) {
-        await this.refreshUserData()
+        await this.refreshUserData('login')
       } else {
         store.setError(result.error || 'Login failed')
       }
@@ -54,14 +54,14 @@ export class AuthService {
     }
   }
 
-  async refreshUserData(): Promise<User | null> {
+  async refreshUserData(source?: string): Promise<User | null> {
     try {
       const user = await this.provider.getUser()
       const store = getAuthState()
       store.setUser(user)
 
       if (user) {
-        await this.checkSubscriptionStatus()
+        await this.checkSubscriptionStatus(source)
       }
 
       return getAuthState().user
@@ -73,7 +73,8 @@ export class AuthService {
 
 
 
-  private async checkSubscriptionStatus(): Promise<'pro' | 'free'> {
+  private async checkSubscriptionStatus(source?: string): Promise<'pro' | 'free'> {
+    console.log(`checkSubscriptionStatus called from ${source || 'unknown'}`);
     const store = getAuthState()
     try {
       const token = await this.getToken()
@@ -95,7 +96,7 @@ export class AuthService {
         if (cachedUser?.subscriptionStatus) {
           return cachedUser.subscriptionStatus
         }
-        console.error(`Kinde API returned status ${res.status} and no cached user subscription status found.`)
+        console.warn(`Kinde API returned status ${res.status} and no cached user subscription status found.`)
         return 'free'
       }
 
@@ -136,7 +137,7 @@ export class AuthService {
     }
   }
 
-  async initializeAuth(): Promise<void> {
+  async initializeAuth(source?: string): Promise<void> {
     const store = getAuthState()
     store.setLoading(true)
 
@@ -144,7 +145,7 @@ export class AuthService {
       const isAuthenticated = await this.provider.isAuthenticated()
 
       if (isAuthenticated) {
-        await this.refreshUserData()
+        await this.refreshUserData(source || 'initializeAuth')
       } else {
         await storageService.clearAuthData()
         store.setUser(null)
