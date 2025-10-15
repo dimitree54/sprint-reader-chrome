@@ -88,6 +88,11 @@ body.reader--light {
   gap: 16px;
 }
 
+.reader__logo {
+  width: 40px;
+  height: 40px;
+}
+
 .reader__cta-button {
   border: 1px solid var(--reader-accent);
   background: transparent;
