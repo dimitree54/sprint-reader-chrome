@@ -75,6 +75,7 @@ function bindSettingsButton(): void {
   button?.addEventListener('click', async () => {
     const url = browserApi.runtime.getURL('pages/settings.html')
     await browserApi.createTab({ url })
+    window.close()
   })
 }
 
