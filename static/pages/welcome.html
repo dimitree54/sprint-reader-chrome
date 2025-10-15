@@ -40,10 +40,10 @@
                 The method you’re using is Rapid Serial Visual Presentation, in short RSVP. It shows one word or a short phrase at a time in the same spot on the screen so you can read without moving your eyes and scrolling the page. That lets you read much faster with no training.
               </p>
               <p>
-                For most of the people this intro would take ~55 seconds, but you finished it in ~38 seconds. You can read any web page like this: select any text and “<span data-app-name></span>” is always right-click away.
+                For most of the people this intro would take ~55 seconds, but you finished it in ~38 seconds. You can read any web page like this: select any text and the extension will always be right-click away.
               </p>
               <p>
-                For now, close this window to return to the onboarding page and learn other ways to use “<span data-app-name></span>”.
+                For now, close this window to return to the onboarding page and learn other ways to use this extension”.
               </p>
             </div>
           </div>
@@ -57,10 +57,20 @@
             <p class="welcome__step">Step 2</p>
             <h2 class="welcome__card-title">Paste any text</h2>
             <p class="welcome__card-description">
-              1. Copy the text below.
+              1. Copy the text from the box below:
+              <button class="welcome__copy-button" type="button" data-copy-target="step2Text" style="margin-left: 8px;">
+                Copy
+              </button>
+              <span class="welcome__copy-toast" role="status" aria-live="polite"></span>
             </p>
-            <p class="welcome__card-description">
-              2. Open the extension window: click the Extensions (jigsaw) icon to the right of the address bar, then click “<span data-app-name></span>”.
+            <p class="welcome__card-description";">
+              2. Open the extension window:
+            </p>
+            <p class="welcome__card-description" style="margin-left: 1.5em;">
+              2.1. Click the Extensions (jigsaw) icon to the right of the address bar”.
+            </p>
+            <p class="welcome__card-description" style="margin-left: 1.5em;">
+              2.2. Then click “<span data-app-name></span>”.
             </p>
             <p class="welcome__card-description">
               3. In the pop-up, paste the copied text into the box to speed-read it.
@@ -69,12 +79,6 @@
               4. In the future, consider pinning the extension for faster access.
             </p>
           </header>
-          <div class="welcome__tools">
-            <button class="welcome__copy-button" type="button" data-copy-target="step2Text">
-              Copy the text below
-            </button>
-            <div class="welcome__copy-toast" role="status" aria-live="polite"></div>
-          </div>
           <div class="welcome__text-box">
             <div id="step2Text" class="welcome__text-content" tabindex="0" role="textbox" aria-label="Practice text for Step 2" spellcheck="false">
               <p>
@@ -84,31 +88,17 @@
                 To help you finish pages even faster, we combine RSVP with AI pre-processing:
               </p>
               <p>
-                1. <strong>AI summarization.</strong> Many web pages are filled with unnecessary text that just wastes your time. For example, before you finally learn how to cook rice, you might need to scroll through a long story about its history and cultural importance. “<span data-app-name></span>” solves this by pre-processing text with AI to keep only the essential information. You can choose how much summarization you want — from none to keep every detail to strong summarization for just the core meaning.
-                This feature alone can help you finish pages up to 3x faster by reducing the amount of content you need to read.
+                1. <strong>AI summarization.</strong> Many web pages are filled with unnecessary text that just wastes your time. The extension solves this by pre-processing text with AI to keep only the essential information. You can choose how much summarization you want: use "none" summarization to keep every detail or use "aggressive" summarization for extracting just the core from the information.
               </p>
               <p>
-                2. <strong>AI translation.</strong> Even if you know several languages, your native language is still your reading superpower — you process it faster and with less effort.
-                “<span data-app-name></span>” uses AI translation to tap into that advantage by instantly converting any content into your native language, so you can read more comfortably and quickly.
-                The exact speed boost depends on your language skills, but here is an example from me: I read English pretty well and use it a lot, yet reading in my native language is still about 1.6x faster for me.
+                2. <strong>AI translation.</strong> Even if you know several languages, your native language is still your reading superpower. You process it faster and with less effort.
+                The extension uses AI translation to tap into that advantage by instantly converting any content into your native language.
               </p>
               <p>
                 3. <strong>AI highlighting.</strong> Our AI automatically highlights key words and phrases, showing them slightly longer during reading so your brain naturally focuses on what matters most.
               </p>
               <p>
-                My personal boost calculation:
-              </p>
-              <p>
-                1. ~2x from RSVP
-              </p>
-              <p>
-                2. ~3x from summarization
-              </p>
-              <p>
-                3. ~1.6x from translation
-              </p>
-              <p>
-                Which multiplies into ~10x overall. Your exact numbers may differ, but for me, it adds up to hours saved every month.
+                For example for me, these individual boosts multiply into ~10x overall. Your exact numbers may differ, but for me, it adds up to hours of reading saved every month.
               </p>
             </div>
           </div>
