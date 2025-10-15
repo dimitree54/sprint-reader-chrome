@@ -91,12 +91,12 @@ export class AuthService {
       })
 
       if (!res.ok) {
-        console.warn(`Kinde API returned status ${res.status}. Using cached subscription status.`)
+        console.info(`Kinde API returned status ${res.status}. Using cached subscription status.`)
         const cachedUser = await storageService.readAuthUser()
         if (cachedUser?.subscriptionStatus) {
           return cachedUser.subscriptionStatus
         }
-        console.warn(`Kinde API returned status ${res.status} and no cached user subscription status found.`)
+        console.info(`Kinde API returned status ${res.status} and no cached user subscription status found.`)
         return 'free'
       }
 

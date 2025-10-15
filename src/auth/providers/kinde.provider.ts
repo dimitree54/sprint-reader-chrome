@@ -180,7 +180,7 @@ export class KindeProvider implements AuthProvider {
         },
         (redirectUrl) => {
           if (chrome.runtime.lastError) {
-            console.warn('[auth:kinde] launchWebAuthFlow error', {
+            console.info('[auth:kinde] launchWebAuthFlow error', {
               message: chrome.runtime.lastError.message,
               authUrl
             })
