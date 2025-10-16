@@ -8,12 +8,6 @@ export interface TimeProgress {
   progressPercent: number
 }
 
-export interface FormattedTime {
-  minutes: number
-  seconds: number
-  display: string
-}
-
 /**
  * Calculate the total reading time for all word items
  */
@@ -72,42 +66,18 @@ export function getTimeProgress(wordItems: WordItem[], currentIndex: number, set
 }
 
 /**
- * Format milliseconds into a readable time format
+ * Format the remaining time in -HH:MM:SS format
  */
-export function formatTime(ms: number): FormattedTime {
-  const totalSeconds = Math.ceil(ms / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
+export function formatEta(remainingMs: number): string {
+  const safeMs = Math.max(0, remainingMs)
+  const totalSeconds = Math.ceil(safeMs / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = totalSeconds % 60
 
-  let display: string
-  if (minutes > 0) {
-    display = `${minutes}m ${seconds}s`
-  } else {
-    display = `${seconds}s`
-  }
+  const hoursStr = String(hours).padStart(2, '0')
+  const minutesStr = String(minutes).padStart(2, '0')
+  const secondsStr = String(seconds).padStart(2, '0')
 
-  return {
-    minutes,
-    seconds,
-    display
-  }
-}
-
-/**
- * Format time remaining display with context
- */
-export function formatTimeRemaining(remainingMs: number): string {
-  if (remainingMs <= 0) {
-    return 'Complete'
-  }
-
-  const { display } = formatTime(remainingMs)
-  return `${display} left`
-}
-
-/**
- * Format progress percentage for display
- */
-export function formatProgressPercent(percent: number): string {
-  return `${Math.round(percent)}%`
+  return `-${hoursStr}:${minutesStr}:${secondsStr}`
 }

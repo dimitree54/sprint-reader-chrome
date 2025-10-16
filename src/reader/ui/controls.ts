@@ -14,12 +14,73 @@ function bindPlaybackButtons(): void {
     if (state.status === 'playing') playbackService.pause()
     else playbackService.play()
   })
+}
 
-  const restartButton = document.getElementById('btnRestart')
-  restartButton?.addEventListener('click', () => {
+function bindTimelineSeek(): void {
+  const timeline = document.getElementById('readerTimeline') as HTMLElement | null
+  if (!timeline) return
+
+  const progressRect = () => timeline.getBoundingClientRect()
+
+  const seekFromClientX = (clientX: number): void => {
     const state = useReaderStore.getState()
-    if (state.isPreprocessing) return
-    playbackService.restart()
+    if (state.isPreprocessing || state.wordItems.length === 0) return
+    const rect = progressRect()
+    if (rect.width <= 0) return
+    const relativeX = Math.min(Math.max(clientX - rect.left, 0), rect.width)
+    const ratio = relativeX / rect.width
+    const available = state.wordItems.length
+    const targetIndex = Math.min(available - 1, Math.max(0, Math.round(ratio * (available - 1))))
+    if (state.index === targetIndex) return
+    state.setPlaybackIndex(targetIndex)
+  }
+
+  let isDragging = false
+
+  timeline.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0 && event.pointerType !== 'touch' && event.pointerType !== 'pen') return
+    const state = useReaderStore.getState()
+    if (state.isPreprocessing || state.wordItems.length === 0) return
+    isDragging = true
+    timeline.setPointerCapture?.(event.pointerId)
+    seekFromClientX(event.clientX)
+  })
+
+  timeline.addEventListener('pointermove', (event) => {
+    if (!isDragging) return
+    event.preventDefault()
+    seekFromClientX(event.clientX)
+  })
+
+  const endInteraction = (event: PointerEvent): void => {
+    if (!isDragging) return
+    isDragging = false
+    timeline.releasePointerCapture?.(event.pointerId)
+    seekFromClientX(event.clientX)
+  }
+
+  timeline.addEventListener('pointerup', endInteraction)
+  timeline.addEventListener('pointercancel', () => {
+    isDragging = false
+  })
+  timeline.addEventListener('pointerleave', (event) => {
+    if (event.pointerType === 'mouse') {
+      endInteraction(event)
+    }
+  })
+
+  timeline.addEventListener('keydown', (event) => {
+    const state = useReaderStore.getState()
+    if (state.isPreprocessing || state.wordItems.length === 0) return
+    const available = state.wordItems.length
+    const step = Math.max(1, Math.floor(available * 0.01))
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      state.setPlaybackIndex(Math.max(0, state.index - step))
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      state.setPlaybackIndex(Math.min(available - 1, state.index + step))
+    }
   })
 }
 
@@ -86,4 +147,5 @@ export function bindControls(): void {
   bindResize()
   bindKeyboardShortcuts()
   bindSettingsButton()
+  bindTimelineSeek()
 }

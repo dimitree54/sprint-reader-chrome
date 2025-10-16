@@ -1,16 +1,16 @@
 import { useReaderStore } from '../state/reader.store'
 import { wrapLettersInSpans, highlightOptimalLetter, setOptimalWordPositioning, applyFlickerEffect } from '../visual-effects'
-import { computeProgress, computeStatus } from './renderer-helpers'
+import { computeProgress } from './renderer-helpers'
 
 // Re-export helper functions for external use
-export { computeProgress, computeStatus } from './renderer-helpers'
+export { computeProgress } from './renderer-helpers'
 
 interface RenderElements {
   wordElement: HTMLElement
-  statusElement: HTMLElement
-  progressElement: HTMLElement
-  progressBarElement: HTMLElement
-  progressFillElement: HTMLElement
+  timelineElement: HTMLElement
+  timelineProgressElement: HTMLElement
+  timelineHandleElement: HTMLElement
+  etaElement: HTMLElement
   playButton: HTMLButtonElement | null
   errorBubbleElement: HTMLElement
 }
@@ -18,23 +18,23 @@ interface RenderElements {
 
 function getRequiredElements(): RenderElements | null {
   const wordElement = document.getElementById('word')
-  const statusElement = document.getElementById('labelStatus')
-  const progressElement = document.getElementById('labelProgress')
-  const progressBarElement = document.querySelector('.reader__progress-bar') as HTMLElement
-  const progressFillElement = document.getElementById('progressBarFill')
+  const timelineElement = document.getElementById('readerTimeline') as HTMLElement | null
+  const timelineProgressElement = document.getElementById('readerTimelineProgress') as HTMLElement | null
+  const timelineHandleElement = document.getElementById('readerTimelineHandle') as HTMLElement | null
+  const etaElement = document.getElementById('labelProgress')
   const playButton = document.getElementById('btnPlay') as HTMLButtonElement | null
   const errorBubbleElement = document.getElementById('error-bubble')
 
-  if (!wordElement || !statusElement || !progressElement || !progressBarElement || !progressFillElement || !errorBubbleElement) {
+  if (!wordElement || !timelineElement || !timelineProgressElement || !timelineHandleElement || !etaElement || !errorBubbleElement) {
     return null
   }
 
   return {
     wordElement,
-    statusElement,
-    progressElement,
-    progressBarElement,
-    progressFillElement,
+    timelineElement,
+    timelineProgressElement,
+    timelineHandleElement,
+    etaElement,
     playButton,
     errorBubbleElement
   }
@@ -81,21 +81,17 @@ function updateDOM(elements: RenderElements, state: ReturnType<typeof useReaderS
   // Update word content
   renderWordContent(elements.wordElement, state)
 
-  // Update status
-  const statusData = computeStatus(state)
-  elements.statusElement.textContent = statusData.text
-
   // Update progress
-  if (state.isPreprocessing) {
-    elements.progressElement.textContent = 'Please wait'
-    elements.progressFillElement.style.width = '0%'
-    elements.progressBarElement.setAttribute('aria-valuenow', '0')
-  } else {
-    const progressData = computeProgress(state)
-    elements.progressElement.textContent = progressData.text
-    elements.progressFillElement.style.width = `${progressData.percent}%`
-    elements.progressBarElement.setAttribute('aria-valuenow', String(progressData.ariaNow))
-  }
+  const progressData = computeProgress(state)
+  const percentString = `${progressData.percent}%`
+  elements.timelineProgressElement.style.width = percentString
+  elements.timelineHandleElement.style.left = percentString
+  elements.timelineElement.setAttribute('aria-valuenow', String(progressData.ariaNow))
+  elements.timelineElement.setAttribute('aria-valuetext', progressData.eta)
+  elements.etaElement.textContent = progressData.eta
+  const disableTimeline = state.isPreprocessing || state.wordItems.length === 0
+  elements.timelineElement.classList.toggle('reader__timeline--disabled', disableTimeline)
+  elements.timelineElement.setAttribute('aria-disabled', disableTimeline ? 'true' : 'false')
 
   // Update play button
   if (elements.playButton) {
@@ -123,12 +119,10 @@ function updateDOM(elements: RenderElements, state: ReturnType<typeof useReaderS
 
   // Update control disabled states and WPM value display
   const isDisabled = state.isPreprocessing
-  const restartButton = document.getElementById('btnRestart') as HTMLButtonElement | null
   const wpmSlider = document.getElementById('sliderWpm') as HTMLInputElement | null
   const themeToggle = document.getElementById('toggleTheme') as HTMLInputElement | null
   const settingsButton = document.getElementById('openReaderSettings') as HTMLButtonElement | null
   if (elements.playButton) elements.playButton.disabled = isDisabled
-  if (restartButton) restartButton.disabled = isDisabled
   if (wpmSlider) wpmSlider.disabled = isDisabled
   if (themeToggle) themeToggle.disabled = isDisabled
   if (settingsButton) settingsButton.disabled = isDisabled
