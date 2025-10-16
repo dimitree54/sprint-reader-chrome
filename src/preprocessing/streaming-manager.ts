@@ -47,7 +47,7 @@ export class StreamingPreprocessingManager {
     if (Object.keys(details).length > 0) {
       console.warn(baseMessage, details)
     } else {
-      console.warn(baseMessage)
+      console.info(baseMessage)
     }
   }
 

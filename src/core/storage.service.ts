@@ -21,7 +21,9 @@ export const STORAGE_KEYS = {
   usageStats: 'sprintReader.usageStats',
   // Authentication keys
   authUser: 'sprintReader.auth.user',
-  authToken: 'sprintReader.auth.token'
+  authToken: 'sprintReader.auth.token',
+  authRefreshToken: 'sprintReader.auth.refreshToken',
+  authTokenExpiresAt: 'sprintReader.auth.tokenExpiresAt'
  } as const
 export class StorageService {
   constructor (private readonly api: BrowserApiService = browserApi) {}
@@ -181,10 +183,31 @@ export class StorageService {
     await this.set({ [STORAGE_KEYS.authToken]: token })
   }
 
+  async readAuthRefreshToken (): Promise<string | null> {
+    const result = await this.get<string>([STORAGE_KEYS.authRefreshToken])
+    return result[STORAGE_KEYS.authRefreshToken] || null
+  }
+
+  async writeAuthRefreshToken (token: string | null): Promise<void> {
+    await this.set({ [STORAGE_KEYS.authRefreshToken]: token })
+  }
+
+  async readAuthTokenExpiresAt (): Promise<number | null> {
+    const result = await this.get<number>([STORAGE_KEYS.authTokenExpiresAt])
+    const expiresAt = result[STORAGE_KEYS.authTokenExpiresAt]
+    return typeof expiresAt === 'number' && Number.isFinite(expiresAt) ? expiresAt : null
+  }
+
+  async writeAuthTokenExpiresAt (timestamp: number | null): Promise<void> {
+    await this.set({ [STORAGE_KEYS.authTokenExpiresAt]: timestamp })
+  }
+
   async clearAuthData (): Promise<void> {
     await this.set({
       [STORAGE_KEYS.authUser]: null,
-      [STORAGE_KEYS.authToken]: null
+      [STORAGE_KEYS.authToken]: null,
+      [STORAGE_KEYS.authRefreshToken]: null,
+      [STORAGE_KEYS.authTokenExpiresAt]: null
     })
   }
 

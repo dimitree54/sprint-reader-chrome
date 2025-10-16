@@ -276,13 +276,32 @@ export class OpenAIProvider implements PreprocessingProvider {
       }
 
       const translatedText = await this.processStreamingResponseWithCallback(response, controller.signal, onToken)
+      const trimmedText = translatedText.trim()
+
+      if (trimmedText.length === 0) {
+        console.info('[OpenAIProvider] Streaming request completed but returned empty body; treating as API error.')
+        return {
+          text,
+          metadata: {
+            originalLength: text.length,
+            processedLength: 0,
+            wasModified: false,
+            provider: this.name,
+            processingTime: Date.now() - startTime
+          },
+          error: {
+            type: 'api_error',
+            message: 'AI preprocessing returned an empty response'
+          }
+        }
+      }
 
       return {
-        text: translatedText.trim(),
+        text: trimmedText,
         metadata: {
           originalLength: text.length,
-          processedLength: translatedText.length,
-          wasModified: translatedText.trim() !== text.trim(),
+          processedLength: trimmedText.length,
+          wasModified: trimmedText !== text.trim(),
           provider: this.name,
           processingTime: Date.now() - startTime
         }
@@ -346,6 +365,6 @@ export class OpenAIProvider implements PreprocessingProvider {
 
     console.log('Raw text from streaming endpoint:', collectedText)
 
-    return collectedText || 'No text received from stream'
+    return collectedText
   }
 }
