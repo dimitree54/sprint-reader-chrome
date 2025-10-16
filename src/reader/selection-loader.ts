@@ -4,6 +4,7 @@ import { wordsToTokens } from './text-types'
 import { decodeHtml, startStreamingFromTokens } from './text'
 import { browserApi } from '../core/browser-api.service'
 import { DEFAULTS } from '../config/defaults'
+import { readPreprocessingEnabled, updateUsageStats } from '../common/storage'
 // aiPreprocessingService availability is handled within streaming manager
 import type { BackgroundMessage } from '../common/messages'
 
@@ -66,6 +67,26 @@ export async function loadSelectionContent (): Promise<void> {
   if (tokens.length === 0) {
     useReaderStore.getState().reset()
     return
+  }
+
+  const wordCount = tokens.length
+  if (wordCount > 0) {
+    try {
+      const isPreprocessingEnabled = await readPreprocessingEnabled()
+      const baselineWpm = isPreprocessingEnabled
+        ? DEFAULTS.READING_SPEED.translationWordsPerMinute
+        : DEFAULTS.READING_SPEED.standardWordsPerMinute
+      const estimatedMinutes = wordCount / baselineWpm
+      const expectedMs = Math.round(estimatedMinutes * 60 * 1000)
+
+      await updateUsageStats((current) => ({
+        ...current,
+        totalWordsRead: current.totalWordsRead + wordCount,
+        totalOriginalReadingTimeMs: current.totalOriginalReadingTimeMs + expectedMs
+      }))
+    } catch (error) {
+      console.error('Failed to update usage statistics for session start', error)
+    }
   }
 
   await startStreamingFromTokens(

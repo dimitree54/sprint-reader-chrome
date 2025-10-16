@@ -1,4 +1,4 @@
-import type { ReaderPreferences, ReaderTheme } from '../common/storage'
+import type { ReaderPreferences, ReaderTheme, UsageStats } from '../common/storage'
 
 /**
  * Centralized configuration for all default values used throughout the extension
@@ -89,6 +89,20 @@ export const DEFAULTS = {
     enabled: false
   },
 
+  // Usage analytics defaults
+  USAGE_STATS: {
+    firstUsedAt: (): number => Date.now(),
+    totalWordsRead: 0,
+    totalOriginalReadingTimeMs: 0,
+    totalExtensionReadingTimeMs: 0
+  },
+
+  // Baseline reading speeds (words per minute)
+  READING_SPEED: {
+    standardWordsPerMinute: 240,
+    translationWordsPerMinute: 200
+  },
+
   // Translation and summarization defaults
   TRANSLATION: {
     defaultLanguage: 'en'
@@ -113,5 +127,14 @@ export function getDefaultSelectionState() {
   return {
     ...DEFAULTS.SELECTION_STATE,
     timestamp: DEFAULTS.SELECTION_STATE.timestamp()
+  }
+}
+
+export function getDefaultUsageStats(): UsageStats {
+  return {
+    firstUsedAt: DEFAULTS.USAGE_STATS.firstUsedAt(),
+    totalWordsRead: DEFAULTS.USAGE_STATS.totalWordsRead,
+    totalOriginalReadingTimeMs: DEFAULTS.USAGE_STATS.totalOriginalReadingTimeMs,
+    totalExtensionReadingTimeMs: DEFAULTS.USAGE_STATS.totalExtensionReadingTimeMs
   }
 }

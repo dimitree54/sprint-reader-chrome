@@ -142,7 +142,7 @@ function updateAiPreprocessingAccess (elements: PopupElements, isAuthenticated: 
 
   setAiControlsDisabled(elements, !isPro)
 
-  const title = 'You are 2x reader now.'
+  const title = "You are on '2x reader' plan now."
 
   if (isPro) {
     elements.aiSection.classList.remove('popup__section--ai-locked')

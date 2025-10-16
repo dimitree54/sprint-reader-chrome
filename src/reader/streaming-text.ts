@@ -11,6 +11,8 @@ import { StreamingTextProcessor } from './streaming-text-processor'
 // legacy-state-helpers removed; use store directly
 import { useReaderStore } from './state/reader.store'
 import type { WordItem } from './timing-engine'
+import { calculateTotalReadingTime } from './time-calculator'
+import { updateUsageStats } from '../common/storage'
 
 export interface StreamingTextProcessorInstance {
   startStreamingText: (rawText: string) => Promise<void>
@@ -26,6 +28,7 @@ class StreamingTextOrchestrator {
   private pendingTokens: string[] = []
   private processingTokens = false
   private currentProcessingPromise: Promise<void> | null = null
+  private hasRecordedSessionStats = false
 
   constructor() {
     this.textBuffer = new StreamingTextBuffer({
@@ -84,6 +87,10 @@ class StreamingTextOrchestrator {
       store.setIsPreprocessing(false)
     }
     console.log('Streaming complete. Full set of tokens:', store.tokens)
+    if (!this.hasRecordedSessionStats) {
+      this.hasRecordedSessionStats = true
+      void this.persistSessionDuration()
+    }
     // Renderer will react to store changes automatically
   }
 
@@ -94,6 +101,7 @@ class StreamingTextOrchestrator {
   async startStreamingText(rawText: string): Promise<void> {
     // Reset text processor
     this.textProcessor.reset()
+    this.hasRecordedSessionStats = false
 
     // Reset and start streaming mode in a single setState to avoid flicker
     useReaderStore.setState({
@@ -213,6 +221,7 @@ class StreamingTextOrchestrator {
     this.textBuffer.clear()
     this.textProcessor.reset()
     this.currentProcessingPromise = null
+    this.hasRecordedSessionStats = false
     useReaderStore.setState({
       isStreaming: false,
       streamingComplete: false,
@@ -220,6 +229,37 @@ class StreamingTextOrchestrator {
       estimatedTotalChunks: undefined,
       isPreprocessing: false
     })
+  }
+
+  private async persistSessionDuration(): Promise<void> {
+    const store = useReaderStore.getState()
+    if (store.wordItems.length === 0) {
+      return
+    }
+
+    const timingSettings = {
+      wordsPerMinute: store.wordsPerMinute,
+      pauseAfterComma: store.pauseAfterComma,
+      pauseAfterPeriod: store.pauseAfterPeriod,
+      pauseAfterParagraph: store.pauseAfterParagraph,
+      chunkSize: store.chunkSize
+    }
+
+    const totalMs = calculateTotalReadingTime(store.wordItems, timingSettings)
+    if (!Number.isFinite(totalMs) || totalMs <= 0) {
+      return
+    }
+
+    const safeDuration = Math.max(0, Math.round(totalMs))
+
+    try {
+      await updateUsageStats((current) => ({
+        ...current,
+        totalExtensionReadingTimeMs: current.totalExtensionReadingTimeMs + safeDuration
+      }))
+    } catch (error) {
+      console.error('Failed to persist usage statistics for session completion', error)
+    }
   }
 }
 

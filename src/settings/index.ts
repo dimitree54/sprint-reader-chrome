@@ -7,7 +7,9 @@ import {
   readSummarizationLevel,
   writeSummarizationLevel,
   readPreprocessingEnabled,
-  writePreprocessingEnabled
+  writePreprocessingEnabled,
+  readUsageStats,
+  type UsageStats
 } from '../common/storage'
 import {
   TRANSLATION_LANGUAGES,
@@ -22,6 +24,7 @@ import {
 } from '../common/summarization'
 import { authService, type User } from '../auth/index'
 import { applyExtensionName } from '../common/app-name'
+import { DEFAULTS } from '../config/defaults'
 
 // Import debug utilities in development
 if (process.env.NODE_ENV === 'development') {
@@ -50,7 +53,94 @@ type SettingsElements = {
   logoutButton: HTMLButtonElement;
   manageSubscriptionButton: HTMLButtonElement;
   authStatus: HTMLElement;
+  statsCard: HTMLElement;
+  statsHoursValue: HTMLElement;
+  statsWordsValue: HTMLElement;
+  statsWithoutExtensionValue: HTMLElement;
+  statsWithExtensionValue: HTMLElement;
+  statsReaderLevelValue: HTMLElement;
+  statsInfoTooltip: HTMLElement;
 };
+
+const numberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 })
+const ratioFormatter = new Intl.NumberFormat(undefined, {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1
+})
+
+function formatInteger(value: number): string {
+  return numberFormatter.format(Math.max(0, Math.round(value)))
+}
+
+function formatDurationHms(ms: number): string {
+  const totalSeconds = Math.max(0, Math.round(ms / 1000))
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  const hoursStr = String(hours).padStart(2, '0')
+  const minutesStr = String(minutes).padStart(2, '0')
+  const secondsStr = String(seconds).padStart(2, '0')
+
+  return `${hoursStr}:${minutesStr}:${secondsStr}`
+}
+
+function renderUsageStats (elements: SettingsElements, stats: UsageStats): void {
+  const now = Date.now()
+  const diffMs = Math.max(0, now - stats.firstUsedAt)
+  const hourMs = 60 * 60 * 1000
+  const hoursUsed = Math.max(1, Math.ceil(diffMs / hourMs))
+  const hourLabel = hoursUsed === 1 ? 'hour' : 'hours'
+
+  elements.statsHoursValue.textContent = `${formatInteger(hoursUsed)} ${hourLabel}`
+  elements.statsWordsValue.textContent = `${formatInteger(stats.totalWordsRead)} words`
+  elements.statsWithoutExtensionValue.textContent = formatDurationHms(stats.totalOriginalReadingTimeMs)
+  elements.statsWithExtensionValue.textContent = formatDurationHms(stats.totalExtensionReadingTimeMs)
+
+  const hasExtensionTime = stats.totalExtensionReadingTimeMs > 0
+  const hasOriginalTime = stats.totalOriginalReadingTimeMs > 0
+  const readerMultiplier = hasExtensionTime && hasOriginalTime
+    ? Math.max(stats.totalOriginalReadingTimeMs / stats.totalExtensionReadingTimeMs, 0)
+    : 0
+
+  if (readerMultiplier > 0) {
+    elements.statsReaderLevelValue.textContent = `${ratioFormatter.format(readerMultiplier)}× Reader`
+  } else {
+    elements.statsReaderLevelValue.textContent = '—'
+  }
+
+  elements.statsCard.classList.add('settings__stats-card--loaded')
+}
+
+function setUsageStatsInfoTooltip (tooltip: HTMLElement): void {
+  const { standardWordsPerMinute, translationWordsPerMinute } = DEFAULTS.READING_SPEED
+  tooltip.textContent = `We estimate "time without the extension" using ${standardWordsPerMinute} words per minute when translation is off and ${translationWordsPerMinute} words per minute when translation is enabled.`
+}
+
+async function refreshUsageStats (elements: SettingsElements): Promise<void> {
+  try {
+    const stats = await readUsageStats()
+    renderUsageStats(elements, stats)
+  } catch (error) {
+    console.error('Failed to load usage statistics', error)
+  }
+}
+
+function registerStatsRefreshHandlers (elements: SettingsElements): void {
+  const handleRefresh = () => { void refreshUsageStats(elements) }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      handleRefresh()
+    }
+  })
+
+  window.addEventListener('focus', () => {
+    if (!document.hidden) {
+      handleRefresh()
+    }
+  })
+}
 
 let statusTimeout: ReturnType<typeof setTimeout> | undefined
 
@@ -231,7 +321,7 @@ function updateAiPreprocessingAccess (elements: SettingsElements, isAuthenticate
 
   setAiControlsDisabled(elements, !hasProBadge)
 
-  const title = 'You are 2x reader now.'
+  const title = "You are on '2x reader' plan now."
 
   if (hasProBadge) {
     elements.aiCard.classList.remove('settings__card--ai-locked')
@@ -396,6 +486,8 @@ async function loadInitialState (elements: SettingsElements): Promise<void> {
 
   // Load authentication state
   await loadAuthState(elements)
+
+  await refreshUsageStats(elements)
 }
 
 async function requestManageSubscriptionUrl (returnUrl: string): Promise<string> {
@@ -618,6 +710,26 @@ document.addEventListener('DOMContentLoaded', () => {
     throw new Error('AI Pre-processing CTA elements are missing')
   }
 
+  const statsCardElement = document.querySelector('[data-usage-stats-card]')
+  const statsHoursElement = document.querySelector('[data-usage-hours]')
+  const statsWordsElement = document.querySelector('[data-usage-words]')
+  const statsWithoutExtensionElement = document.querySelector('[data-usage-without-extension]')
+  const statsWithExtensionElement = document.querySelector('[data-usage-with-extension]')
+  const statsReaderLevelElement = document.querySelector('[data-usage-reader-level]')
+  const statsInfoTooltipElement = document.querySelector('[data-usage-info-tooltip]')
+
+  if (
+    !(statsCardElement instanceof HTMLElement) ||
+    !(statsHoursElement instanceof HTMLElement) ||
+    !(statsWordsElement instanceof HTMLElement) ||
+    !(statsWithoutExtensionElement instanceof HTMLElement) ||
+    !(statsWithExtensionElement instanceof HTMLElement) ||
+    !(statsReaderLevelElement instanceof HTMLElement) ||
+    !(statsInfoTooltipElement instanceof HTMLElement)
+  ) {
+    throw new Error('Usage statistics elements are missing')
+  }
+
   const elements: SettingsElements = {
     form: document.getElementById('settingsForm') as HTMLFormElement,
     enablePreprocessingToggle: document.getElementById('enableTranslation') as HTMLInputElement,
@@ -634,8 +746,17 @@ document.addEventListener('DOMContentLoaded', () => {
     loginButton: document.getElementById('loginButton') as HTMLButtonElement,
     logoutButton: document.getElementById('logoutButton') as HTMLButtonElement,
     manageSubscriptionButton: document.getElementById('manageSubscription') as HTMLButtonElement,
-    authStatus: document.getElementById('authStatus') as HTMLElement
+    authStatus: document.getElementById('authStatus') as HTMLElement,
+    statsCard: statsCardElement,
+    statsHoursValue: statsHoursElement,
+    statsWordsValue: statsWordsElement,
+    statsWithoutExtensionValue: statsWithoutExtensionElement,
+    statsWithExtensionValue: statsWithExtensionElement,
+    statsReaderLevelValue: statsReaderLevelElement,
+    statsInfoTooltip: statsInfoTooltipElement
   }
+
+  setUsageStatsInfoTooltip(elements.statsInfoTooltip)
 
   updateAiPreprocessingAccess(elements, false, null)
 
@@ -645,6 +766,7 @@ document.addEventListener('DOMContentLoaded', () => {
   })
   registerEvents(elements)
   registerAuthRefreshHandlers()
+  registerStatsRefreshHandlers(elements)
 
   // Handle incoming actions from other extension pages
   const urlParams = new URLSearchParams(window.location.search)
