@@ -41,14 +41,33 @@ function getRequiredElements(): RenderElements | null {
 }
 
 function renderWordContent(wordElement: HTMLElement, state: ReturnType<typeof useReaderStore.getState>): void {
-  if (state.isPreprocessing) {
-    wordElement.textContent = 'Processing text...'
+  const isWaitingForFirstChunk = state.isPreprocessing || (state.isStreaming && state.wordItems.length === 0)
+
+  if (isWaitingForFirstChunk) {
+    const loadingText = state.isPreprocessing ? 'AI pre-processing' : 'Preparing content...'
+    if (wordElement.dataset.loadingText !== loadingText) {
+      wordElement.dataset.loadingText = loadingText
+      wordElement.classList.add('reader__word--loading')
+      wordElement.setAttribute('aria-busy', 'true')
+      wordElement.style.fontSize = ''
+      wordElement.style.left = '50%'
+      wordElement.style.transform = 'translate(-50%, -50%)'
+      wordElement.innerHTML = `
+        <div class="reader__loading" role="status">
+          <span class="reader__loading-spinner" aria-hidden="true"></span>
+          <span class="reader__loading-text">${loadingText}</span>
+        </div>
+      `.trim()
+    }
     return
   }
 
-  if (state.isStreaming && state.wordItems.length === 0) {
-    wordElement.textContent = 'Preparing content...'
-    return
+  if (wordElement.dataset.loadingText) {
+    delete wordElement.dataset.loadingText
+    wordElement.classList.remove('reader__word--loading')
+    wordElement.removeAttribute('aria-busy')
+    wordElement.style.left = '0'
+    wordElement.style.transform = 'translateY(-50%)'
   }
 
   const currentWordItem = state.wordItems[state.index]
