@@ -13,15 +13,6 @@
         <button id="ctaButton" class="reader__cta-button" hidden>Become 10x reader</button>
       </div>
       <div class="reader__header-right">
-        <div class="reader__meta">
-          <span id="labelStatus" class="reader__status">Loading...</span>
-          <div class="reader__progress-container">
-            <div class="reader__progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-              <div id="progressBarFill" class="reader__progress-fill"></div>
-            </div>
-            <span id="labelProgress" class="reader__progress-text" aria-live="polite"></span>
-          </div>
-        </div>
         <label class="reader__theme-switch reader__theme-switch--header" for="toggleTheme">
           <input
             id="toggleTheme"
@@ -42,10 +33,26 @@
       <div id="error-bubble" class="error-bubble" hidden></div>
       <div id="word" class="reader__word" aria-live="assertive" aria-atomic="true"></div>
     </main>
+    <div
+      id="readerTimeline"
+      class="reader__timeline"
+      role="slider"
+      aria-label="Reading progress"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="0"
+      aria-live="polite"
+      tabindex="0"
+    >
+      <div class="reader__timeline-track">
+        <div id="readerTimelineProgress" class="reader__timeline-progress"></div>
+        <div id="readerTimelineHandle" class="reader__timeline-handle" aria-hidden="true"></div>
+        <span id="labelProgress" class="reader__timeline-eta">-00:00:00</span>
+      </div>
+    </div>
     <footer class="reader__controls">
       <div class="reader__controls-group">
         <button id="btnPlay" class="reader__button">Play</button>
-        <button id="btnRestart" class="reader__button reader__button--secondary">Restart</button>
       </div>
       <div class="reader__controls-group reader__controls-group--settings">
         <label class="reader__slider-label">

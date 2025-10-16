@@ -122,11 +122,6 @@ body.reader--light {
   font-size: 1.4rem;
 }
 
-.reader__status {
-  font-size: 0.9rem;
-  color: var(--reader-muted);
-}
-
 .reader__main {
   flex: 1;
   display: block;
@@ -165,12 +160,6 @@ body.reader--light {
   box-shadow: var(--reader-button-shadow);
 }
 
-.reader__button--secondary {
-  background: var(--reader-secondary-bg);
-  color: var(--reader-secondary-fg);
-  border: 1px solid var(--reader-secondary-border);
-}
-
 .reader__slider-label {
   display: flex;
   align-items: center;
@@ -185,60 +174,81 @@ body.reader--light {
   color: var(--reader-accent);
 }
 
-.reader__progress-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-left: 12px;
-}
-
-.reader__progress-bar {
-  width: 120px;
-  height: 6px;
-  background: var(--reader-progress-bg);
-  border-radius: 3px;
-  overflow: hidden;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
-}
-
-.reader__progress-fill {
-  height: 100%;
-  width: 0%;
-  background: var(--reader-progress-fill);
-  border-radius: 3px;
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+.reader__timeline {
   position: relative;
-  overflow: hidden;
+  padding: 12px 32px 24px;
+  cursor: pointer;
+  user-select: none;
 }
 
-.reader__progress-fill::after {
-  content: '';
+.reader__timeline-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--reader-progress-bg);
+}
+
+.reader__timeline-progress {
   position: absolute;
   top: 0;
   left: 0;
   bottom: 0;
+  width: 0%;
+  border-radius: 999px;
+  background: var(--reader-progress-fill);
+  transition: width 0.2s ease;
+}
+
+.reader__timeline-handle {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--reader-accent);
+  border: 3px solid var(--reader-button-primary-color);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: box-shadow 0.2s ease;
+}
+
+.reader__timeline:hover .reader__timeline-handle {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+.reader__timeline-eta {
+  position: absolute;
   right: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-  animation: progress-shimmer 2s infinite;
-}
-
-@keyframes progress-shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-.reader__progress-text {
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 0.85rem;
-  color: var(--reader-muted);
-  font-weight: 500;
-  min-width: 80px;
-  text-align: left;
+  font-weight: 600;
+  color: var(--reader-button-primary-color);
+  background: rgba(0, 0, 0, 0.45);
+  padding: 4px 12px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+body.reader--light .reader__timeline-eta {
+  background: rgba(74, 0, 224, 0.12);
+  color: var(--reader-accent);
+}
+
+.reader__timeline--disabled {
+  cursor: default;
+  pointer-events: none;
+}
+
+.reader__timeline--disabled .reader__timeline-handle {
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+.reader__timeline--disabled .reader__timeline-progress {
+  background: linear-gradient(135deg, rgba(142, 45, 226, 0.45), rgba(74, 0, 224, 0.45));
 }
 
 input[type='range'] {
