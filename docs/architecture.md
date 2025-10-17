@@ -184,6 +184,7 @@ The reader implementation follows a modular architecture with clear separation o
 * Blurs AI pre-processing controls and overlays a centered "Become 10x Reader" CTA until the authenticated user has an active pro subscription; the button routes guests to registration and free users to subscription management so upgrade paths stay explicit without silent fallbacks.
 * Surfaces compliance details in the footer: the privacy policy link resolves from `PRIVACY_POLICY_URL` at build time, followed by mandatory disclaimers and company contact information.
 * Loads preferred translation language and summarisation level from storage, lets users update or clear them, and surfaces inline success or error feedback; every control auto-saves as soon as it changes, while reading speed adjustments now live directly in the reader UI.
+* Anchors usage statistics beneath the AI card, summarising days of usage, words read, estimated vs. actual time, saved hours, and reader level, and exposes a **Reset stats** button that prompts for confirmation before writing fresh defaults to usage storage. Stats flush once a reading session finishes so partial/aborted runs never skew totals.
 
 ## 4. Cross-Cutting Modules
 

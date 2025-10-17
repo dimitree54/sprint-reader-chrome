@@ -61,71 +61,6 @@
         </div>
       </section>
 
-      <section class="settings__card settings__card--stats" data-usage-stats-card>
-        <header class="settings__card-header">
-          <div class="settings__card-title-row">
-            <h2 class="settings__card-title">Reading statistics</h2>
-            <div class="settings__info" data-usage-info>
-              <button
-                type="button"
-                class="settings__info-trigger"
-                aria-label="How are reading statistics calculated?"
-                aria-describedby="usageStatsInfoTooltip"
-                data-usage-info-trigger
-              >
-                <span aria-hidden="true">i</span>
-              </button>
-              <div
-                id="usageStatsInfoTooltip"
-                class="settings__info-tooltip"
-                role="tooltip"
-                data-usage-info-tooltip
-              ></div>
-            </div>
-          </div>
-          <p class="settings__card-subtitle">Track your progress and the time you save.</p>
-        </header>
-        <div class="settings__stats-grid">
-          <article class="settings__stat">
-            <span class="settings__stat-icon" aria-hidden="true">📅</span>
-            <div class="settings__stat-content">
-              <p class="settings__stat-label">You are using extension for</p>
-              <p class="settings__stat-value"><span data-usage-hours>—</span></p>
-            </div>
-          </article>
-          <article class="settings__stat">
-            <span class="settings__stat-icon" aria-hidden="true">🔤</span>
-            <div class="settings__stat-content">
-              <p class="settings__stat-label">You have read</p>
-              <p class="settings__stat-value"><span data-usage-words>—</span></p>
-            </div>
-          </article>
-          <article class="settings__stat">
-            <span class="settings__stat-icon" aria-hidden="true">⏳</span>
-            <div class="settings__stat-content">
-              <p class="settings__stat-label">It would take</p>
-              <p class="settings__stat-value"><span data-usage-without-extension>00:00:00</span></p>
-              <p class="settings__stat-note">to read it without the extension.</p>
-            </div>
-          </article>
-          <article class="settings__stat">
-            <span class="settings__stat-icon" aria-hidden="true">⚡</span>
-            <div class="settings__stat-content">
-              <p class="settings__stat-label">But you finished in</p>
-              <p class="settings__stat-value"><span data-usage-with-extension>00:00:00</span></p>
-            </div>
-          </article>
-          <article class="settings__stat settings__stat--wide">
-            <span class="settings__stat-icon" aria-hidden="true">🚀</span>
-            <div class="settings__stat-content">
-              <p class="settings__stat-label">You are</p>
-              <p class="settings__stat-value"><span data-usage-reader-level>—</span></p>
-              <p class="settings__stat-note">Based on original vs. Sprint Reader timing.</p>
-            </div>
-          </article>
-        </div>
-      </section>
-
       <section class="settings__card settings__card--ai" data-ai-card>
         <header class="settings__card-header">
           <h2 class="settings__card-title">AI Pre-processing</h2>
@@ -207,6 +142,88 @@
             </button>
             <p class="settings__ai-lock-title" data-ai-cta-subtitle>To enable<br>ai pre-processing</p>
           </div>
+        </div>
+      </section>
+
+      <section class="settings__card settings__card--stats" data-usage-stats-card>
+        <header class="settings__card-header">
+          <div class="settings__card-title-row">
+            <div class="settings__card-title-group">
+              <h2 class="settings__card-title">Reading statistics</h2>
+              <div class="settings__info" data-usage-info>
+                <button
+                  type="button"
+                  class="settings__info-trigger"
+                  aria-label="How are reading statistics calculated?"
+                  aria-describedby="usageStatsInfoTooltip"
+                  data-usage-info-trigger
+                >
+                  <span aria-hidden="true">i</span>
+                </button>
+                <div
+                  id="usageStatsInfoTooltip"
+                  class="settings__info-tooltip"
+                  role="tooltip"
+                  data-usage-info-tooltip
+                ></div>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="settings__button settings__button--ghost settings__stats-reset-button"
+              data-usage-reset
+            >
+              Reset stats
+            </button>
+          </div>
+          <p class="settings__card-subtitle">Track your progress and the time you save.</p>
+        </header>
+        <div class="settings__stats-grid">
+          <article class="settings__stat">
+            <span class="settings__stat-icon" aria-hidden="true">📅</span>
+            <div class="settings__stat-content">
+              <p class="settings__stat-label">You are using extension for</p>
+              <p class="settings__stat-value"><span data-usage-hours>—</span></p>
+            </div>
+          </article>
+          <article class="settings__stat">
+            <span class="settings__stat-icon" aria-hidden="true">🔤</span>
+            <div class="settings__stat-content">
+              <p class="settings__stat-label">You have read</p>
+              <p class="settings__stat-value"><span data-usage-words>—</span></p>
+            </div>
+          </article>
+          <article class="settings__stat">
+            <span class="settings__stat-icon" aria-hidden="true">⏳</span>
+            <div class="settings__stat-content">
+              <p class="settings__stat-label">It would take</p>
+              <p class="settings__stat-value"><span data-usage-without-extension>00:00:00</span></p>
+              <p class="settings__stat-note">to read it without the extension.</p>
+            </div>
+          </article>
+          <article class="settings__stat">
+            <span class="settings__stat-icon" aria-hidden="true">⚡</span>
+            <div class="settings__stat-content">
+              <p class="settings__stat-label">But you finished in</p>
+              <p class="settings__stat-value"><span data-usage-with-extension>00:00:00</span></p>
+            </div>
+          </article>
+          <article class="settings__stat">
+            <span class="settings__stat-icon" aria-hidden="true">💡</span>
+            <div class="settings__stat-content">
+              <p class="settings__stat-label">You saved</p>
+              <p class="settings__stat-value"><span data-usage-saved-hours>0 hours</span></p>
+              <p class="settings__stat-note">Difference between estimated and actual time.</p>
+            </div>
+          </article>
+          <article class="settings__stat">
+            <span class="settings__stat-icon" aria-hidden="true">🚀</span>
+            <div class="settings__stat-content">
+              <p class="settings__stat-label">You are</p>
+              <p class="settings__stat-value"><span data-usage-reader-level>—</span></p>
+              <p class="settings__stat-note">Based on original vs. Sprint Reader timing.</p>
+            </div>
+          </article>
         </div>
       </section>
     </main>

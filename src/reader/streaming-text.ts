@@ -14,6 +14,23 @@ import type { WordItem } from './timing-engine'
 import { calculateTotalReadingTime } from './time-calculator'
 import { updateUsageStats } from '../common/storage'
 
+type UsageStatsSnapshot = {
+  wordCount: number;
+  expectedMs: number;
+};
+
+let pendingUsageStatsSnapshot: UsageStatsSnapshot | null = null
+
+export function primeUsageStatsSnapshot (snapshot: UsageStatsSnapshot | null): void {
+  pendingUsageStatsSnapshot = snapshot
+}
+
+function consumeUsageStatsSnapshot (): UsageStatsSnapshot | null {
+  const snapshot = pendingUsageStatsSnapshot
+  pendingUsageStatsSnapshot = null
+  return snapshot
+}
+
 export interface StreamingTextProcessorInstance {
   startStreamingText: (rawText: string) => Promise<void>
   addStreamingToken: (token: string) => Promise<void>
@@ -29,8 +46,10 @@ class StreamingTextOrchestrator {
   private processingTokens = false
   private currentProcessingPromise: Promise<void> | null = null
   private hasRecordedSessionStats = false
+  private usageSnapshot: UsageStatsSnapshot | null
 
-  constructor() {
+  constructor(snapshot: UsageStatsSnapshot | null = null) {
+    this.usageSnapshot = snapshot
     this.textBuffer = new StreamingTextBuffer({
       // Reduced buffer size for faster initial chunk emission during streaming
       minBufferSize: 50,
@@ -222,6 +241,7 @@ class StreamingTextOrchestrator {
     this.textProcessor.reset()
     this.currentProcessingPromise = null
     this.hasRecordedSessionStats = false
+    this.usageSnapshot = null
     useReaderStore.setState({
       isStreaming: false,
       streamingComplete: false,
@@ -252,13 +272,26 @@ class StreamingTextOrchestrator {
 
     const safeDuration = Math.max(0, Math.round(totalMs))
 
+    const snapshot = this.usageSnapshot
+    const fallbackWordCount = store.tokens.length
+    const safeWordCount = snapshot && Number.isFinite(snapshot.wordCount)
+      ? Math.max(0, Math.round(snapshot.wordCount))
+      : Math.max(0, Math.round(fallbackWordCount))
+    const safeExpectedDuration = snapshot && Number.isFinite(snapshot.expectedMs)
+      ? Math.max(0, Math.round(snapshot.expectedMs))
+      : safeDuration
+
     try {
       await updateUsageStats((current) => ({
         ...current,
+        totalWordsRead: current.totalWordsRead + safeWordCount,
+        totalOriginalReadingTimeMs: current.totalOriginalReadingTimeMs + safeExpectedDuration,
         totalExtensionReadingTimeMs: current.totalExtensionReadingTimeMs + safeDuration
       }))
     } catch (error) {
       console.error('Failed to persist usage statistics for session completion', error)
+    } finally {
+      this.usageSnapshot = null
     }
   }
 }
@@ -276,7 +309,7 @@ export async function initializeStreamingText(rawText: string): Promise<Streamin
     streamingOrchestrator = null
   }
   // Create new orchestrator for this session
-  streamingOrchestrator = new StreamingTextOrchestrator()
+  streamingOrchestrator = new StreamingTextOrchestrator(consumeUsageStatsSnapshot())
 
   // Start processing
   await streamingOrchestrator.startStreamingText(rawText)
@@ -301,7 +334,7 @@ export async function initializeStreamingSession(): Promise<StreamingTextProcess
   }
 
   // Create new orchestrator for this session
-  streamingOrchestrator = new StreamingTextOrchestrator()
+  streamingOrchestrator = new StreamingTextOrchestrator(consumeUsageStatsSnapshot())
 
   // Do not start processing here; return bound methods
   return {

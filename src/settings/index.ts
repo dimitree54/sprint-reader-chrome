@@ -9,6 +9,7 @@ import {
   readPreprocessingEnabled,
   writePreprocessingEnabled,
   readUsageStats,
+  writeUsageStats,
   type UsageStats
 } from '../common/storage'
 import {
@@ -24,7 +25,7 @@ import {
 } from '../common/summarization'
 import { authService, type User } from '../auth/index'
 import { applyExtensionName } from '../common/app-name'
-import { DEFAULTS } from '../config/defaults'
+import { DEFAULTS, getDefaultUsageStats } from '../config/defaults'
 
 // Import debug utilities in development
 if (process.env.NODE_ENV === 'development') {
@@ -58,16 +59,17 @@ type SettingsElements = {
   statsWordsValue: HTMLElement;
   statsWithoutExtensionValue: HTMLElement;
   statsWithExtensionValue: HTMLElement;
+  statsSavedHoursValue: HTMLElement;
   statsReaderLevelValue: HTMLElement;
   statsInfoTooltip: HTMLElement;
+  statsResetButton: HTMLButtonElement;
 };
 
 const numberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 })
-const ratioFormatter = new Intl.NumberFormat(undefined, {
-  minimumFractionDigits: 1,
+const hoursFormatter = new Intl.NumberFormat(undefined, {
+  minimumFractionDigits: 0,
   maximumFractionDigits: 1
 })
-
 function formatInteger(value: number): string {
   return numberFormatter.format(Math.max(0, Math.round(value)))
 }
@@ -88,11 +90,12 @@ function formatDurationHms(ms: number): string {
 function renderUsageStats (elements: SettingsElements, stats: UsageStats): void {
   const now = Date.now()
   const diffMs = Math.max(0, now - stats.firstUsedAt)
+  const dayMs = 24 * 60 * 60 * 1000
+  const daysUsed = Math.max(1, Math.ceil(diffMs / dayMs))
+  const dayLabel = daysUsed === 1 ? 'day' : 'days'
   const hourMs = 60 * 60 * 1000
-  const hoursUsed = Math.max(1, Math.ceil(diffMs / hourMs))
-  const hourLabel = hoursUsed === 1 ? 'hour' : 'hours'
 
-  elements.statsHoursValue.textContent = `${formatInteger(hoursUsed)} ${hourLabel}`
+  elements.statsHoursValue.textContent = `${formatInteger(daysUsed)} ${dayLabel}`
   elements.statsWordsValue.textContent = `${formatInteger(stats.totalWordsRead)} words`
   elements.statsWithoutExtensionValue.textContent = formatDurationHms(stats.totalOriginalReadingTimeMs)
   elements.statsWithExtensionValue.textContent = formatDurationHms(stats.totalExtensionReadingTimeMs)
@@ -103,8 +106,19 @@ function renderUsageStats (elements: SettingsElements, stats: UsageStats): void 
     ? Math.max(stats.totalOriginalReadingTimeMs / stats.totalExtensionReadingTimeMs, 0)
     : 0
 
-  if (readerMultiplier > 0) {
-    elements.statsReaderLevelValue.textContent = `${ratioFormatter.format(readerMultiplier)}× Reader`
+  const savedMs = Math.max(stats.totalOriginalReadingTimeMs - stats.totalExtensionReadingTimeMs, 0)
+  const savedHours = savedMs / hourMs
+
+  if (savedHours > 0) {
+    elements.statsSavedHoursValue.textContent = `${hoursFormatter.format(savedHours)} hours`
+  } else {
+    elements.statsSavedHoursValue.textContent = '0 hours'
+  }
+
+  const roundedMultiplier = Math.round(readerMultiplier)
+
+  if (roundedMultiplier > 0) {
+    elements.statsReaderLevelValue.textContent = `${formatInteger(roundedMultiplier)}x Reader`
   } else {
     elements.statsReaderLevelValue.textContent = '—'
   }
@@ -124,6 +138,11 @@ async function refreshUsageStats (elements: SettingsElements): Promise<void> {
   } catch (error) {
     console.error('Failed to load usage statistics', error)
   }
+}
+
+async function resetUsageStats (): Promise<void> {
+  const defaultStats = getDefaultUsageStats()
+  await writeUsageStats(defaultStats)
 }
 
 function registerStatsRefreshHandlers (elements: SettingsElements): void {
@@ -665,6 +684,29 @@ function registerEvents (elements: SettingsElements): void {
     }
   })
 
+  elements.statsResetButton.addEventListener('click', async () => {
+    if (elements.statsResetButton.disabled) {
+      return
+    }
+
+    const confirmed = window.confirm('Reset reading statistics? This clears your usage history.')
+    if (!confirmed) {
+      return
+    }
+
+    elements.statsResetButton.disabled = true
+    try {
+      await resetUsageStats()
+      await refreshUsageStats(elements)
+      showStatus(elements, 'Statistics reset.', 'success')
+    } catch (error) {
+      console.error('Failed to reset usage statistics', error)
+      showStatus(elements, 'Could not reset statistics. Try again.', 'error')
+    } finally {
+      elements.statsResetButton.disabled = false
+    }
+  })
+
   // Authentication event handlers
   elements.loginButton.addEventListener('click', async () => {
     try {
@@ -715,8 +757,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const statsWordsElement = document.querySelector('[data-usage-words]')
   const statsWithoutExtensionElement = document.querySelector('[data-usage-without-extension]')
   const statsWithExtensionElement = document.querySelector('[data-usage-with-extension]')
+  const statsSavedHoursElement = document.querySelector('[data-usage-saved-hours]')
   const statsReaderLevelElement = document.querySelector('[data-usage-reader-level]')
   const statsInfoTooltipElement = document.querySelector('[data-usage-info-tooltip]')
+  const statsResetButtonElement = document.querySelector('[data-usage-reset]')
 
   if (
     !(statsCardElement instanceof HTMLElement) ||
@@ -724,8 +768,10 @@ document.addEventListener('DOMContentLoaded', () => {
     !(statsWordsElement instanceof HTMLElement) ||
     !(statsWithoutExtensionElement instanceof HTMLElement) ||
     !(statsWithExtensionElement instanceof HTMLElement) ||
+    !(statsSavedHoursElement instanceof HTMLElement) ||
     !(statsReaderLevelElement instanceof HTMLElement) ||
-    !(statsInfoTooltipElement instanceof HTMLElement)
+    !(statsInfoTooltipElement instanceof HTMLElement) ||
+    !(statsResetButtonElement instanceof HTMLButtonElement)
   ) {
     throw new Error('Usage statistics elements are missing')
   }
@@ -752,8 +798,10 @@ document.addEventListener('DOMContentLoaded', () => {
     statsWordsValue: statsWordsElement,
     statsWithoutExtensionValue: statsWithoutExtensionElement,
     statsWithExtensionValue: statsWithExtensionElement,
+    statsSavedHoursValue: statsSavedHoursElement,
     statsReaderLevelValue: statsReaderLevelElement,
-    statsInfoTooltip: statsInfoTooltipElement
+    statsInfoTooltip: statsInfoTooltipElement,
+    statsResetButton: statsResetButtonElement
   }
 
   setUsageStatsInfoTooltip(elements.statsInfoTooltip)

@@ -4,7 +4,8 @@ import { wordsToTokens } from './text-types'
 import { decodeHtml, startStreamingFromTokens } from './text'
 import { browserApi } from '../core/browser-api.service'
 import { DEFAULTS } from '../config/defaults'
-import { readPreprocessingEnabled, updateUsageStats } from '../common/storage'
+import { readPreprocessingEnabled } from '../common/storage'
+import { primeUsageStatsSnapshot } from './streaming-text'
 // aiPreprocessingService availability is handled within streaming manager
 import type { BackgroundMessage } from '../common/messages'
 
@@ -79,14 +80,16 @@ export async function loadSelectionContent (): Promise<void> {
       const estimatedMinutes = wordCount / baselineWpm
       const expectedMs = Math.round(estimatedMinutes * 60 * 1000)
 
-      await updateUsageStats((current) => ({
-        ...current,
-        totalWordsRead: current.totalWordsRead + wordCount,
-        totalOriginalReadingTimeMs: current.totalOriginalReadingTimeMs + expectedMs
-      }))
+      primeUsageStatsSnapshot({
+        wordCount,
+        expectedMs
+      })
     } catch (error) {
-      console.error('Failed to update usage statistics for session start', error)
+      console.error('Failed to prepare usage statistics snapshot for session start', error)
+      primeUsageStatsSnapshot(null)
     }
+  } else {
+    primeUsageStatsSnapshot(null)
   }
 
   await startStreamingFromTokens(
