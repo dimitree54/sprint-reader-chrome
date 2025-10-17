@@ -79,9 +79,11 @@ export class AuthService {
     try {
       const token = await this.getToken()
       if (!token) {
+        console.info(`[AuthService] No token available when checking subscription from ${source || 'unknown'}`)
         return 'free'
       }
 
+      console.info(`[AuthService] Using bearer token (len=${token.length}) for subscription check from ${source || 'unknown'}`)
       const config = getAuthConfig()
       const domain = config.kinde.domain.replace(/^https?:\/\//, '')
       const entitlementsUrl = `https://${domain}/account_api/v1/entitlements`
@@ -91,6 +93,10 @@ export class AuthService {
       })
 
       if (!res.ok) {
+        const errorBody = await res.text().catch(() => '')
+        console.info(
+          `[AuthService] Kinde entitlements request failed (${res.status} ${res.statusText}) from ${source || 'unknown'}; body: ${errorBody || '<<empty>>'}`
+        )
         console.info(`Kinde API returned status ${res.status}. Using cached subscription status.`)
         const cachedUser = await storageService.readAuthUser()
         if (cachedUser?.subscriptionStatus) {
@@ -102,8 +108,11 @@ export class AuthService {
 
       const responseData = await res.json()
       const entitlements = responseData.data?.entitlements ?? []
+      console.info(
+        `[AuthService] Kinde entitlements fetched successfully from ${source || 'unknown'}; total=${entitlements.length}`
+      )
       const hasPermission = entitlements.some((e: any) => e.feature_key === 'ai_preprocessing')
-      
+
       const status = hasPermission ? 'pro' : 'free'
       store.setSubscriptionStatus(status)
 
@@ -114,7 +123,7 @@ export class AuthService {
 
       return status
     } catch (error) {
-      console.error("Error checking subscription status:", error)
+      console.error(`Error checking subscription status from ${source || 'unknown'}:`, error)
       return 'free'
     }
   }

@@ -11,6 +11,25 @@ import { StreamingTextProcessor } from './streaming-text-processor'
 // legacy-state-helpers removed; use store directly
 import { useReaderStore } from './state/reader.store'
 import type { WordItem } from './timing-engine'
+import { calculateTotalReadingTime } from './time-calculator'
+import { updateUsageStats } from '../common/storage'
+
+type UsageStatsSnapshot = {
+  wordCount: number;
+  expectedMs: number;
+};
+
+let pendingUsageStatsSnapshot: UsageStatsSnapshot | null = null
+
+export function primeUsageStatsSnapshot (snapshot: UsageStatsSnapshot | null): void {
+  pendingUsageStatsSnapshot = snapshot
+}
+
+function consumeUsageStatsSnapshot (): UsageStatsSnapshot | null {
+  const snapshot = pendingUsageStatsSnapshot
+  pendingUsageStatsSnapshot = null
+  return snapshot
+}
 
 export interface StreamingTextProcessorInstance {
   startStreamingText: (rawText: string) => Promise<void>
@@ -26,8 +45,11 @@ class StreamingTextOrchestrator {
   private pendingTokens: string[] = []
   private processingTokens = false
   private currentProcessingPromise: Promise<void> | null = null
+  private hasRecordedSessionStats = false
+  private usageSnapshot: UsageStatsSnapshot | null
 
-  constructor() {
+  constructor(snapshot: UsageStatsSnapshot | null = null) {
+    this.usageSnapshot = snapshot
     this.textBuffer = new StreamingTextBuffer({
       // Reduced buffer size for faster initial chunk emission during streaming
       minBufferSize: 50,
@@ -84,6 +106,10 @@ class StreamingTextOrchestrator {
       store.setIsPreprocessing(false)
     }
     console.log('Streaming complete. Full set of tokens:', store.tokens)
+    if (!this.hasRecordedSessionStats) {
+      this.hasRecordedSessionStats = true
+      void this.persistSessionDuration()
+    }
     // Renderer will react to store changes automatically
   }
 
@@ -94,6 +120,7 @@ class StreamingTextOrchestrator {
   async startStreamingText(rawText: string): Promise<void> {
     // Reset text processor
     this.textProcessor.reset()
+    this.hasRecordedSessionStats = false
 
     // Reset and start streaming mode in a single setState to avoid flicker
     useReaderStore.setState({
@@ -213,6 +240,8 @@ class StreamingTextOrchestrator {
     this.textBuffer.clear()
     this.textProcessor.reset()
     this.currentProcessingPromise = null
+    this.hasRecordedSessionStats = false
+    this.usageSnapshot = null
     useReaderStore.setState({
       isStreaming: false,
       streamingComplete: false,
@@ -220,6 +249,50 @@ class StreamingTextOrchestrator {
       estimatedTotalChunks: undefined,
       isPreprocessing: false
     })
+  }
+
+  private async persistSessionDuration(): Promise<void> {
+    const store = useReaderStore.getState()
+    if (store.wordItems.length === 0) {
+      return
+    }
+
+    const timingSettings = {
+      wordsPerMinute: store.wordsPerMinute,
+      pauseAfterComma: store.pauseAfterComma,
+      pauseAfterPeriod: store.pauseAfterPeriod,
+      pauseAfterParagraph: store.pauseAfterParagraph,
+      chunkSize: store.chunkSize
+    }
+
+    const totalMs = calculateTotalReadingTime(store.wordItems, timingSettings)
+    if (!Number.isFinite(totalMs) || totalMs <= 0) {
+      return
+    }
+
+    const safeDuration = Math.max(0, Math.round(totalMs))
+
+    const snapshot = this.usageSnapshot
+    const fallbackWordCount = store.tokens.length
+    const safeWordCount = snapshot && Number.isFinite(snapshot.wordCount)
+      ? Math.max(0, Math.round(snapshot.wordCount))
+      : Math.max(0, Math.round(fallbackWordCount))
+    const safeExpectedDuration = snapshot && Number.isFinite(snapshot.expectedMs)
+      ? Math.max(0, Math.round(snapshot.expectedMs))
+      : safeDuration
+
+    try {
+      await updateUsageStats((current) => ({
+        ...current,
+        totalWordsRead: current.totalWordsRead + safeWordCount,
+        totalOriginalReadingTimeMs: current.totalOriginalReadingTimeMs + safeExpectedDuration,
+        totalExtensionReadingTimeMs: current.totalExtensionReadingTimeMs + safeDuration
+      }))
+    } catch (error) {
+      console.error('Failed to persist usage statistics for session completion', error)
+    } finally {
+      this.usageSnapshot = null
+    }
   }
 }
 
@@ -236,7 +309,7 @@ export async function initializeStreamingText(rawText: string): Promise<Streamin
     streamingOrchestrator = null
   }
   // Create new orchestrator for this session
-  streamingOrchestrator = new StreamingTextOrchestrator()
+  streamingOrchestrator = new StreamingTextOrchestrator(consumeUsageStatsSnapshot())
 
   // Start processing
   await streamingOrchestrator.startStreamingText(rawText)
@@ -261,7 +334,7 @@ export async function initializeStreamingSession(): Promise<StreamingTextProcess
   }
 
   // Create new orchestrator for this session
-  streamingOrchestrator = new StreamingTextOrchestrator()
+  streamingOrchestrator = new StreamingTextOrchestrator(consumeUsageStatsSnapshot())
 
   // Do not start processing here; return bound methods
   return {

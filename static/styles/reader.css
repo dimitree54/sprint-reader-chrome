@@ -142,6 +142,44 @@ body.reader--light {
   transform: translateY(-50%);
 }
 
+.reader__word--loading {
+  white-space: normal;
+  text-align: center;
+}
+
+.reader__loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: clamp(1rem, 1.3vw + 0.85rem, 1.6rem);
+  font-weight: 600;
+  color: var(--reader-fg);
+}
+
+.reader__loading-text {
+  letter-spacing: 0.02em;
+}
+
+.reader__loading-spinner {
+  width: 1.75em;
+  height: 1.75em;
+  border-radius: 50%;
+  border: 3px solid rgba(246, 247, 251, 0.2);
+  border-top-color: var(--reader-accent);
+  animation: reader__loading-spin 0.8s linear infinite;
+}
+
+body.reader--light .reader__loading-spinner {
+  border-color: rgba(33, 31, 51, 0.18);
+  border-top-color: var(--reader-accent);
+}
+
+@keyframes reader__loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .reader__button {
   border: none;
   border-radius: 999px;

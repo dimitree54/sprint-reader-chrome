@@ -2,6 +2,13 @@ import type { TranslationLanguage } from './translation'
 import type { SummarizationLevel } from './summarization'
 import { storageService, STORAGE_KEYS as CORE_STORAGE_KEYS } from '../core/storage.service'
 
+export type UsageStats = {
+  firstUsedAt: number;
+  totalWordsRead: number;
+  totalOriginalReadingTimeMs: number;
+  totalExtensionReadingTimeMs: number;
+};
+
 
 export type ReaderTheme = 'dark' | 'light';
 
@@ -60,4 +67,16 @@ export async function readPreprocessingEnabled (): Promise<boolean> {
 
 export async function writePreprocessingEnabled (enabled: boolean): Promise<void> {
   await storageService.writePreprocessingEnabled(enabled)
+}
+
+export async function readUsageStats (): Promise<UsageStats> {
+  return storageService.readUsageStats()
+}
+
+export async function writeUsageStats (stats: UsageStats): Promise<void> {
+  await storageService.writeUsageStats(stats)
+}
+
+export async function updateUsageStats (updater: (current: UsageStats) => UsageStats): Promise<UsageStats> {
+  return storageService.updateUsageStats(updater)
 }

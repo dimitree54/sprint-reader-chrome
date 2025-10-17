@@ -1,6 +1,6 @@
 import { browserApi, BrowserApiService } from './browser-api.service'
-import { getDefaultReaderPreferences, DEFAULTS } from '../config/defaults'
-import type { ReaderPreferences } from '../common/storage'
+import { getDefaultReaderPreferences, getDefaultUsageStats, DEFAULTS } from '../config/defaults'
+import type { ReaderPreferences, UsageStats } from '../common/storage'
 import {
   DEFAULT_TRANSLATION_LANGUAGE,
   isTranslationLanguage,
@@ -18,9 +18,12 @@ export const STORAGE_KEYS = {
   translationLanguage: 'sprintReader.translationLanguage',
   summarizationLevel: 'sprintReader.summarizationLevel',
   preprocessingEnabled: 'sprintReader.preprocessingEnabled',
+  usageStats: 'sprintReader.usageStats',
   // Authentication keys
   authUser: 'sprintReader.auth.user',
-  authToken: 'sprintReader.auth.token'
+  authToken: 'sprintReader.auth.token',
+  authRefreshToken: 'sprintReader.auth.refreshToken',
+  authTokenExpiresAt: 'sprintReader.auth.tokenExpiresAt'
  } as const
 export class StorageService {
   constructor (private readonly api: BrowserApiService = browserApi) {}
@@ -88,6 +91,79 @@ export class StorageService {
     await this.set({ [STORAGE_KEYS.preprocessingEnabled]: enabled })
   }
 
+  // Usage statistics --------------------------------------------------------
+  async readUsageStats (): Promise<UsageStats> {
+    const result = await this.get<UsageStats>([STORAGE_KEYS.usageStats])
+    const stored = result[STORAGE_KEYS.usageStats]
+    const defaults = getDefaultUsageStats()
+
+    let needsSync = false
+
+    const firstUsedAt = typeof stored?.firstUsedAt === 'number' && Number.isFinite(stored.firstUsedAt)
+      ? stored.firstUsedAt
+      : defaults.firstUsedAt
+    if (firstUsedAt !== stored?.firstUsedAt) {
+      needsSync = true
+    }
+
+    const totalWordsRead = typeof stored?.totalWordsRead === 'number' && Number.isFinite(stored.totalWordsRead)
+      ? stored.totalWordsRead
+      : defaults.totalWordsRead
+    if (totalWordsRead !== stored?.totalWordsRead) {
+      needsSync = true
+    }
+
+    const totalOriginalReadingTimeMs = typeof stored?.totalOriginalReadingTimeMs === 'number' && Number.isFinite(stored.totalOriginalReadingTimeMs)
+      ? stored.totalOriginalReadingTimeMs
+      : defaults.totalOriginalReadingTimeMs
+    if (totalOriginalReadingTimeMs !== stored?.totalOriginalReadingTimeMs) {
+      needsSync = true
+    }
+
+    const totalExtensionReadingTimeMs = typeof stored?.totalExtensionReadingTimeMs === 'number' && Number.isFinite(stored.totalExtensionReadingTimeMs)
+      ? stored.totalExtensionReadingTimeMs
+      : defaults.totalExtensionReadingTimeMs
+    if (totalExtensionReadingTimeMs !== stored?.totalExtensionReadingTimeMs) {
+      needsSync = true
+    }
+
+    const stats: UsageStats = {
+      firstUsedAt,
+      totalWordsRead,
+      totalOriginalReadingTimeMs,
+      totalExtensionReadingTimeMs
+    }
+
+    if (needsSync) {
+      await this.writeUsageStats(stats)
+    }
+
+    return stats
+  }
+
+  async writeUsageStats (stats: UsageStats): Promise<void> {
+    await this.set({ [STORAGE_KEYS.usageStats]: stats })
+  }
+
+  async updateUsageStats (updater: (current: UsageStats) => UsageStats): Promise<UsageStats> {
+    const current = await this.readUsageStats()
+    const updated = updater({ ...current })
+
+    const firstUsedAtCandidate = typeof updated.firstUsedAt === 'number' && Number.isFinite(updated.firstUsedAt)
+      ? updated.firstUsedAt
+      : current.firstUsedAt
+
+    const normalized: UsageStats = {
+      firstUsedAt: Math.min(firstUsedAtCandidate, current.firstUsedAt),
+      totalWordsRead: Math.max(0, Math.round(updated.totalWordsRead)),
+      totalOriginalReadingTimeMs: Math.max(0, Math.round(updated.totalOriginalReadingTimeMs)),
+      totalExtensionReadingTimeMs: Math.max(0, Math.round(updated.totalExtensionReadingTimeMs))
+    }
+
+    await this.writeUsageStats(normalized)
+    return normalized
+  }
+
   // Authentication methods --------------------------------------------------------
   async readAuthUser (): Promise<User | null> {
     const result = await this.get<User>([STORAGE_KEYS.authUser])
@@ -107,10 +183,31 @@ export class StorageService {
     await this.set({ [STORAGE_KEYS.authToken]: token })
   }
 
+  async readAuthRefreshToken (): Promise<string | null> {
+    const result = await this.get<string>([STORAGE_KEYS.authRefreshToken])
+    return result[STORAGE_KEYS.authRefreshToken] || null
+  }
+
+  async writeAuthRefreshToken (token: string | null): Promise<void> {
+    await this.set({ [STORAGE_KEYS.authRefreshToken]: token })
+  }
+
+  async readAuthTokenExpiresAt (): Promise<number | null> {
+    const result = await this.get<number>([STORAGE_KEYS.authTokenExpiresAt])
+    const expiresAt = result[STORAGE_KEYS.authTokenExpiresAt]
+    return typeof expiresAt === 'number' && Number.isFinite(expiresAt) ? expiresAt : null
+  }
+
+  async writeAuthTokenExpiresAt (timestamp: number | null): Promise<void> {
+    await this.set({ [STORAGE_KEYS.authTokenExpiresAt]: timestamp })
+  }
+
   async clearAuthData (): Promise<void> {
     await this.set({
       [STORAGE_KEYS.authUser]: null,
-      [STORAGE_KEYS.authToken]: null
+      [STORAGE_KEYS.authToken]: null,
+      [STORAGE_KEYS.authRefreshToken]: null,
+      [STORAGE_KEYS.authTokenExpiresAt]: null
     })
   }
 

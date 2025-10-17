@@ -7,7 +7,10 @@ import {
   readSummarizationLevel,
   writeSummarizationLevel,
   readPreprocessingEnabled,
-  writePreprocessingEnabled
+  writePreprocessingEnabled,
+  readUsageStats,
+  writeUsageStats,
+  type UsageStats
 } from '../common/storage'
 import {
   TRANSLATION_LANGUAGES,
@@ -22,6 +25,7 @@ import {
 } from '../common/summarization'
 import { authService, type User } from '../auth/index'
 import { applyExtensionName } from '../common/app-name'
+import { DEFAULTS, getDefaultUsageStats } from '../config/defaults'
 
 // Import debug utilities in development
 if (process.env.NODE_ENV === 'development') {
@@ -50,7 +54,112 @@ type SettingsElements = {
   logoutButton: HTMLButtonElement;
   manageSubscriptionButton: HTMLButtonElement;
   authStatus: HTMLElement;
+  statsCard: HTMLElement;
+  statsHoursValue: HTMLElement;
+  statsWordsValue: HTMLElement;
+  statsWithoutExtensionValue: HTMLElement;
+  statsWithExtensionValue: HTMLElement;
+  statsSavedHoursValue: HTMLElement;
+  statsReaderLevelValue: HTMLElement;
+  statsInfoTooltip: HTMLElement;
+  statsResetButton: HTMLButtonElement;
 };
+
+const numberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 })
+const hoursFormatter = new Intl.NumberFormat(undefined, {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 1
+})
+function formatInteger(value: number): string {
+  return numberFormatter.format(Math.max(0, Math.round(value)))
+}
+
+function formatDurationHms(ms: number): string {
+  const totalSeconds = Math.max(0, Math.round(ms / 1000))
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  const hoursStr = String(hours).padStart(2, '0')
+  const minutesStr = String(minutes).padStart(2, '0')
+  const secondsStr = String(seconds).padStart(2, '0')
+
+  return `${hoursStr}:${minutesStr}:${secondsStr}`
+}
+
+function renderUsageStats (elements: SettingsElements, stats: UsageStats): void {
+  const now = Date.now()
+  const diffMs = Math.max(0, now - stats.firstUsedAt)
+  const dayMs = 24 * 60 * 60 * 1000
+  const daysUsed = Math.max(1, Math.ceil(diffMs / dayMs))
+  const dayLabel = daysUsed === 1 ? 'day' : 'days'
+  const hourMs = 60 * 60 * 1000
+
+  elements.statsHoursValue.textContent = `${formatInteger(daysUsed)} ${dayLabel}`
+  elements.statsWordsValue.textContent = `${formatInteger(stats.totalWordsRead)} words`
+  elements.statsWithoutExtensionValue.textContent = formatDurationHms(stats.totalOriginalReadingTimeMs)
+  elements.statsWithExtensionValue.textContent = formatDurationHms(stats.totalExtensionReadingTimeMs)
+
+  const hasExtensionTime = stats.totalExtensionReadingTimeMs > 0
+  const hasOriginalTime = stats.totalOriginalReadingTimeMs > 0
+  const readerMultiplier = hasExtensionTime && hasOriginalTime
+    ? Math.max(stats.totalOriginalReadingTimeMs / stats.totalExtensionReadingTimeMs, 0)
+    : 0
+
+  const savedMs = Math.max(stats.totalOriginalReadingTimeMs - stats.totalExtensionReadingTimeMs, 0)
+  const savedHours = savedMs / hourMs
+
+  if (savedHours > 0) {
+    elements.statsSavedHoursValue.textContent = `${hoursFormatter.format(savedHours)} hours`
+  } else {
+    elements.statsSavedHoursValue.textContent = '0 hours'
+  }
+
+  const roundedMultiplier = Math.round(readerMultiplier)
+
+  if (roundedMultiplier > 0) {
+    elements.statsReaderLevelValue.textContent = `${formatInteger(roundedMultiplier)}x Reader`
+  } else {
+    elements.statsReaderLevelValue.textContent = '—'
+  }
+
+  elements.statsCard.classList.add('settings__stats-card--loaded')
+}
+
+function setUsageStatsInfoTooltip (tooltip: HTMLElement): void {
+  const { standardWordsPerMinute, translationWordsPerMinute } = DEFAULTS.READING_SPEED
+  tooltip.textContent = `We estimate "time without the extension" using ${standardWordsPerMinute} words per minute when translation is off and ${translationWordsPerMinute} words per minute when translation is enabled.`
+}
+
+async function refreshUsageStats (elements: SettingsElements): Promise<void> {
+  try {
+    const stats = await readUsageStats()
+    renderUsageStats(elements, stats)
+  } catch (error) {
+    console.error('Failed to load usage statistics', error)
+  }
+}
+
+async function resetUsageStats (): Promise<void> {
+  const defaultStats = getDefaultUsageStats()
+  await writeUsageStats(defaultStats)
+}
+
+function registerStatsRefreshHandlers (elements: SettingsElements): void {
+  const handleRefresh = () => { void refreshUsageStats(elements) }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      handleRefresh()
+    }
+  })
+
+  window.addEventListener('focus', () => {
+    if (!document.hidden) {
+      handleRefresh()
+    }
+  })
+}
 
 let statusTimeout: ReturnType<typeof setTimeout> | undefined
 
@@ -231,7 +340,7 @@ function updateAiPreprocessingAccess (elements: SettingsElements, isAuthenticate
 
   setAiControlsDisabled(elements, !hasProBadge)
 
-  const title = 'You are 2x reader now.'
+  const title = "You are on '2x reader' plan now."
 
   if (hasProBadge) {
     elements.aiCard.classList.remove('settings__card--ai-locked')
@@ -396,6 +505,8 @@ async function loadInitialState (elements: SettingsElements): Promise<void> {
 
   // Load authentication state
   await loadAuthState(elements)
+
+  await refreshUsageStats(elements)
 }
 
 async function requestManageSubscriptionUrl (returnUrl: string): Promise<string> {
@@ -573,6 +684,29 @@ function registerEvents (elements: SettingsElements): void {
     }
   })
 
+  elements.statsResetButton.addEventListener('click', async () => {
+    if (elements.statsResetButton.disabled) {
+      return
+    }
+
+    const confirmed = window.confirm('Reset reading statistics? This clears your usage history.')
+    if (!confirmed) {
+      return
+    }
+
+    elements.statsResetButton.disabled = true
+    try {
+      await resetUsageStats()
+      await refreshUsageStats(elements)
+      showStatus(elements, 'Statistics reset.', 'success')
+    } catch (error) {
+      console.error('Failed to reset usage statistics', error)
+      showStatus(elements, 'Could not reset statistics. Try again.', 'error')
+    } finally {
+      elements.statsResetButton.disabled = false
+    }
+  })
+
   // Authentication event handlers
   elements.loginButton.addEventListener('click', async () => {
     try {
@@ -618,6 +752,30 @@ document.addEventListener('DOMContentLoaded', () => {
     throw new Error('AI Pre-processing CTA elements are missing')
   }
 
+  const statsCardElement = document.querySelector('[data-usage-stats-card]')
+  const statsHoursElement = document.querySelector('[data-usage-hours]')
+  const statsWordsElement = document.querySelector('[data-usage-words]')
+  const statsWithoutExtensionElement = document.querySelector('[data-usage-without-extension]')
+  const statsWithExtensionElement = document.querySelector('[data-usage-with-extension]')
+  const statsSavedHoursElement = document.querySelector('[data-usage-saved-hours]')
+  const statsReaderLevelElement = document.querySelector('[data-usage-reader-level]')
+  const statsInfoTooltipElement = document.querySelector('[data-usage-info-tooltip]')
+  const statsResetButtonElement = document.querySelector('[data-usage-reset]')
+
+  if (
+    !(statsCardElement instanceof HTMLElement) ||
+    !(statsHoursElement instanceof HTMLElement) ||
+    !(statsWordsElement instanceof HTMLElement) ||
+    !(statsWithoutExtensionElement instanceof HTMLElement) ||
+    !(statsWithExtensionElement instanceof HTMLElement) ||
+    !(statsSavedHoursElement instanceof HTMLElement) ||
+    !(statsReaderLevelElement instanceof HTMLElement) ||
+    !(statsInfoTooltipElement instanceof HTMLElement) ||
+    !(statsResetButtonElement instanceof HTMLButtonElement)
+  ) {
+    throw new Error('Usage statistics elements are missing')
+  }
+
   const elements: SettingsElements = {
     form: document.getElementById('settingsForm') as HTMLFormElement,
     enablePreprocessingToggle: document.getElementById('enableTranslation') as HTMLInputElement,
@@ -634,8 +792,19 @@ document.addEventListener('DOMContentLoaded', () => {
     loginButton: document.getElementById('loginButton') as HTMLButtonElement,
     logoutButton: document.getElementById('logoutButton') as HTMLButtonElement,
     manageSubscriptionButton: document.getElementById('manageSubscription') as HTMLButtonElement,
-    authStatus: document.getElementById('authStatus') as HTMLElement
+    authStatus: document.getElementById('authStatus') as HTMLElement,
+    statsCard: statsCardElement,
+    statsHoursValue: statsHoursElement,
+    statsWordsValue: statsWordsElement,
+    statsWithoutExtensionValue: statsWithoutExtensionElement,
+    statsWithExtensionValue: statsWithExtensionElement,
+    statsSavedHoursValue: statsSavedHoursElement,
+    statsReaderLevelValue: statsReaderLevelElement,
+    statsInfoTooltip: statsInfoTooltipElement,
+    statsResetButton: statsResetButtonElement
   }
+
+  setUsageStatsInfoTooltip(elements.statsInfoTooltip)
 
   updateAiPreprocessingAccess(elements, false, null)
 
@@ -645,6 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
   })
   registerEvents(elements)
   registerAuthRefreshHandlers()
+  registerStatsRefreshHandlers(elements)
 
   // Handle incoming actions from other extension pages
   const urlParams = new URLSearchParams(window.location.search)

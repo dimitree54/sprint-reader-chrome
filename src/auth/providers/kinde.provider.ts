@@ -55,7 +55,7 @@ export class KindeProvider implements AuthProvider {
       const tokens = await this.exchangeCodeForTokens(authCode, config)
       const user = await this.getUserFromToken(tokens.access_token, config)
 
-      await storageService.writeAuthToken(tokens.access_token)
+      await this.persistTokens(tokens)
       if (user) {
         await storageService.writeAuthUser(user)
       }
@@ -89,7 +89,7 @@ export class KindeProvider implements AuthProvider {
       await this.launchWebAuthFlow(logoutUrl)
 
       // Clear stored auth data
-      await storageService.writeAuthToken(null)
+      await this.persistTokens({ access_token: null, refresh_token: null, expires_in: null })
       await storageService.writeAuthUser(null)
 
       console.log('User logged out successfully from Kinde and extension')
@@ -101,7 +101,7 @@ export class KindeProvider implements AuthProvider {
         console.error('Kinde logout error:', error)
       }
       // Still attempt to clear local data
-      await storageService.writeAuthToken(null)
+      await this.persistTokens({ access_token: null, refresh_token: null, expires_in: null })
       await storageService.writeAuthUser(null)
     }
   }
@@ -127,7 +127,32 @@ export class KindeProvider implements AuthProvider {
         return (globalThis as any).TEST_AUTH_TOKEN || null
       }
 
-      return await storageService.readAuthToken()
+      const [accessToken, expiresAt] = await Promise.all([
+        storageService.readAuthToken(),
+        storageService.readAuthTokenExpiresAt()
+      ])
+
+      if (accessToken && expiresAt && !this.isTokenExpired(expiresAt)) {
+        return accessToken
+      }
+
+      const refreshToken = await storageService.readAuthRefreshToken()
+      if (refreshToken) {
+        try {
+          const config = getAuthConfig()
+          const refreshed = await this.refreshAccessToken(refreshToken, config)
+          if (refreshed?.access_token) {
+            await this.persistTokens(refreshed)
+            return refreshed.access_token
+          }
+        } catch (error) {
+          console.error('Failed to refresh Kinde access token:', error)
+        }
+      }
+
+      // Token missing or refresh failed; clear stored data to avoid using bad tokens downstream
+      await this.persistTokens({ access_token: null, refresh_token: null, expires_in: null })
+      return null
     } catch (error) {
       console.error('Error getting Kinde token:', error)
       return null
@@ -237,6 +262,53 @@ export class KindeProvider implements AuthProvider {
     }
 
     return await response.json()
+  }
+
+  private async refreshAccessToken(
+    refreshToken: string,
+    config: ReturnType<typeof getAuthConfig>
+  ): Promise<{ access_token: string; refresh_token?: string; expires_in?: number } | null> {
+    const domain = config.kinde.domain.replace(/^https?:\/\//, '')
+
+    const response = await fetch(`https://${domain}/oauth2/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: config.kinde.clientId,
+        refresh_token: refreshToken
+      })
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '')
+      console.warn(`[auth:kinde] Refresh token request failed: ${response.status} ${response.statusText} ${errorText}`)
+      return null
+    }
+
+    return await response.json()
+  }
+
+  private isTokenExpired(expiresAt: number): boolean {
+    const bufferMs = 60_000 // refresh 1 minute before expiry
+    return Date.now() + bufferMs >= expiresAt
+  }
+
+  private async persistTokens(tokens: { access_token: string | null; refresh_token?: string | null; expires_in?: number | null }): Promise<void> {
+    await storageService.writeAuthToken(tokens.access_token)
+
+    if (Object.prototype.hasOwnProperty.call(tokens, 'refresh_token')) {
+      await storageService.writeAuthRefreshToken(tokens.refresh_token ?? null)
+    }
+
+    if (Object.prototype.hasOwnProperty.call(tokens, 'expires_in')) {
+      const expiresAt = typeof tokens.expires_in === 'number' && Number.isFinite(tokens.expires_in)
+        ? Date.now() + (tokens.expires_in * 1000)
+        : null
+      await storageService.writeAuthTokenExpiresAt(expiresAt)
+    }
   }
 
   private async getUserFromToken(accessToken: string, config: ReturnType<typeof getAuthConfig>): Promise<User | null> {
