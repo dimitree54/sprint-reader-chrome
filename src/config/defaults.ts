@@ -33,7 +33,7 @@ export const DEFAULTS = {
   TIMING: {
     minimumDelayMs: 20,
     minimumWpmForCalculation: 100,
-    wpmModifier: 500 / 350,
+    wpmModifier: 200 / 143,
     selectionCaptureDelayMs: 120,
     MULTIPLIERS: {
       bold: 1.4,
