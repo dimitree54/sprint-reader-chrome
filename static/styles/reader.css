@@ -212,15 +212,26 @@ body.reader--light .reader__loading-spinner {
   color: var(--reader-accent);
 }
 
+.reader__timeline-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 32px 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .reader__timeline {
   position: relative;
-  padding: 12px 32px 24px;
+  flex: 1;
   cursor: pointer;
   user-select: none;
+  padding: 12px 0;
 }
 
 .reader__timeline-track {
   position: relative;
+  width: 100%;
   height: 8px;
   border-radius: 999px;
   background: var(--reader-progress-bg);
@@ -256,23 +267,19 @@ body.reader--light .reader__loading-spinner {
 }
 
 .reader__timeline-eta {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 72px;
   font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--reader-button-primary-color);
-  background: rgba(0, 0, 0, 0.45);
-  padding: 4px 12px;
-  border-radius: 999px;
-  letter-spacing: 0.04em;
+  font-weight: 500;
+  color: var(--reader-muted);
+  white-space: nowrap;
   pointer-events: none;
 }
 
 body.reader--light .reader__timeline-eta {
-  background: rgba(74, 0, 224, 0.12);
-  color: var(--reader-accent);
+  color: rgba(33, 31, 51, 0.6);
 }
 
 .reader__timeline--disabled {

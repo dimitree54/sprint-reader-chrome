@@ -33,22 +33,24 @@
       <div id="error-bubble" class="error-bubble" hidden></div>
       <div id="word" class="reader__word" aria-live="assertive" aria-atomic="true"></div>
     </main>
-    <div
-      id="readerTimeline"
-      class="reader__timeline"
-      role="slider"
-      aria-label="Reading progress"
-      aria-valuemin="0"
-      aria-valuemax="100"
-      aria-valuenow="0"
-      aria-live="polite"
-      tabindex="0"
-    >
-      <div class="reader__timeline-track">
-        <div id="readerTimelineProgress" class="reader__timeline-progress"></div>
-        <div id="readerTimelineHandle" class="reader__timeline-handle" aria-hidden="true"></div>
-        <span id="labelProgress" class="reader__timeline-eta">-00:00:00</span>
+    <div class="reader__timeline-container">
+      <div
+        id="readerTimeline"
+        class="reader__timeline"
+        role="slider"
+        aria-label="Reading progress"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+        aria-live="polite"
+        tabindex="0"
+      >
+        <div class="reader__timeline-track">
+          <div id="readerTimelineProgress" class="reader__timeline-progress"></div>
+          <div id="readerTimelineHandle" class="reader__timeline-handle" aria-hidden="true"></div>
+        </div>
       </div>
+      <span id="labelProgress" class="reader__timeline-eta">-00:00:00</span>
     </div>
     <footer class="reader__controls">
       <div class="reader__controls-group">
