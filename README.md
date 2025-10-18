@@ -25,7 +25,7 @@ Our AI preprocessing, available to authenticated users, optimizes text before pr
 > Adjustable word-per-minute (WPM)
 > Intelligent hyphenation of words
 > Focal guides to improve attention
-> Adjustable words-per-slide (chunk size)
+> Words-per-slide (chunk size) centrally configured via `DEFAULTS.READER_PREFERENCES`
 > Provision for different display algorithms
 > Optimal word positioning to improve comprehension
 > Optional grammar delays

@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
   registerMessageListener()
   // Initialize store-driven renderer and capture unsubscribe
   const unsubscribe = initRenderer()
+  const { chunkSize } = useReaderStore.getState()
+  console.info('[Reader] chunkSize:', chunkSize, 'maxWordLengthForGrouping:', DEFAULTS.WORD_PROCESSING.maxWordLengthForGrouping)
   bindControls()
   initCtaButton()
   // Register beforeunload to cleanup store subscriptions

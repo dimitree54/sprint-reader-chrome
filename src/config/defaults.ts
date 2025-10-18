@@ -10,7 +10,7 @@ export const DEFAULTS = {
     pauseAfterComma: true,
     pauseAfterPeriod: true,
     pauseAfterParagraph: true,
-    chunkSize: 3,
+    chunkSize: 2,
     wordFlicker: false,
     wordFlickerPercent: 10,
     theme: 'dark' as ReaderTheme
@@ -18,7 +18,7 @@ export const DEFAULTS = {
 
   // Word processing defaults
   WORD_PROCESSING: {
-    maxWordLengthForGrouping: 2
+    maxWordLengthForGrouping: 4
   },
 
   // Selection state defaults
@@ -33,15 +33,15 @@ export const DEFAULTS = {
   TIMING: {
     minimumDelayMs: 20,
     minimumWpmForCalculation: 100,
-    wpmModifier: 200 / 143,
+    wpmModifier: 200 / 147,
     selectionCaptureDelayMs: 120,
     MULTIPLIERS: {
       bold: 1.4,
-      commaPause: 0.2,
-      periodPause: 0.5,
-      paragraphPause: 1.5,
+      commaPause: 0.5,
+      periodPause: 1.0,
+      paragraphPause: 1.0,
       groupedChunk: 1.2,
-      nonLetterChunk: 1.2
+      nonLetterChunk: 1.4
     }
   },
 

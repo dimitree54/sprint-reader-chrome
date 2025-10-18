@@ -40,20 +40,32 @@ export class StorageService {
   async readReaderPreferences (): Promise<ReaderPreferences> {
     const result = await this.get<ReaderPreferences>([STORAGE_KEYS.readerPrefs])
     const defaults = getDefaultReaderPreferences()
-    return {
-      wordsPerMinute: result[STORAGE_KEYS.readerPrefs]?.wordsPerMinute ?? defaults.wordsPerMinute,
-      pauseAfterComma: result[STORAGE_KEYS.readerPrefs]?.pauseAfterComma ?? defaults.pauseAfterComma,
-      pauseAfterPeriod: result[STORAGE_KEYS.readerPrefs]?.pauseAfterPeriod ?? defaults.pauseAfterPeriod,
-      pauseAfterParagraph: result[STORAGE_KEYS.readerPrefs]?.pauseAfterParagraph ?? defaults.pauseAfterParagraph,
-      chunkSize: result[STORAGE_KEYS.readerPrefs]?.chunkSize ?? defaults.chunkSize,
-      wordFlicker: result[STORAGE_KEYS.readerPrefs]?.wordFlicker ?? defaults.wordFlicker,
-      wordFlickerPercent: result[STORAGE_KEYS.readerPrefs]?.wordFlickerPercent ?? defaults.wordFlickerPercent,
-      theme: result[STORAGE_KEYS.readerPrefs]?.theme ?? defaults.theme
+    const storedPrefs = result[STORAGE_KEYS.readerPrefs] ?? {}
+    const normalized: ReaderPreferences = {
+      wordsPerMinute: storedPrefs?.wordsPerMinute ?? defaults.wordsPerMinute,
+      pauseAfterComma: storedPrefs?.pauseAfterComma ?? defaults.pauseAfterComma,
+      pauseAfterPeriod: storedPrefs?.pauseAfterPeriod ?? defaults.pauseAfterPeriod,
+      pauseAfterParagraph: storedPrefs?.pauseAfterParagraph ?? defaults.pauseAfterParagraph,
+      chunkSize: defaults.chunkSize,
+      wordFlicker: storedPrefs?.wordFlicker ?? defaults.wordFlicker,
+      wordFlickerPercent: storedPrefs?.wordFlickerPercent ?? defaults.wordFlickerPercent,
+      theme: storedPrefs?.theme ?? defaults.theme
     }
+
+    if (storedPrefs?.chunkSize !== normalized.chunkSize && result[STORAGE_KEYS.readerPrefs] != null) {
+      await this.writeReaderPreferences({ ...result[STORAGE_KEYS.readerPrefs], chunkSize: normalized.chunkSize })
+    }
+
+    return normalized
   }
 
   async writeReaderPreferences (prefs: ReaderPreferences): Promise<void> {
-    await this.set({ [STORAGE_KEYS.readerPrefs]: prefs })
+    const defaults = getDefaultReaderPreferences()
+    const normalized: ReaderPreferences = {
+      ...prefs,
+      chunkSize: defaults.chunkSize
+    }
+    await this.set({ [STORAGE_KEYS.readerPrefs]: normalized })
   }
 
   // API key & config -------------------------------------------------------

@@ -14,10 +14,12 @@ These values control the initial reading experience when a user first installs t
 | `pauseAfterComma` | `true` | Enables pause after commas for natural reading rhythm |
 | `pauseAfterPeriod` | `true` | Enables pause after periods for sentence boundaries |
 | `pauseAfterParagraph` | `true` | Enables pause after paragraphs for content separation |
-| `chunkSize` | `3` | Number of words to group together (1=single word, 2-4=word groups) |
+| `chunkSize` | `2` | Number of words to group together; persisted values are reset to this default |
 | `wordFlicker` | `false` | Enables flicker effect to improve concentration |
 | `wordFlickerPercent` | `10` | Percentage of word display time for flicker effect |
 | `theme` | `'dark'` | Default visual theme (dark reduces eye strain) |
+
+> **Note:** `chunkSize` is normalized on load to the configured default to keep grouping consistent across sessions.
 
 ## Selection State Defaults
 
@@ -58,7 +60,7 @@ These values control how text is processed and grouped for optimal reading.
 
 | Setting | Default Value | Purpose |
 |---------|---------------|---------|
-| `maxWordLengthForGrouping` | `2` | Maximum word length (in mini-tokens) for grouping multiple words together |
+| `maxWordLengthForGrouping` | `3` | Maximum word length (in mini-tokens) for grouping multiple words together |
 | `rawText` | `''` | Fallback for empty raw text to prevent errors in preprocessing |
 
 ## Visual Effects Defaults
@@ -154,7 +156,7 @@ All defaults are defined in `src/config/defaults.ts` using TypeScript's `satisfi
 export const DEFAULTS = {
   READER_PREFERENCES: {
     wordsPerMinute: 350,
-    chunkSize: 3,
+    chunkSize: 2,
     theme: 'dark' as ReaderTheme
     // ... other preferences
   } satisfies ReaderPreferences,

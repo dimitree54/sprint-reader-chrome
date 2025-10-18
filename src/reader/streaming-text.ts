@@ -106,6 +106,12 @@ class StreamingTextOrchestrator {
       store.setIsPreprocessing(false)
     }
     console.log('Streaming complete. Full set of tokens:', store.tokens)
+    const chunkSummaries = store.wordItems.map(item => ({
+      text: item.text,
+      wordsInChunk: item.wordsInChunk,
+      isGrouped: item.isGrouped
+    }))
+    console.info('[StreamingTextOrchestrator] Final chunks:', chunkSummaries)
     if (!this.hasRecordedSessionStats) {
       this.hasRecordedSessionStats = true
       void this.persistSessionDuration()
