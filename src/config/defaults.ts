@@ -36,11 +36,11 @@ export const DEFAULTS = {
     wpmModifier: 500 / 350,
     selectionCaptureDelayMs: 120,
     MULTIPLIERS: {
-      bold: 1.5,
-      commaPause: 0.5,
-      periodPause: 1.0,
-      paragraphPause: 2.5,
-      groupedChunk: 1.3,
+      bold: 1.4,
+      commaPause: 0.2,
+      periodPause: 0.5,
+      paragraphPause: 1.5,
+      groupedChunk: 1.2,
       nonLetterChunk: 1.2
     }
   },
