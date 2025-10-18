@@ -60,6 +60,14 @@ export class PlaybackService {
     const { wordItems, index, wordsPerMinute } = s
     const current = wordItems[index]
     if (current) {
+      const storedDuration = Number.isFinite(current.duration) ? current.duration : 0
+      const storedPostdelay = Number.isFinite(current.postdelay) ? current.postdelay : 0
+
+      if (storedDuration > 0 || storedPostdelay > 0) {
+        const totalDelay = storedDuration + storedPostdelay
+        return Math.max(totalDelay, DEFAULTS.TIMING.minimumDelayMs)
+      }
+
       // Recalculate duration using current timing preferences from snapshot
       const prefs = {
         wordsPerMinute: s.wordsPerMinute,
