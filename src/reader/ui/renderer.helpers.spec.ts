@@ -34,6 +34,7 @@ describe('renderer helpers', () => {
 
       expect(result).toEqual({
         percent: 0,
+        timePercent: 0,
         eta: '-00:00:00',
         ariaNow: 0
       })
@@ -59,9 +60,10 @@ describe('renderer helpers', () => {
 
       const result = computeProgress(state as any)
 
-      expect(result.percent).toBe(45.5)
+      expect(result.percent).toBe(50)
+      expect(result.timePercent).toBe(45.5)
       expect(result.eta).toBe('-00:10:00')
-      expect(result.ariaNow).toBe(46)
+      expect(result.ariaNow).toBe(50)
     })
 
     it('falls back to index-based progress when timing data unavailable', () => {
@@ -89,6 +91,7 @@ describe('renderer helpers', () => {
       const result = computeProgress(state as any)
 
       expect(result.percent).toBeCloseTo(66.667, 3)
+      expect(result.timePercent).toBeCloseTo(66.667, 3)
       expect(result.eta).toBe('-00:02:00')
       expect(result.ariaNow).toBe(67)
     })

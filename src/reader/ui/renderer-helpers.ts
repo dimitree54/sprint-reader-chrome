@@ -3,6 +3,7 @@ import { getTimeProgress, formatEta } from '../time-calculator'
 
 export interface ProgressData {
   percent: number
+  timePercent: number
   eta: string
   ariaNow: number
 }
@@ -10,7 +11,7 @@ export interface ProgressData {
 // Pure helper functions
 export function computeProgress(state: ReturnType<typeof useReaderStore.getState>): ProgressData {
   if (state.wordItems.length === 0 || state.isPreprocessing) {
-    return { percent: 0, eta: '-00:00:00', ariaNow: 0 }
+    return { percent: 0, timePercent: 0, eta: '-00:00:00', ariaNow: 0 }
   }
 
   const available = state.wordItems.length
@@ -36,10 +37,12 @@ export function computeProgress(state: ReturnType<typeof useReaderStore.getState
   const eta = formatEta(timeProgress.remainingMs)
 
   const hasTiming = timeProgress.totalDurationMs > 0 && Number.isFinite(timeProgress.progressPercent)
-  const percent = hasTiming ? Math.min(Math.max(timeProgress.progressPercent, 0), 100) : fallbackPercent
+  const timePercent = hasTiming ? Math.min(Math.max(timeProgress.progressPercent, 0), 100) : fallbackPercent
+  const percent = fallbackPercent
 
   return {
     percent,
+    timePercent,
     eta,
     ariaNow: Math.round(percent)
   }
