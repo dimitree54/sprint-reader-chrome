@@ -189,15 +189,7 @@ export class StreamingPreprocessingManager {
       // Feed the entire processed text as one chunk
       const processedText = result.text || rawText
 
-      // Split into smaller chunks to simulate streaming
-      const chunkSize = 100 // characters per chunk
-      for (let i = 0; i < processedText.length; i += chunkSize) {
-        const chunk = processedText.slice(i, i + chunkSize)
-        await streamingProcessor.addStreamingToken(chunk)
-
-        // Small delay to prevent blocking
-        await new Promise(resolve => setTimeout(resolve, 10))
-      }
+      await streamingProcessor.addStreamingToken(processedText)
 
       // Complete the streaming
       await streamingProcessor.completeStreamingText()
